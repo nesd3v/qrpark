@@ -13,7 +13,6 @@ import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
 import Pricing from "./pages/Pricing";
 import Install from "./pages/Install";
-import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/SupportChatWidget";
 
@@ -36,7 +35,6 @@ const App = () => (
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/install" element={<Install />} />
-          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />
