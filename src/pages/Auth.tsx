@@ -253,6 +253,10 @@ const Auth = () => {
                 className="text-primary hover:underline font-medium">Kayıt Ol</button>
             </p>
           </form>
+        </motion.div>
+      </div>
+    );
+  }
 
   // ========== REGISTRATION ==========
   return (
