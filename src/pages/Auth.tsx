@@ -43,6 +43,15 @@ const Auth = () => {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    const { error } = await lovable.auth.signInWithOAuth("apple", {
+      redirect_uri: window.location.origin,
+    });
+    if (error) {
+      toast.error("Apple ile giriş yapılamadı");
+    }
+  };
+
   const isPasswordValid = passwordRules.every((r) => r.test(password));
 
   // --- Register ---
