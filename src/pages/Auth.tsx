@@ -54,6 +54,11 @@ const Auth = () => {
 
   const isPasswordValid = passwordRules.every((r) => r.test(password));
 
+  const isAppleDevice = useMemo(() => {
+    const ua = navigator.userAgent || "";
+    return /iPhone|iPad|iPod|Macintosh/.test(ua);
+  }, []);
+
   // --- Register ---
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
