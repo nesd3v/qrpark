@@ -105,6 +105,13 @@ const Dashboard = () => {
       .order("created_at", { ascending: true });
 
     const allVehicles = (vehicleData as Vehicle[]) || [];
+    
+    // OAuth users without vehicles → redirect to onboarding
+    if (allVehicles.length === 0) {
+      navigate("/onboarding");
+      return;
+    }
+
     setVehicles(allVehicles);
 
     const active = allVehicles[0] || null;
