@@ -20,15 +20,16 @@ import { useNavigate } from "react-router-dom";
 interface DeleteAccountDialogProps {
   isPremium: boolean;
   userEmail: string;
+  isOAuthUser?: boolean;
   externalOpen?: boolean;
   onExternalOpenChange?: (open: boolean) => void;
 }
 
-const DeleteAccountDialog = ({ isPremium, userEmail, externalOpen, onExternalOpenChange }: DeleteAccountDialogProps) => {
+const DeleteAccountDialog = ({ isPremium, userEmail, isOAuthUser, externalOpen, onExternalOpenChange }: DeleteAccountDialogProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = externalOpen ?? internalOpen;
   const setOpen = onExternalOpenChange ?? setInternalOpen;
-  const [step, setStep] = useState<"confirm" | "password">("confirm");
+  const [step, setStep] = useState<"confirm" | "final">("confirm");
   const [password, setPassword] = useState("");
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -60,12 +61,16 @@ const DeleteAccountDialog = ({ isPremium, userEmail, externalOpen, onExternalOpe
         toast.error("Şifre yanlış. Lütfen tekrar deneyin.");
         return;
       }
-      setStep("password");
+      setStep("final");
     } catch {
       toast.error("Doğrulama sırasında bir hata oluştu");
     } finally {
       setVerifying(false);
     }
+  };
+
+  const handleProceedOAuth = () => {
+    setStep("final");
   };
 
   const handleDelete = async () => {
@@ -108,12 +113,18 @@ const DeleteAccountDialog = ({ isPremium, userEmail, externalOpen, onExternalOpe
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                 <Lock className="w-5 h-5" />
-                Kimlik Doğrulama
+                {isOAuthUser ? "Hesap Silme Onayı" : "Kimlik Doğrulama"}
               </AlertDialogTitle>
               <AlertDialogDescription className="space-y-3 text-left">
-                <p>
-                  Hesabınızı silmeden önce kimliğinizi doğrulamamız gerekiyor. Lütfen mevcut şifrenizi girin.
-                </p>
+                {isOAuthUser ? (
+                  <p>
+                    Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                  </p>
+                ) : (
+                  <p>
+                    Hesabınızı silmeden önce kimliğinizi doğrulamamız gerekiyor. Lütfen mevcut şifrenizi girin.
+                  </p>
+                )}
 
                 {isPremium && (
                   <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
@@ -127,38 +138,46 @@ const DeleteAccountDialog = ({ isPremium, userEmail, externalOpen, onExternalOpe
                   </div>
                 )}
 
-                <div className="pt-2 space-y-2">
-                  <Label className="text-sm text-foreground font-medium flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5" />
-                    Mevcut Şifreniz
-                  </Label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="border-destructive/30 focus:border-destructive"
-                    onKeyDown={(e) => e.key === "Enter" && handleVerifyPassword()}
-                  />
-                </div>
+                {!isOAuthUser && (
+                  <div className="pt-2 space-y-2">
+                    <Label className="text-sm text-foreground font-medium flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5" />
+                      Mevcut Şifreniz
+                    </Label>
+                    <Input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="border-destructive/30 focus:border-destructive"
+                      onKeyDown={(e) => e.key === "Enter" && handleVerifyPassword()}
+                    />
+                  </div>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={verifying}>Vazgeç</AlertDialogCancel>
-              <Button
-                variant="destructive"
-                onClick={handleVerifyPassword}
-                disabled={!password.trim() || verifying}
-              >
-                {verifying ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
-                    Doğrulanıyor...
-                  </span>
-                ) : (
-                  "Devam Et"
-                )}
-              </Button>
+              {isOAuthUser ? (
+                <Button variant="destructive" onClick={handleProceedOAuth}>
+                  Devam Et
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  onClick={handleVerifyPassword}
+                  disabled={!password.trim() || verifying}
+                >
+                  {verifying ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
+                      Doğrulanıyor...
+                    </span>
+                  ) : (
+                    "Devam Et"
+                  )}
+                </Button>
+              )}
             </AlertDialogFooter>
           </>
         ) : (
