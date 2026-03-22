@@ -57,19 +57,8 @@ const Pricing = () => {
     }
   };
 
-  const handleManageSubscription = async () => {
-    setLoadingPlan("manage");
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast.error("Portal açılamadı: " + (err.message || "Bilinmeyen hata"));
-    } finally {
-      setLoadingPlan(null);
-    }
+  const handleManageSubscription = () => {
+    toast.info("Abonelik yönetimi için destek ekibiyle iletişime geçin.");
   };
 
   return (
