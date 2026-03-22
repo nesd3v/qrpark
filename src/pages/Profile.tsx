@@ -123,6 +123,29 @@ const Profile = () => {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      toast.error("Şifre en az 8 karakter olmalıdır");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Şifreler eşleşmiyor");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Şifreniz başarıyla değiştirildi!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Şifre değiştirilemedi");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleDeleteVehicle = async (vehicleId: string) => {
     if (vehicles.length <= 1) {
       toast.error("En az bir aracınız olmalıdır");
