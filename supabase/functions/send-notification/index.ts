@@ -201,7 +201,9 @@ Deno.serve(async (req) => {
     const smsResult = await sendTwilioSMS(vehicle.phone, message);
     const status = smsResult.success ? "sent" : "failed";
 
+    const notifId = crypto.randomUUID();
     const { error: notifError } = await supabase.from("notifications").insert({
+      id: notifId,
       vehicle_id: vehicle.id,
       plate: vehicle.plate,
       issue_type,
@@ -211,6 +213,31 @@ Deno.serve(async (req) => {
 
     if (notifError) {
       console.error("Notification insert error:", notifError);
+    }
+
+    // Send email notification to vehicle owner if they have an account
+    if (vehicle.user_id) {
+      try {
+        const { data: userData } = await supabase.auth.admin.getUserById(vehicle.user_id);
+        const ownerEmail = userData?.user?.email;
+        if (ownerEmail) {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "vehicle-notification",
+              recipientEmail: ownerEmail,
+              idempotencyKey: `vehicle-notif-${notifId}`,
+              templateData: {
+                plate: vehicle.plate,
+                issueType: issue_type,
+                note: note || undefined,
+              },
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.error("Failed to send notification email:", emailErr);
+        // Non-fatal — SMS was already sent
+      }
     }
 
     if (!smsResult.success) {
