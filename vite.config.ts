@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: ["pwa-192x192.png", "pwa-512x512.png", "pwa-maskable-512x512.png"],
       manifest: {
         name: "QRPark - Akıllı Park Bildirim Sistemi",
         short_name: "QRPark",
