@@ -452,6 +452,81 @@ const Profile = () => {
               </Button>
             </motion.div>
 
+            {/* Change Password - only for email users */}
+            {!isOAuthUser && (
+              <motion.div
+                className="glass rounded-2xl p-6 mt-4"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <KeyRound className="w-4 h-4 text-primary" />
+                  </div>
+                  <h2 className="text-base font-display font-bold text-foreground">Şifre Değiştir</h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5" />
+                      Yeni Şifre
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground focus:border-primary/50 transition-colors pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5" />
+                      Yeni Şifre (Tekrar)
+                    </Label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="bg-secondary/50 border-border text-foreground placeholder:text-muted-foreground focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={changingPassword || !newPassword || !confirmPassword}
+                    variant="outline"
+                    className="w-full py-5 font-medium border-border hover:bg-secondary/80"
+                  >
+                    {changingPassword ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" />
+                        Değiştiriliyor...
+                      </span>
+                    ) : (
+                      <>
+                        <KeyRound className="w-4 h-4 mr-2" />
+                        Şifreyi Değiştir
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
             {/* Delete Account */}
             <motion.div
               className="flex justify-center pt-6 pb-2"
@@ -459,7 +534,7 @@ const Profile = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45 }}
             >
-              <DeleteAccountDialog isPremium={isPremium} userEmail={user?.email || ""} />
+              <DeleteAccountDialog isPremium={isPremium} userEmail={user?.email || ""} isOAuthUser={isOAuthUser} />
             </motion.div>
           </motion.div>
         </div>
