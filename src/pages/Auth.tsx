@@ -62,6 +62,17 @@ const Auth = () => {
         },
       });
       if (error) throw error;
+
+      // Send welcome email
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "welcome-email",
+          recipientEmail: email,
+          idempotencyKey: `welcome-${email}-${Date.now()}`,
+          templateData: { name: fullName.trim() },
+        },
+      }).catch(() => {});
+
       setRegistered(true);
     } catch (err: any) {
       toast.error(err.message || "Bir hata oluştu");
