@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'QRPark - E-postanızı Doğrulayın',
+  invite: 'QRPark - Davet Edildiniz',
+  magiclink: 'QRPark - Giriş Bağlantınız',
+  recovery: 'QRPark - Şifrenizi Sıfırlayın',
+  email_change: 'QRPark - E-posta Değişikliğini Onaylayın',
+  reauthentication: 'QRPark - Doğrulama Kodunuz',
 }
 
 // Template mapping
