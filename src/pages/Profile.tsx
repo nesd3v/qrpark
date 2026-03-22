@@ -27,6 +27,12 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const isOAuthUser = user?.app_metadata?.provider !== "email" && user?.app_metadata?.provider !== undefined;
 
   useEffect(() => {
     if (!authLoading && !user) {
