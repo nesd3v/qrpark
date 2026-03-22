@@ -36,6 +36,7 @@ const App = () => (
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/install" element={<Install />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />
