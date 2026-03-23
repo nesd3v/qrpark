@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
 
       const { data: msgs } = await supabase
         .from("support_messages")
-        .select("id, sender_type, message, created_at")
+        .select("id, sender_type, message, created_at, attachment_url, attachment_type")
         .eq("conversation_id", conversation_id)
         .order("created_at", { ascending: true });
 
@@ -193,7 +193,8 @@ Deno.serve(async (req) => {
       const decrypted = await Promise.all(
         (msgs || []).map(async (m) => ({
           ...m,
-          message: await decrypt(m.message, encKey),
+          message: m.message ? await decrypt(m.message, encKey) : "",
+          attachment_url: m.attachment_url ? await decrypt(m.attachment_url, encKey) : null,
         }))
       );
 
