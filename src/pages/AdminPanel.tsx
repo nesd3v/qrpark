@@ -50,6 +50,66 @@ type SupportMessage = {
   attachment_type: string | null;
 };
 
+// ─── Attachment Preview for Admin ───
+const AdminAttachmentPreview = ({
+  attachmentUrl,
+  attachmentType,
+  isAdmin,
+}: {
+  attachmentUrl: string;
+  attachmentType: string | null;
+  isAdmin: boolean;
+}) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUrl = async () => {
+      const { data } = await supabase.storage
+        .from("support-attachments")
+        .createSignedUrl(attachmentUrl, 3600);
+      if (data?.signedUrl) setSignedUrl(data.signedUrl);
+    };
+    getUrl();
+  }, [attachmentUrl]);
+
+  if (!signedUrl) {
+    return (
+      <div className="flex items-center gap-1.5 mt-1.5 opacity-60">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <span className="text-xs">Ek yükleniyor...</span>
+      </div>
+    );
+  }
+
+  if (attachmentType === "image") {
+    return (
+      <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="block mt-1.5">
+        <img
+          src={signedUrl}
+          alt="Ek"
+          className="max-w-[200px] max-h-[150px] rounded-lg object-cover border border-border/30"
+        />
+      </a>
+    );
+  }
+
+  const fileName = attachmentUrl.split("/").pop() || "dosya";
+  return (
+    <a
+      href={signedUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center gap-2 mt-1.5 px-2 py-1.5 rounded-md text-xs ${
+        isAdmin ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" : "bg-muted hover:bg-muted/80"
+      } transition-colors`}
+    >
+      <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+      <span className="truncate max-w-[150px]">{fileName}</span>
+      <Download className="w-3 h-3 flex-shrink-0 ml-auto" />
+    </a>
+  );
+};
+
 // ─── Support Panel Sub-component ───
 const SupportPanel = ({ user }: { user: any }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
