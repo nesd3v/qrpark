@@ -46,6 +46,8 @@ type SupportMessage = {
   sender_type: string;
   message: string;
   created_at: string;
+  attachment_url: string | null;
+  attachment_type: string | null;
 };
 
 // ─── Support Panel Sub-component ───
