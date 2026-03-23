@@ -218,11 +218,11 @@ SADECE aşağıdaki JSON formatında yanıt ver:
     let verificationNote: string;
 
     if (parsed.is_fake) {
-      verificationStatus = "rejected";
-      verificationNote = `Sahte veya yapay zeka ile oluşturulmuş belge tespit edildi: ${parsed.fake_reason || "Detay yok"}`;
+      verificationStatus = "pending";
+      verificationNote = `[AI Red] Sahte veya yapay zeka ile oluşturulmuş belge şüphesi: ${parsed.fake_reason || "Detay yok"} — Admin incelemesi bekleniyor`;
     } else if (!parsed.is_ruhsat) {
-      verificationStatus = "rejected";
-      verificationNote = "Yüklenen belge geçerli bir araç ruhsatı olarak tanınamadı";
+      verificationStatus = "pending";
+      verificationNote = "[AI Red] Yüklenen belge geçerli bir araç ruhsatı olarak tanınamadı — Admin incelemesi bekleniyor";
     } else if (!detectedPlate) {
       verificationStatus = "pending";
       verificationNote = "Ruhsattan plaka okunamadı, admin incelemesi bekleniyor";
@@ -233,14 +233,14 @@ SADECE aşağıdaki JSON formatında yanıt ver:
       verificationStatus = "pending";
       verificationNote = `Plaka ve isim eşleşiyor ancak güven düzeyi düşük (${parsed.confidence}), admin onayı bekleniyor`;
     } else if (plateMatch && !nameMatch) {
-      verificationStatus = "rejected";
-      verificationNote = `Plaka eşleşiyor ancak isim uyuşmuyor. Girilen: ${full_name}, Tespit edilen: ${parsed.detected_name || "okunamadı"}`;
+      verificationStatus = "pending";
+      verificationNote = `[AI Red] Plaka eşleşiyor ancak isim uyuşmuyor. Girilen: ${full_name}, Tespit edilen: ${parsed.detected_name || "okunamadı"} — Admin incelemesi bekleniyor`;
     } else if (!plateMatch && nameMatch) {
-      verificationStatus = "rejected";
-      verificationNote = `İsim eşleşiyor ancak plaka uyuşmuyor. Girilen: ${plate}, Tespit edilen: ${parsed.detected_plate || "okunamadı"}`;
+      verificationStatus = "pending";
+      verificationNote = `[AI Red] İsim eşleşiyor ancak plaka uyuşmuyor. Girilen: ${plate}, Tespit edilen: ${parsed.detected_plate || "okunamadı"} — Admin incelemesi bekleniyor`;
     } else {
-      verificationStatus = "rejected";
-      verificationNote = `Plaka ve isim uyuşmuyor. Girilen plaka: ${plate}, Tespit edilen: ${parsed.detected_plate || "okunamadı"}. Girilen isim: ${full_name}, Tespit edilen: ${parsed.detected_name || "okunamadı"}`;
+      verificationStatus = "pending";
+      verificationNote = `[AI Red] Plaka ve isim uyuşmuyor. Girilen plaka: ${plate}, Tespit edilen: ${parsed.detected_plate || "okunamadı"}. Girilen isim: ${full_name}, Tespit edilen: ${parsed.detected_name || "okunamadı"} — Admin incelemesi bekleniyor`;
     }
 
     await supabase

@@ -230,7 +230,14 @@ const SupportPanel = ({ user }: { user: any }) => {
                         ? "bg-primary text-primary-foreground rounded-br-sm"
                         : "bg-secondary text-foreground rounded-bl-sm"
                     }`}>
-                      {msg.message}
+                      {msg.message && <span>{msg.message}</span>}
+                      {msg.attachment_url && (
+                        <AdminAttachmentPreview
+                          attachmentUrl={msg.attachment_url}
+                          attachmentType={msg.attachment_type}
+                          isAdmin={msg.sender_type === "admin"}
+                        />
+                      )}
                       <p className={`text-[10px] mt-1 ${
                         msg.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"
                       }`}>
