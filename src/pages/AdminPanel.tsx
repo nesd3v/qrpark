@@ -521,9 +521,9 @@ const AdminPanel = () => {
             )}
 
             {/* Vehicle Tabs */}
-            <div className="flex gap-2 mb-6">
+            <div className="flex flex-wrap items-center gap-2 mb-6">
               {vehicleTabs.map((t) => (
-                <button key={t.key} onClick={() => setTab(t.key)}
+                <button key={t.key} onClick={() => { setTab(t.key); setAiRedFilter(false); }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     tab === t.key
                       ? "bg-primary text-primary-foreground"
@@ -538,6 +538,24 @@ const AdminPanel = () => {
                   )}
                 </button>
               ))}
+              {tab === "pending" && (
+                <button
+                  onClick={() => setAiRedFilter((prev) => !prev)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                    aiRedFilter
+                      ? "bg-destructive/15 border-destructive/40 text-destructive"
+                      : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <ShieldX className="w-3.5 h-3.5" />
+                  AI Red
+                  {aiRedFilter && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-destructive/20">
+                      {vehicles.filter((v) => v.verification_note?.includes("[AI Red]")).length}
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Vehicle List */}
