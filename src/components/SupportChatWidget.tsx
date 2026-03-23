@@ -188,7 +188,7 @@ const SupportChatWidget = () => {
                   </TooltipTrigger>
                   <TooltipContent side="bottom" align="end" className="max-w-[240px] text-xs leading-relaxed">
                     <p className="font-semibold mb-1">🔒 Uçtan Uca Şifreleme</p>
-                    <p>Mesajlarınız AES-256-GCM ile şifrelenir. Veritabanında yalnızca şifreli metin saklanır, hiçbir üçüncü taraf okuyamaz.</p>
+                    <p>Canlı Destek konuşmaları uçtan uca şifrelenir.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
