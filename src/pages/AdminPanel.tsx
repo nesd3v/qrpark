@@ -571,7 +571,7 @@ const AdminPanel = () => {
               <div className="space-y-4">
                 {(aiRedFilter ? vehicles.filter((v) => v.verification_note?.includes("[AI Red]")) : vehicles).map((v) => (
                   <motion.div key={v.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="glass rounded-xl p-5">
+                    className={`glass rounded-xl p-5 ${v.verification_note?.includes("[AI Red]") ? "border-2 border-destructive/70 shadow-[0_0_15px_-3px_hsl(var(--destructive)/0.3)]" : ""}`}>
                     <div className="flex flex-col md:flex-row gap-4">
                       {v.photo_url && (
                         <button onClick={() => setSelectedPhoto(v.photo_url)}
