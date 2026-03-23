@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield, ShieldCheck, ShieldX, Clock, Eye, CheckCircle2, XCircle,
   Loader2, LogIn, Car, BarChart3, RefreshCw, ExternalLink, MessageCircle, Send,
+  Paperclip, FileText, Download, Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
