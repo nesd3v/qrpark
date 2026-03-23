@@ -103,9 +103,9 @@ Deno.serve(async (req) => {
 
     // --- Actions ---
     if (action === "send") {
-      const { conversation_id, message, sender_type } = params;
-      if (!conversation_id || !message) {
-        return new Response(JSON.stringify({ error: "conversation_id and message required" }), {
+      const { conversation_id, message, sender_type, attachment_url, attachment_type } = params;
+      if (!conversation_id || (!message && !attachment_url)) {
+        return new Response(JSON.stringify({ error: "conversation_id and (message or attachment) required" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -125,15 +125,21 @@ Deno.serve(async (req) => {
         });
       }
 
-      const encryptedMessage = await encrypt(message, encKey);
+      const encryptedMessage = message ? await encrypt(message, encKey) : "";
       const sType = isAdmin && sender_type === "admin" ? "admin" : "user";
 
-      const { error: insertError } = await supabase.from("support_messages").insert({
+      const insertData: Record<string, unknown> = {
         conversation_id,
         sender_type: sType,
         sender_id: user.id,
         message: encryptedMessage,
-      });
+      };
+      if (attachment_url) {
+        insertData.attachment_url = await encrypt(attachment_url, encKey);
+        insertData.attachment_type = attachment_type || "file";
+      }
+
+      const { error: insertError } = await supabase.from("support_messages").insert(insertData);
 
       if (insertError) {
         console.error("Insert error:", insertError);
