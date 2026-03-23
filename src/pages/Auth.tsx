@@ -50,6 +50,16 @@ const Auth = () => {
 
     setLoading(true);
     try {
+      // Check if phone already exists
+      const { data: phoneExists } = await supabase.rpc("check_phone_exists", {
+        p_phone: phone.trim(),
+      });
+      if (phoneExists) {
+        toast.error("Bu telefon numarası zaten başka bir hesapta kayıtlı");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
