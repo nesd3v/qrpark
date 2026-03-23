@@ -346,6 +346,7 @@ const AdminPanel = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState<Record<string, string>>({});
+  const [aiRedFilter, setAiRedFilter] = useState(false);
 
   const checkAdmin = useCallback(async () => {
     if (!user) { setChecking(false); return; }
