@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Loader2, LogIn, Lock, ShieldCheck } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, Image as ImageIcon, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -11,7 +11,12 @@ type Message = {
   sender_type: string;
   message: string;
   created_at: string;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
 };
+
+const isImageType = (type: string | null | undefined) =>
+  type === "image" || type?.startsWith("image/");
 
 const SupportChatWidget = () => {
   const { user } = useAuth();
@@ -21,7 +26,9 @@ const SupportChatWidget = () => {
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,7 +47,6 @@ const SupportChatWidget = () => {
     }
   }, []);
 
-  // Load or create conversation
   const loadConversation = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -67,10 +73,8 @@ const SupportChatWidget = () => {
     if (open && user) loadConversation();
   }, [open, user, loadConversation]);
 
-  // Realtime subscription - refetch decrypted messages on new insert
   useEffect(() => {
     if (!conversationId) return;
-
     const channel = supabase
       .channel(`support-${conversationId}`)
       .on(
@@ -82,7 +86,6 @@ const SupportChatWidget = () => {
           filter: `conversation_id=eq.${conversationId}`,
         },
         () => {
-          // Refetch to get decrypted messages
           fetchMessages(conversationId);
         }
       )
@@ -93,41 +96,83 @@ const SupportChatWidget = () => {
     };
   }, [conversationId, fetchMessages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || !user || sending) return;
+  const ensureConversation = async (): Promise<string | null> => {
+    if (conversationId) return conversationId;
+    const { data, error } = await supabase.functions.invoke("support-chat", {
+      body: { action: "create-conversation" },
+    });
+    if (error || !data?.conversation_id) {
+      toast.error("Konuşma oluşturulamadı");
+      return null;
+    }
+    setConversationId(data.conversation_id);
+    return data.conversation_id;
+  };
+
+  const sendMessage = async (attachmentUrl?: string, attachmentType?: string) => {
+    if ((!input.trim() && !attachmentUrl) || !user || sending) return;
 
     const messageText = input.trim();
     setInput("");
     setSending(true);
 
     try {
-      let convId = conversationId;
-
-      // Create conversation if needed
-      if (!convId) {
-        const { data, error } = await supabase.functions.invoke("support-chat", {
-          body: { action: "create-conversation" },
-        });
-        if (error || !data?.conversation_id) throw new Error("Konuşma oluşturulamadı");
-        convId = data.conversation_id;
-        setConversationId(convId);
-      }
+      const convId = await ensureConversation();
+      if (!convId) throw new Error("No conversation");
 
       const { error } = await supabase.functions.invoke("support-chat", {
         body: {
           action: "send",
           conversation_id: convId,
-          message: messageText,
+          message: messageText || (attachmentUrl ? "📎 Dosya gönderildi" : ""),
           sender_type: "user",
+          ...(attachmentUrl && { attachment_url: attachmentUrl, attachment_type: attachmentType }),
         },
       });
 
       if (error) throw error;
-    } catch (err: any) {
+    } catch {
       toast.error("Mesaj gönderilemedi");
-      setInput(messageText);
+      if (messageText) setInput(messageText);
     }
     setSending(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    e.target.value = "";
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Dosya boyutu 5MB'dan küçük olmalıdır");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const convId = await ensureConversation();
+      if (!convId) throw new Error("No conversation");
+
+      const ext = file.name.split(".").pop() || "bin";
+      const filePath = `${convId}/${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("support-attachments")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("support-attachments")
+        .getPublicUrl(filePath);
+
+      // Since bucket is private, we store the path and use signed URLs
+      const attachmentType = file.type.startsWith("image/") ? "image" : "file";
+      await sendMessage(filePath, attachmentType);
+    } catch {
+      toast.error("Dosya yüklenemedi");
+    }
+    setUploading(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -135,6 +180,47 @@ const SupportChatWidget = () => {
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  const AttachmentPreview = ({ msg }: { msg: Message }) => {
+    const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+      if (!msg.attachment_url) return;
+      supabase.storage
+        .from("support-attachments")
+        .createSignedUrl(msg.attachment_url, 3600)
+        .then(({ data }) => {
+          if (data?.signedUrl) setSignedUrl(data.signedUrl);
+        });
+    }, [msg.attachment_url]);
+
+    if (!msg.attachment_url || !signedUrl) return null;
+
+    if (isImageType(msg.attachment_type)) {
+      return (
+        <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
+          <img
+            src={signedUrl}
+            alt="Ek"
+            className="max-w-full max-h-40 rounded-lg object-cover"
+            loading="lazy"
+          />
+        </a>
+      );
+    }
+
+    return (
+      <a
+        href={signedUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 mt-1 text-xs underline opacity-80 hover:opacity-100"
+      >
+        <FileText className="w-3.5 h-3.5" />
+        Dosyayı Aç
+      </a>
+    );
   };
 
   return (
@@ -234,7 +320,9 @@ const SupportChatWidget = () => {
                               : "bg-secondary text-foreground rounded-bl-sm"
                           }`}
                         >
-                          {msg.message}
+                          {msg.message && msg.message !== "📎 Dosya gönderildi" && msg.message}
+                          <AttachmentPreview msg={msg} />
+                          {msg.message === "📎 Dosya gönderildi" && !msg.attachment_url && msg.message}
                           <p className={`text-[10px] mt-1 ${
                             msg.sender_type === "user" ? "text-primary-foreground/60" : "text-muted-foreground"
                           }`}>
@@ -249,7 +337,26 @@ const SupportChatWidget = () => {
 
                 {/* Input */}
                 <div className="p-3 border-t border-border bg-secondary/30">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sending || uploading}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                      title="Dosya ekle"
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Paperclip className="w-4 h-4" />
+                      )}
+                    </button>
                     <input
                       type="text"
                       value={input}
@@ -257,11 +364,11 @@ const SupportChatWidget = () => {
                       onKeyDown={handleKeyDown}
                       placeholder="Mesajınızı yazın..."
                       className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                      disabled={sending}
+                      disabled={sending || uploading}
                     />
                     <button
-                      onClick={sendMessage}
-                      disabled={!input.trim() || sending}
+                      onClick={() => sendMessage()}
+                      disabled={(!input.trim() && !uploading) || sending}
                       className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       {sending ? (
