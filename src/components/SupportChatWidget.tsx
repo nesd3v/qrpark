@@ -178,10 +178,20 @@ const SupportChatWidget = () => {
                 <p className="text-sm font-semibold text-foreground">Canlı Destek</p>
                 <p className="text-xs text-muted-foreground">Size yardımcı olmaya hazırız</p>
               </div>
-              <div className="flex items-center gap-1 text-xs text-primary">
-                <Lock className="w-3 h-3" />
-                <span>Şifreli</span>
-              </div>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 text-xs text-primary cursor-help">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Şifreli</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="end" className="max-w-[240px] text-xs leading-relaxed">
+                    <p className="font-semibold mb-1">🔒 Uçtan Uca Şifreleme</p>
+                    <p>Mesajlarınız AES-256-GCM ile şifrelenir. Veritabanında yalnızca şifreli metin saklanır, hiçbir üçüncü taraf okuyamaz.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             {!user ? (
