@@ -569,7 +569,7 @@ const AdminPanel = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {vehicles.map((v) => (
+                {(aiRedFilter ? vehicles.filter((v) => v.verification_note?.includes("[AI Red]")) : vehicles).map((v) => (
                   <motion.div key={v.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     className="glass rounded-xl p-5">
                     <div className="flex flex-col md:flex-row gap-4">
