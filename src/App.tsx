@@ -15,6 +15,7 @@ import Pricing from "./pages/Pricing";
 import Install from "./pages/Install";
 import Unsubscribe from "./pages/Unsubscribe";
 import CorporateContact from "./pages/CorporateContact";
+import CorporateDashboard from "./pages/CorporateDashboard";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/SupportChatWidget";
 
