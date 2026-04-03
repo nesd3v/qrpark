@@ -53,6 +53,50 @@ export type Database = {
         }
         Relationships: []
       }
+      corporate_members: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          inquiry_id: string | null
+          is_active: boolean
+          max_vehicles: number
+          plan_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          inquiry_id?: string | null
+          is_active?: boolean
+          max_vehicles?: number
+          plan_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          inquiry_id?: string | null
+          is_active?: boolean
+          max_vehicles?: number
+          plan_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corporate_members_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_inquiries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string

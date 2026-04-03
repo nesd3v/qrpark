@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, vehicle_id, status: newStatus, note } = await req.json();
+    const { action, vehicle_id, status: newStatus, note, user_email, max_vehicles } = await req.json();
 
     // LIST pending verifications
     if (action === "list") {
@@ -193,6 +193,39 @@ Deno.serve(async (req) => {
       if (updateError) {
         return new Response(JSON.stringify({ error: "Failed to update" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // CORPORATE APPROVE - Create corporate membership for a user
+    if (action === "corporate_approve") {
+      if (!vehicle_id || !user_email) {
+        return new Response(JSON.stringify({ error: "inquiry id and user_email are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Get inquiry
+      const { data: inquiry } = await supabase.from("corporate_inquiries").select("*").eq("id", vehicle_id).maybeSingle();
+      if (!inquiry) {
+        return new Response(JSON.stringify({ error: "Inquiry not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Find user by email
+      const { data: { users } } = await supabase.auth.admin.listUsers();
+      const targetUser = (users || []).find(u => u.email === user_email.trim().toLowerCase());
+      if (!targetUser) {
+        return new Response(JSON.stringify({ error: "User not found with this email" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Create corporate membership
+      const { error: memberError } = await supabase.from("corporate_members").upsert({
+        user_id: targetUser.id,
+        inquiry_id: inquiry.id,
+        company_name: inquiry.company_name,
+        plan_type: inquiry.plan_type,
+        max_vehicles: max_vehicles || inquiry.vehicle_count || 50,
+        is_active: true,
+      }, { onConflict: "user_id" });
+      if (memberError) {
+        return new Response(JSON.stringify({ error: "Failed to create membership: " + memberError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Update inquiry status
+      await supabase.from("corporate_inquiries").update({ status: "completed", user_id: targetUser.id }).eq("id", vehicle_id);
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
