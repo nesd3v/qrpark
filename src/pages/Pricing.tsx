@@ -364,10 +364,10 @@ const Pricing = () => {
                   <span className="text-3xl font-bold text-foreground">Özel Fiyat</span>
                 </div>
                 <button
-                  onClick={handleCorporateContact}
+                  onClick={() => handleCorporateContact("filo")}
                   className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Headphones className="w-4 h-4" /> Bizimle İletişime Geçin
+                  <Headphones className="w-4 h-4" /> Başvuru Yap
                 </button>
               </motion.div>
 
