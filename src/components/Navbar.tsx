@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
-import { Car, QrCode, LogIn, LogOut, Bell, User, Crown, Trash2 } from "lucide-react";
+import { Car, QrCode, LogIn, LogOut, Bell, User, Crown, Trash2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useEffect, useState as useReactState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
