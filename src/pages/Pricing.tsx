@@ -59,8 +59,8 @@ const Pricing = () => {
     toast.info("Abonelik yönetimi için destek ekibiyle iletişime geçin.");
   };
 
-  const handleCorporateContact = () => {
-    toast.info("Kurumsal plan için destek ekibiyle iletişime geçin. Canlı destekten bize ulaşabilirsiniz.");
+  const handleCorporateContact = (plan: string) => {
+    navigate(`/corporate-contact?plan=${plan}`);
   };
 
   return (
