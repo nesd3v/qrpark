@@ -512,9 +512,9 @@ const AdminPanel = () => {
   }, [authLoading, checkAdmin]);
 
   useEffect(() => {
-    if (isAdmin && mainTab === "vehicles") {
+    if (isAdmin) {
       fetchStats();
-      fetchVehicles(tab);
+      if (mainTab === "vehicles") fetchVehicles(tab);
     }
   }, [isAdmin, mainTab, tab, fetchStats, fetchVehicles]);
 
