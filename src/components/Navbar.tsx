@@ -18,7 +18,14 @@ import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { isPremium } = useSubscription();
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useReactState(false);
+  const [isCorporate, setIsCorporate] = useReactState(false);
+
+  useEffect(() => {
+    if (!user) { setIsCorporate(false); return; }
+    supabase.from("corporate_members").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle()
+      .then(({ data }) => setIsCorporate(!!data));
+  }, [user]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
