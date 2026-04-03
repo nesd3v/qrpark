@@ -358,6 +358,8 @@ const CorporatePanel = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [approveEmail, setApproveEmail] = useState<Record<string, string>>({});
+  const [approveVehicles, setApproveVehicles] = useState<Record<string, string>>({});
 
   const fetchInquiries = useCallback(async () => {
     setLoading(true);
@@ -380,6 +382,23 @@ const CorporatePanel = () => {
       setInquiries((prev) => prev.map((i) => i.id === id ? { ...i, status: newStatus } : i));
     } else {
       toast.error("Güncelleme başarısız");
+    }
+    setUpdatingId(null);
+  };
+
+  const approveInquiry = async (id: string) => {
+    const email = approveEmail[id]?.trim();
+    if (!email) { toast.error("Kullanıcı e-postası gerekli"); return; }
+    setUpdatingId(id);
+    const maxV = parseInt(approveVehicles[id]) || undefined;
+    const { data, error } = await supabase.functions.invoke("admin-panel", {
+      body: { action: "corporate_approve", vehicle_id: id, user_email: email, max_vehicles: maxV },
+    });
+    if (!error && data?.success) {
+      toast.success("Kurumsal üyelik oluşturuldu!");
+      setInquiries((prev) => prev.map((i) => i.id === id ? { ...i, status: "completed" } : i));
+    } else {
+      toast.error(data?.error || "Onaylama başarısız");
     }
     setUpdatingId(null);
   };
@@ -432,21 +451,41 @@ const CorporatePanel = () => {
                   <p className="text-xs text-muted-foreground mt-2">
                     {new Date(inq.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </p>
+
+                  {/* Approve section */}
+                  {inq.status !== "completed" && (
+                    <div className="mt-3 p-3 bg-secondary/50 rounded-lg space-y-2">
+                      <p className="text-xs font-medium text-foreground">Kurumsal Üyelik Onayla</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <Input
+                          placeholder="Kullanıcı e-postası"
+                          value={approveEmail[inq.id] || inq.contact_email}
+                          onChange={(e) => setApproveEmail((p) => ({ ...p, [inq.id]: e.target.value }))}
+                          className="flex-1 min-w-[200px] h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Araç limiti"
+                          value={approveVehicles[inq.id] || String(inq.vehicle_count)}
+                          onChange={(e) => setApproveVehicles((p) => ({ ...p, [inq.id]: e.target.value }))}
+                          className="w-24 h-8 text-xs"
+                        />
+                        <Button size="sm" onClick={() => approveInquiry(inq.id)}
+                          disabled={updatingId === inq.id}
+                          className="gradient-primary text-primary-foreground text-xs h-8">
+                          {updatingId === inq.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+                          Onayla & Üyelik Oluştur
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
-                  {inq.status !== "reviewing" && (
+                  {inq.status !== "reviewing" && inq.status !== "completed" && (
                     <Button size="sm" variant="outline" onClick={() => updateStatus(inq.id, "reviewing")}
                       disabled={updatingId === inq.id} className="text-xs">
                       {updatingId === inq.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3 mr-1" />}
                       Görüşülüyor
-                    </Button>
-                  )}
-                  {inq.status !== "completed" && (
-                    <Button size="sm" onClick={() => updateStatus(inq.id, "completed")}
-                      disabled={updatingId === inq.id}
-                      className="gradient-primary text-primary-foreground text-xs">
-                      {updatingId === inq.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
-                      Tamamlandı
                     </Button>
                   )}
                 </div>
