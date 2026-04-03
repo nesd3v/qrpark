@@ -222,6 +222,36 @@ export type Database = {
           },
         ]
       }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
