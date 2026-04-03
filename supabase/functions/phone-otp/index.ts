@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, phone, code } = await req.json();
+    const body = await req.json();
+    const { action, phone, code } = body;
 
     if (!action || !phone) {
       return new Response(
