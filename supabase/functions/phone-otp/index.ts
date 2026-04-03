@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, phone, code } = await req.json();
+    const body = await req.json();
+    const { action, phone, code } = body;
 
     if (!action || !phone) {
       return new Response(
@@ -145,6 +146,18 @@ Deno.serve(async (req) => {
 
       // Success
       otpStore.delete(normalizedPhone);
+
+      // If vehicle_id provided, mark vehicle as verified
+      if (body?.vehicle_id) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, serviceRoleKey);
+        await supabase
+          .from("vehicles")
+          .update({ verification_status: "verified", verification_note: "SMS ile araç sahibi tarafından doğrulandı" })
+          .eq("id", body.vehicle_id);
+      }
+
       return new Response(
         JSON.stringify({ success: true, verified: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
