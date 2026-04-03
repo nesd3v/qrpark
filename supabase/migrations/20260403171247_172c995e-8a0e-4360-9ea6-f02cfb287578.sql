@@ -1,0 +1,1 @@
+ALTER TABLE public.vehicles ADD COLUMN qr_expires_at timestamp with time zone DEFAULT NULL;

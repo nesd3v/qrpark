@@ -335,6 +335,7 @@ export type Database = {
           last_qr_generated_at: string | null
           phone: string
           plate: string
+          qr_expires_at: string | null
           ruhsat_photo_path: string | null
           sms_enabled: boolean
           user_id: string | null
@@ -348,6 +349,7 @@ export type Database = {
           last_qr_generated_at?: string | null
           phone: string
           plate: string
+          qr_expires_at?: string | null
           ruhsat_photo_path?: string | null
           sms_enabled?: boolean
           user_id?: string | null
@@ -361,6 +363,7 @@ export type Database = {
           last_qr_generated_at?: string | null
           phone?: string
           plate?: string
+          qr_expires_at?: string | null
           ruhsat_photo_path?: string | null
           sms_enabled?: boolean
           user_id?: string | null
