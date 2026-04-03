@@ -291,14 +291,18 @@ const GenerateQR = () => {
 
     setRegenerating(true);
     try {
+      const now = new Date().toISOString();
+      // Free users: QR expires in 7 days. Premium: no expiry.
+      const qrExpiresAt = isPremium ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
       const { error } = await supabase
         .from("vehicles")
-        .update({ last_qr_generated_at: new Date().toISOString() })
+        .update({ last_qr_generated_at: now, qr_expires_at: qrExpiresAt })
         .eq("id", selectedVehicle.id);
 
       if (error) throw error;
 
-      const updated = { ...selectedVehicle, last_qr_generated_at: new Date().toISOString() };
+      const updated = { ...selectedVehicle, last_qr_generated_at: now };
       setSelectedVehicle(updated);
       setVehicles((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
       setGenerated(true);
