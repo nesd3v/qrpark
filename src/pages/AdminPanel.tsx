@@ -603,7 +603,7 @@ const AdminPanel = () => {
 
       <div className="container mx-auto px-6 py-6">
         {/* Main tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setMainTab("vehicles")}
             className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
@@ -611,6 +611,17 @@ const AdminPanel = () => {
             }`}
           >
             <Car className="w-4 h-4" /> Araç Doğrulama
+          </button>
+          <button
+            onClick={() => setMainTab("corporate")}
+            className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              mainTab === "corporate" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Building2 className="w-4 h-4" /> Kurumsal Başvurular
+            {stats && stats.corporate_new > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-xs bg-destructive text-destructive-foreground">{stats.corporate_new}</span>
+            )}
           </button>
           <button
             onClick={() => setMainTab("support")}
@@ -624,6 +635,8 @@ const AdminPanel = () => {
 
         {mainTab === "support" ? (
           <SupportPanel user={user} />
+        ) : mainTab === "corporate" ? (
+          <CorporatePanel />
         ) : (
           <>
             {/* Stats */}
