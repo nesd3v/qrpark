@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      corporate_inquiries: {
+        Row: {
+          company_name: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          id: string
+          message: string | null
+          plan_type: string
+          status: string
+          user_id: string | null
+          vehicle_count: number
+        }
+        Insert: {
+          company_name: string
+          contact_email: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          plan_type?: string
+          status?: string
+          user_id?: string | null
+          vehicle_count: number
+        }
+        Update: {
+          company_name?: string
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          plan_type?: string
+          status?: string
+          user_id?: string | null
+          vehicle_count?: number
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
