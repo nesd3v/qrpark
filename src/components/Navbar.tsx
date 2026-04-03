@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
-import { Car, QrCode, LogIn, LogOut, Bell, User, Crown, Trash2 } from "lucide-react";
+import { Car, QrCode, LogIn, LogOut, Bell, User, Crown, Trash2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useEffect, useState as useReactState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +18,14 @@ import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { isPremium } = useSubscription();
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useReactState(false);
+  const [isCorporate, setIsCorporate] = useReactState(false);
+
+  useEffect(() => {
+    if (!user) { setIsCorporate(false); return; }
+    supabase.from("corporate_members").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle()
+      .then(({ data }) => setIsCorporate(!!data));
+  }, [user]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
@@ -45,6 +54,14 @@ const Navbar = () => {
                   <span className="hidden sm:inline">Bildirimler</span>
                 </Button>
               </Link>
+              {isCorporate && (
+                <Link to="/corporate">
+                  <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                    <Building2 className="w-4 h-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Kurumsal</span>
+                  </Button>
+                </Link>
+              )}
               <Link to="/pricing">
                 <Button variant="ghost" size="sm" className={isPremium ? "text-yellow-500 hover:text-yellow-400" : "text-muted-foreground hover:text-foreground"}>
                   <Crown className={`w-4 h-4 sm:mr-1.5 ${isPremium ? "fill-yellow-500/20 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)]" : ""}`} />
