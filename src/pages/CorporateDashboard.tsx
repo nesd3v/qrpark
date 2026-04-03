@@ -344,12 +344,13 @@ const CorporateDashboard = () => {
                         <TableHead>Durum</TableHead>
                         <TableHead>QR</TableHead>
                         <TableHead>Kayıt</TableHead>
+                        <TableHead>İşlem</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {vehicles.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             Henüz araç eklenmemiş
                           </TableCell>
                         </TableRow>
@@ -381,12 +382,34 @@ const CorporateDashboard = () => {
                             <TableCell className="text-xs text-muted-foreground">
                               {new Date(v.created_at).toLocaleDateString("tr-TR")}
                             </TableCell>
+                            <TableCell>
+                              {v.verification_status !== "verified" && (
+                                <Button size="sm" variant="outline" className="gap-1 text-xs h-7" onClick={() => setVerifyVehicle(v)}>
+                                  <Shield className="w-3 h-3" /> Doğrula
+                                </Button>
+                              )}
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
                     </TableBody>
                   </Table>
                 </div>
+
+                {verifyVehicle && (
+                  <VehicleVerifyDialog
+                    open={!!verifyVehicle}
+                    onOpenChange={(open) => !open && setVerifyVehicle(null)}
+                    vehicleId={verifyVehicle.id}
+                    plate={verifyVehicle.plate}
+                    phone={verifyVehicle.phone}
+                    onVerified={() => {
+                      setVerifyVehicle(null);
+                      invoke("vehicles").then((d) => setVehicles(d.vehicles));
+                      invoke("report").then((d) => setReport(d.report));
+                    }}
+                  />
+                )}
               </div>
             )}
 
