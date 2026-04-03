@@ -15,6 +15,12 @@ import {
   BarChart3,
   Lock,
   ChevronDown,
+  CircleSlash,
+  CarFront,
+  DoorOpen,
+  Siren,
+  ShieldAlert,
+  Fuel,
 } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
@@ -28,9 +34,18 @@ import DashboardCharts from "@/components/DashboardCharts";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
+  "double-park": { icon: CircleSlash, label: "Çift Sıra Park", color: "text-destructive", bg: "bg-destructive/10" },
+  "blocking": { icon: CarFront, label: "Yol Kapatmış", color: "text-destructive", bg: "bg-destructive/10" },
   "lights-on": { icon: Lightbulb, label: "Farlar Açık", color: "text-warning", bg: "bg-warning/10" },
-  "damaged": { icon: AlertTriangle, label: "Araç Hasarlı", color: "text-destructive", bg: "bg-destructive/10" },
   "window-open": { icon: Wind, label: "Cam Açık", color: "text-info", bg: "bg-info/10" },
+  "door-open": { icon: DoorOpen, label: "Kapı Açık", color: "text-info", bg: "bg-info/10" },
+  "trunk-open": { icon: Car, label: "Bagaj Açık", color: "text-info", bg: "bg-info/10" },
+  "alarm": { icon: Siren, label: "Alarm Çalıyor", color: "text-warning", bg: "bg-warning/10" },
+  "damaged": { icon: AlertTriangle, label: "Araç Hasarlı", color: "text-destructive", bg: "bg-destructive/10" },
+  "flat-tire": { icon: ShieldAlert, label: "Lastik Patlak", color: "text-warning", bg: "bg-warning/10" },
+  "handbrake": { icon: Car, label: "El Freni Çekilmemiş", color: "text-destructive", bg: "bg-destructive/10" },
+  "fuel-leak": { icon: Fuel, label: "Yakıt/Sıvı Sızıntısı", color: "text-destructive", bg: "bg-destructive/10" },
+  "tow-needed": { icon: Car, label: "Çekilmesi Gerekiyor", color: "text-destructive", bg: "bg-destructive/10" },
   "other": { icon: MoreHorizontal, label: "Diğer", color: "text-primary", bg: "bg-primary/10" },
 };
 
