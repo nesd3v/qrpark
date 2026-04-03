@@ -48,15 +48,20 @@ const CorporateContactForm = ({ planType = "filo", onClose }: CorporateContactFo
 
       if (error) throw error;
 
-      // Notify support team
-      await supabase.functions.invoke("support-chat", {
+      // Send admin email notification
+      await supabase.functions.invoke("send-transactional-email", {
         body: {
-          type: "corporate_inquiry",
-          company: form.company_name,
-          vehicleCount,
-          phone: form.contact_phone,
-          email: form.contact_email,
-          planType,
+          templateName: "corporate-inquiry-notification",
+          recipientEmail: "admin@qrpark.xyz",
+          idempotencyKey: `corporate-inquiry-${Date.now()}`,
+          templateData: {
+            companyName: form.company_name,
+            vehicleCount,
+            contactPhone: form.contact_phone,
+            contactEmail: form.contact_email,
+            planType,
+            message: form.message || undefined,
+          },
         },
       }).catch(() => {});
 

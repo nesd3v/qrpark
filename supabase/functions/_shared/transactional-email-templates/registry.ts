@@ -12,9 +12,11 @@ export interface TemplateEntry {
 import { template as welcomeEmail } from './welcome-email.tsx'
 import { template as vehicleNotification } from './vehicle-notification.tsx'
 import { template as qrExpiryReminder } from './qr-expiry-reminder.tsx'
+import { template as corporateInquiryNotification } from './corporate-inquiry-notification.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome-email': welcomeEmail,
   'vehicle-notification': vehicleNotification,
   'qr-expiry-reminder': qrExpiryReminder,
+  'corporate-inquiry-notification': corporateInquiryNotification,
 }

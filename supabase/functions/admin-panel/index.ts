@@ -152,11 +152,48 @@ Deno.serve(async (req) => {
       const { count: verified } = await supabase.from("vehicles").select("*", { count: "exact", head: true }).eq("verification_status", "verified");
       const { count: rejected } = await supabase.from("vehicles").select("*", { count: "exact", head: true }).eq("verification_status", "rejected");
       const { count: totalNotifs } = await supabase.from("notifications").select("*", { count: "exact", head: true });
+      const { count: corporateNew } = await supabase.from("corporate_inquiries").select("*", { count: "exact", head: true }).eq("status", "new");
 
       return new Response(
-        JSON.stringify({ pending: pending || 0, verified: verified || 0, rejected: rejected || 0, total_notifications: totalNotifs || 0 }),
+        JSON.stringify({ pending: pending || 0, verified: verified || 0, rejected: rejected || 0, total_notifications: totalNotifs || 0, corporate_new: corporateNew || 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // CORPORATE INQUIRIES - LIST
+    if (action === "corporate_list") {
+      const statusFilter = newStatus || "all";
+      let query = supabase
+        .from("corporate_inquiries")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+      const { data: inquiries, error: listError } = await query;
+      if (listError) {
+        return new Response(JSON.stringify({ error: "Failed to fetch inquiries" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ inquiries: inquiries || [] }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // CORPORATE INQUIRIES - UPDATE STATUS
+    if (action === "corporate_update") {
+      if (!vehicle_id || !newStatus) {
+        return new Response(JSON.stringify({ error: "id and status are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!["new", "reviewing", "completed"].includes(newStatus)) {
+        return new Response(JSON.stringify({ error: "Invalid status" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error: updateError } = await supabase
+        .from("corporate_inquiries")
+        .update({ status: newStatus })
+        .eq("id", vehicle_id);
+      if (updateError) {
+        return new Response(JSON.stringify({ error: "Failed to update" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // CHECK ADMIN (for frontend auth check)
