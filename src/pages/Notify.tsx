@@ -6,26 +6,41 @@ import {
   Lightbulb,
   AlertTriangle,
   Wind,
-  MoreHorizontal,
   CheckCircle2,
   Send,
   Car,
   PhoneCall,
   MessageSquare,
+  Lock,
+  ShieldAlert,
+  Siren,
+  CarFront,
+  DoorOpen,
+  CircleSlash,
+  Fuel,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 const issueTypes = [
   { id: "wrong-park", icon: ParkingCircle, label: "Hatalı Park", desc: "Araç uygunsuz şekilde park etmiş", color: "text-destructive", bg: "bg-destructive/10" },
+  { id: "double-park", icon: CircleSlash, label: "Çift Sıra Park", desc: "Araç çift sıra park etmiş", color: "text-destructive", bg: "bg-destructive/10" },
+  { id: "blocking", icon: CarFront, label: "Yol Kapatmış", desc: "Araç geçişi engelliyor", color: "text-destructive", bg: "bg-destructive/10" },
   { id: "lights-on", icon: Lightbulb, label: "Farlar Açık", desc: "Araç farları açık kalmış", color: "text-warning", bg: "bg-warning/10" },
-  { id: "damaged", icon: AlertTriangle, label: "Araç Hasarlı", desc: "Araçta hasar tespit edildi", color: "text-destructive", bg: "bg-destructive/10" },
   { id: "window-open", icon: Wind, label: "Cam Açık", desc: "Araç camı açık kalmış", color: "text-info", bg: "bg-info/10" },
-  { id: "other", icon: MoreHorizontal, label: "Diğer", desc: "Başka bir durum bildirin", color: "text-primary", bg: "bg-primary/10" },
+  { id: "door-open", icon: DoorOpen, label: "Kapı Açık", desc: "Araç kapısı açık kalmış", color: "text-info", bg: "bg-info/10" },
+  { id: "trunk-open", icon: Car, label: "Bagaj Açık", desc: "Araç bagajı açık kalmış", color: "text-info", bg: "bg-info/10" },
+  { id: "alarm", icon: Siren, label: "Alarm Çalıyor", desc: "Araç alarmı çalıyor", color: "text-warning", bg: "bg-warning/10" },
+  { id: "damaged", icon: AlertTriangle, label: "Araç Hasarlı", desc: "Araçta hasar tespit edildi", color: "text-destructive", bg: "bg-destructive/10" },
+  { id: "flat-tire", icon: ShieldAlert, label: "Lastik Patlak", desc: "Araçta lastik patlamış", color: "text-warning", bg: "bg-warning/10" },
+  { id: "handbrake", icon: Car, label: "El Freni Çekilmemiş", desc: "Araç hareket edebilir durumda", color: "text-destructive", bg: "bg-destructive/10" },
+  { id: "fuel-leak", icon: Fuel, label: "Yakıt/Sıvı Sızıntısı", desc: "Araç altında sızıntı var", color: "text-destructive", bg: "bg-destructive/10" },
+  { id: "tow-needed", icon: Car, label: "Çekilmesi Gerekiyor", desc: "Araç acilen çekilmeli", color: "text-destructive", bg: "bg-destructive/10" },
 ];
 
 type ContactMethod = "sms" | "call";
@@ -33,7 +48,6 @@ type ContactMethod = "sms" | "call";
 const Notify = () => {
   const { plateId } = useParams<{ plateId: string }>();
   const [selected, setSelected] = useState<string | null>(null);
-  const [note, setNote] = useState("");
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [contactMethod, setContactMethod] = useState<ContactMethod>("sms");
@@ -41,6 +55,7 @@ const Notify = () => {
   const [smsEnabled, setSmsEnabled] = useState(true);
   const [callEnabled, setCallEnabled] = useState(false);
   const [loadingPrefs, setLoadingPrefs] = useState(true);
+  const [qrExpired, setQrExpired] = useState(false);
 
   const plate = decodeURIComponent(plateId || "");
 
@@ -48,16 +63,20 @@ const Notify = () => {
     const fetchPrefs = async () => {
       const { data } = await supabase
         .from("vehicles")
-        .select("sms_enabled, call_enabled")
+        .select("sms_enabled, call_enabled, qr_expires_at")
         .eq("plate", plate)
         .maybeSingle();
 
       if (data) {
         setSmsEnabled(data.sms_enabled ?? true);
         setCallEnabled(data.call_enabled ?? false);
-        // Default to whichever is available
         if (data.sms_enabled) setContactMethod("sms");
         else if (data.call_enabled) setContactMethod("call");
+
+        // Check QR expiry
+        if (data.qr_expires_at && new Date(data.qr_expires_at) < new Date()) {
+          setQrExpired(true);
+        }
       }
       setLoadingPrefs(false);
     };
@@ -83,7 +102,7 @@ const Notify = () => {
     try {
       if (contactMethod === "sms") {
         const { data, error } = await supabase.functions.invoke("send-notification", {
-          body: { plate, issue_type: selected, note: note || null },
+          body: { plate, issue_type: selected, note: null },
         });
 
         if (error) {
@@ -167,6 +186,20 @@ const Notify = () => {
               <div className="flex items-center justify-center py-12">
                 <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
               </div>
+            ) : qrExpired ? (
+              <motion.div className="text-center py-12 glass rounded-2xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                  <Lock className="w-8 h-8 text-destructive" />
+                </div>
+                <h2 className="text-lg font-display font-bold text-foreground mb-2">QR Kodu Süresi Dolmuş</h2>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Bu QR kodun süresi dolmuştur. Araç sahibinin QR kodunu yenilemesi gerekmektedir.
+                </p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
+                  <Crown className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-medium text-primary">Premium ile QR kodlar süresiz olur</span>
+                </div>
+              </motion.div>
             ) : noMethodAvailable ? (
               <motion.div className="text-center py-12 glass rounded-2xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
@@ -205,7 +238,6 @@ const Notify = () => {
                   </div>
                 )}
 
-                {/* Only SMS available badge */}
                 {smsEnabled && !callEnabled && (
                   <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-lg bg-secondary/50 border border-border/50">
                     <MessageSquare className="w-4 h-4 text-muted-foreground" />
@@ -213,7 +245,6 @@ const Notify = () => {
                   </div>
                 )}
 
-                {/* Only Call available badge */}
                 {!smsEnabled && callEnabled && (
                   <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-lg bg-secondary/50 border border-border/50">
                     <PhoneCall className="w-4 h-4 text-muted-foreground" />
@@ -243,21 +274,6 @@ const Notify = () => {
                     </motion.button>
                   ))}
                 </div>
-
-                <AnimatePresence>
-                  {selected && contactMethod === "sms" && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-6">
-                      <Textarea
-                        placeholder="Ek not ekleyin (isteğe bağlı)..."
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        className="bg-secondary border-border text-foreground placeholder:text-muted-foreground resize-none"
-                        rows={3}
-                        maxLength={500}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
 
                 {/* Caller phone input for call method */}
                 <AnimatePresence>

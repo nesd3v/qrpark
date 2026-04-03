@@ -94,6 +94,28 @@ async function sendTwilioSMS(to: string, body: string): Promise<TwilioResult> {
   return { success: true, sid, status };
 }
 
+const validIssueTypes = [
+  "wrong-park", "double-park", "blocking", "lights-on", "window-open",
+  "door-open", "trunk-open", "alarm", "damaged", "flat-tire",
+  "handbrake", "fuel-leak", "tow-needed",
+];
+
+const issueLabels: Record<string, string> = {
+  "wrong-park": "Hatali Park",
+  "double-park": "Cift Sira Park",
+  "blocking": "Yol Kapatmis",
+  "lights-on": "Farlar Acik",
+  "window-open": "Cam Acik",
+  "door-open": "Kapi Acik",
+  "trunk-open": "Bagaj Acik",
+  "alarm": "Alarm Caliyor",
+  "damaged": "Arac Hasarli",
+  "flat-tire": "Lastik Patlak",
+  "handbrake": "El Freni Cekilmemis",
+  "fuel-leak": "Yakit/Sivi Sizintisi",
+  "tow-needed": "Cekilmesi Gerekiyor",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -121,8 +143,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate issue_type
-    const validIssueTypes = ["wrong-park", "lights-on", "damaged", "window-open", "other"];
     if (!validIssueTypes.includes(issue_type)) {
       return new Response(
         JSON.stringify({ error: "Invalid issue type" }),
@@ -180,6 +200,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check QR expiry
+    if (vehicle.qr_expires_at && new Date(vehicle.qr_expires_at) < new Date()) {
+      return new Response(
+        JSON.stringify({ error: "Bu QR kodun suresi dolmustur. Arac sahibinin QR kodunu yenilemesi gerekmektedir." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check if SMS is enabled for this vehicle
     if (!vehicle.sms_enabled) {
       return new Response(
@@ -187,14 +215,6 @@ Deno.serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const issueLabels: Record<string, string> = {
-      "wrong-park": "Hatali Park",
-      "lights-on": "Farlar Acik",
-      "damaged": "Arac Hasarli",
-      "window-open": "Cam Acik",
-      "other": "Diger",
-    };
 
     const message = `QRPark Bildirimi\n\nPlaka: ${vehicle.plate}\nSorun: ${issueLabels[issue_type] || issue_type}${note ? `\nNot: ${note}` : ""}`;
 
@@ -236,7 +256,6 @@ Deno.serve(async (req) => {
         }
       } catch (emailErr) {
         console.error("Failed to send notification email:", emailErr);
-        // Non-fatal — SMS was already sent
       }
     }
 
