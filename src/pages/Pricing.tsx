@@ -59,8 +59,8 @@ const Pricing = () => {
     toast.info("Abonelik yönetimi için destek ekibiyle iletişime geçin.");
   };
 
-  const handleCorporateContact = () => {
-    toast.info("Kurumsal plan için destek ekibiyle iletişime geçin. Canlı destekten bize ulaşabilirsiniz.");
+  const handleCorporateContact = (plan: string) => {
+    navigate(`/corporate-contact?plan=${plan}`);
   };
 
   return (
@@ -364,10 +364,10 @@ const Pricing = () => {
                   <span className="text-3xl font-bold text-foreground">Özel Fiyat</span>
                 </div>
                 <button
-                  onClick={handleCorporateContact}
+                  onClick={() => handleCorporateContact("filo")}
                   className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Headphones className="w-4 h-4" /> Bizimle İletişime Geçin
+                  <Headphones className="w-4 h-4" /> Başvuru Yap
                 </button>
               </motion.div>
 
@@ -412,10 +412,10 @@ const Pricing = () => {
                   <span className="text-3xl font-bold text-foreground">Özel Fiyat</span>
                 </div>
                 <button
-                  onClick={handleCorporateContact}
+                  onClick={() => handleCorporateContact("avm")}
                   className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Headphones className="w-4 h-4" /> Bizimle İletişime Geçin
+                  <Headphones className="w-4 h-4" /> Başvuru Yap
                 </button>
               </motion.div>
             </div>

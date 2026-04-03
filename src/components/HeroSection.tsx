@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, QrCode, Bell, Shield } from "lucide-react";
+import { ArrowRight, QrCode, Bell, Shield, Clock, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -61,7 +61,7 @@ const HeroSection = () => {
 
         {/* Feature cards */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-24 max-w-4xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-4 gap-5 mt-24 max-w-5xl mx-auto"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
@@ -69,8 +69,9 @@ const HeroSection = () => {
         >
           {[
             { icon: QrCode, title: "QR Oluştur", desc: "Plakanıza özel benzersiz QR kodu oluşturun" },
-            { icon: Bell, title: "Anlık Bildirim", desc: "WhatsApp veya SMS ile anında haberdar olun" },
-            { icon: Shield, title: "Güvenli & Gizli", desc: "Kişisel bilgileriniz tamamen korunur" },
+            { icon: Bell, title: "Anlık Bildirim", desc: "SMS ile anında haberdar olun" },
+            { icon: Clock, title: "7 Gün Ücretsiz", desc: "QR kodunuz 7 gün geçerli, Premium ile süresiz" },
+            { icon: Crown, title: "Premium Avantajlar", desc: "Sınırsız araç, özel tema, detaylı istatistikler" },
           ].map((item, i) => (
             <motion.div
               key={item.title}
