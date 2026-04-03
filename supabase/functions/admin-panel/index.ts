@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, vehicle_id, status: newStatus, note } = await req.json();
+    const { action, vehicle_id, status: newStatus, note, user_email, max_vehicles } = await req.json();
 
     // LIST pending verifications
     if (action === "list") {
