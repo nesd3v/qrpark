@@ -722,10 +722,20 @@ const GenerateQR = () => {
                     </div>
                   )}
 
+                  {!isPremium && (
+                    <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-destructive/5 border border-destructive/20 w-full">
+                      <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+                      <p className="text-xs text-destructive">
+                        Ücretsiz planda QR kodunuz oluşturulduktan <span className="font-bold">7 gün sonra</span> devre dışı kalır.{" "}
+                        <Link to="/pricing" className="font-medium underline">Premium ile süresiz kullanın</Link>
+                      </p>
+                    </div>
+                  )}
+
                   {isPremium && (
                     <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20 w-full">
                       <Crown className="w-4 h-4 text-primary flex-shrink-0" />
-                      <p className="text-xs text-primary">Premium: Sınırsız QR yenileme hakkınız var</p>
+                      <p className="text-xs text-primary">Premium: Sınırsız QR yenileme ve süresiz QR kod hakkınız var</p>
                     </div>
                   )}
                 </motion.div>
