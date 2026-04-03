@@ -74,7 +74,7 @@ const CorporateDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const [verifyVehicle, setVerifyVehicle] = useState<Vehicle | null>(null);
   const invoke = useCallback(async (action: string, extra: any = {}) => {
     const { data, error } = await supabase.functions.invoke("corporate-dashboard", {
       body: { action, ...extra },
