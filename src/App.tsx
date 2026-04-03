@@ -38,6 +38,7 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/install" element={<Install />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/corporate-contact" element={<CorporateContact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />
