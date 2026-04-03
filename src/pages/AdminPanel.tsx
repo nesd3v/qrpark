@@ -30,6 +30,19 @@ type Stats = {
   verified: number;
   rejected: number;
   total_notifications: number;
+  corporate_new: number;
+};
+
+type CorporateInquiry = {
+  id: string;
+  company_name: string;
+  vehicle_count: number;
+  contact_phone: string;
+  contact_email: string;
+  plan_type: string;
+  status: string;
+  message: string | null;
+  created_at: string;
 };
 
 type Conversation = {
