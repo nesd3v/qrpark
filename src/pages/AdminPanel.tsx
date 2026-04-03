@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield, ShieldCheck, ShieldX, Clock, Eye, CheckCircle2, XCircle,
   Loader2, LogIn, Car, BarChart3, RefreshCw, ExternalLink, MessageCircle, Send,
-  Paperclip, FileText, Download, Image as ImageIcon,
+  Paperclip, FileText, Download, Image as ImageIcon, Building2, Phone, Mail, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,19 @@ type Stats = {
   verified: number;
   rejected: number;
   total_notifications: number;
+  corporate_new: number;
+};
+
+type CorporateInquiry = {
+  id: string;
+  company_name: string;
+  vehicle_count: number;
+  contact_phone: string;
+  contact_email: string;
+  plan_type: string;
+  status: string;
+  message: string | null;
+  created_at: string;
 };
 
 type Conversation = {
@@ -333,12 +346,125 @@ const SupportPanel = ({ user }: { user: any }) => {
   );
 };
 
+// ─── Corporate Inquiries Panel ───
+const statusLabels: Record<string, { label: string; color: string }> = {
+  new: { label: "Yeni", color: "bg-primary/20 text-primary" },
+  reviewing: { label: "Görüşülüyor", color: "bg-warning/20 text-warning" },
+  completed: { label: "Tamamlandı", color: "bg-emerald-500/20 text-emerald-600" },
+};
+
+const CorporatePanel = () => {
+  const [inquiries, setInquiries] = useState<CorporateInquiry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const fetchInquiries = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.functions.invoke("admin-panel", {
+      body: { action: "corporate_list", status: filter },
+    });
+    if (data?.inquiries) setInquiries(data.inquiries);
+    setLoading(false);
+  }, [filter]);
+
+  useEffect(() => { fetchInquiries(); }, [fetchInquiries]);
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    setUpdatingId(id);
+    const { data, error } = await supabase.functions.invoke("admin-panel", {
+      body: { action: "corporate_update", vehicle_id: id, status: newStatus },
+    });
+    if (!error && data?.success) {
+      toast.success("Durum güncellendi");
+      setInquiries((prev) => prev.map((i) => i.id === id ? { ...i, status: newStatus } : i));
+    } else {
+      toast.error("Güncelleme başarısız");
+    }
+    setUpdatingId(null);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {["all", "new", "reviewing", "completed"].map((f) => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              filter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+            }`}>
+            {f === "all" ? "Tümü" : statusLabels[f]?.label || f}
+          </button>
+        ))}
+        <button onClick={fetchInquiries} className="ml-auto text-muted-foreground hover:text-foreground">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-primary animate-spin" /></div>
+      ) : inquiries.length === 0 ? (
+        <div className="text-center py-12"><p className="text-muted-foreground">Başvuru bulunmuyor</p></div>
+      ) : (
+        <div className="space-y-3">
+          {inquiries.map((inq) => (
+            <motion.div key={inq.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              className="glass rounded-xl p-5 border border-border">
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 className="w-4 h-4 text-primary" />
+                    <span className="font-display font-bold text-foreground">{inq.company_name}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusLabels[inq.status]?.color || "bg-muted text-muted-foreground"}`}>
+                      {statusLabels[inq.status]?.label || inq.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm text-muted-foreground">
+                    <p className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5" /> {inq.vehicle_count} araç</p>
+                    <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {inq.contact_phone}</p>
+                    <p className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {inq.contact_email}</p>
+                    <p className="flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5" /> {inq.plan_type === "avm" ? "AVM & Otopark" : "Filo Yönetimi"}
+                    </p>
+                  </div>
+                  {inq.message && (
+                    <p className="mt-2 text-sm text-foreground bg-secondary rounded-lg px-3 py-2">{inq.message}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {new Date(inq.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  {inq.status !== "reviewing" && (
+                    <Button size="sm" variant="outline" onClick={() => updateStatus(inq.id, "reviewing")}
+                      disabled={updatingId === inq.id} className="text-xs">
+                      {updatingId === inq.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3 mr-1" />}
+                      Görüşülüyor
+                    </Button>
+                  )}
+                  {inq.status !== "completed" && (
+                    <Button size="sm" onClick={() => updateStatus(inq.id, "completed")}
+                      disabled={updatingId === inq.id}
+                      className="gradient-primary text-primary-foreground text-xs">
+                      {updatingId === inq.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+                      Tamamlandı
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Main Admin Panel ───
 const AdminPanel = () => {
   const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
-  const [mainTab, setMainTab] = useState<"vehicles" | "support">("vehicles");
+  const [mainTab, setMainTab] = useState<"vehicles" | "support" | "corporate">("vehicles");
   const [tab, setTab] = useState<"pending" | "verified" | "rejected">("pending");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -386,9 +512,9 @@ const AdminPanel = () => {
   }, [authLoading, checkAdmin]);
 
   useEffect(() => {
-    if (isAdmin && mainTab === "vehicles") {
+    if (isAdmin) {
       fetchStats();
-      fetchVehicles(tab);
+      if (mainTab === "vehicles") fetchVehicles(tab);
     }
   }, [isAdmin, mainTab, tab, fetchStats, fetchVehicles]);
 
@@ -477,7 +603,7 @@ const AdminPanel = () => {
 
       <div className="container mx-auto px-6 py-6">
         {/* Main tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setMainTab("vehicles")}
             className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
@@ -485,6 +611,17 @@ const AdminPanel = () => {
             }`}
           >
             <Car className="w-4 h-4" /> Araç Doğrulama
+          </button>
+          <button
+            onClick={() => setMainTab("corporate")}
+            className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              mainTab === "corporate" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Building2 className="w-4 h-4" /> Kurumsal Başvurular
+            {stats && stats.corporate_new > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-xs bg-destructive text-destructive-foreground">{stats.corporate_new}</span>
+            )}
           </button>
           <button
             onClick={() => setMainTab("support")}
@@ -498,6 +635,8 @@ const AdminPanel = () => {
 
         {mainTab === "support" ? (
           <SupportPanel user={user} />
+        ) : mainTab === "corporate" ? (
+          <CorporatePanel />
         ) : (
           <>
             {/* Stats */}
