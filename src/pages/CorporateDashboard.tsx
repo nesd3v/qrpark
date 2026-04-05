@@ -370,15 +370,23 @@ const CorporateDashboard = () => {
                               </span>
                             </TableCell>
                             <TableCell>
-                              {v.qr_expires_at ? (
-                                new Date(v.qr_expires_at) > new Date() ?
-                                  <span className="text-xs text-emerald-500">Aktif</span> :
-                                  <span className="text-xs text-destructive">Süresi Dolmuş</span>
-                              ) : v.last_qr_generated_at ? (
-                                <span className="text-xs text-primary">Süresiz</span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">-</span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                <QRCodeSVG
+                                  value={`${window.location.origin}/notify?plate=${encodeURIComponent(v.plate)}`}
+                                  size={48}
+                                  level="M"
+                                  className="rounded"
+                                />
+                                {v.qr_expires_at ? (
+                                  new Date(v.qr_expires_at) > new Date() ?
+                                    <span className="text-xs text-emerald-500">Aktif</span> :
+                                    <span className="text-xs text-destructive">Süresi Dolmuş</span>
+                                ) : v.last_qr_generated_at ? (
+                                  <span className="text-xs text-primary">Süresiz</span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
                               {new Date(v.created_at).toLocaleDateString("tr-TR")}
