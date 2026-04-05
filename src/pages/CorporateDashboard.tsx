@@ -8,6 +8,7 @@ import {
   Wind, Siren, Fuel, MoreHorizontal, CarFront, DoorOpen, ShieldAlert,
   CircleSlash, Crown,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
