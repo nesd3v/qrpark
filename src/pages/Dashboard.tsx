@@ -346,27 +346,27 @@ const Dashboard = () => {
               </motion.div>
             )}
 
-            {/* Subscription Details */}
+            {/* Subscription link */}
             <motion.div
               className="mb-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22 }}
             >
-              <SubscriptionDetails />
-            </motion.div>
-
-            {/* Payment History - Premium only */}
-            {isPremium && (
-              <motion.div
-                className="mb-6"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
+              <Link
+                to="/subscription"
+                className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/30 border border-border transition-colors group block"
               >
-                <PaymentHistory />
-              </motion.div>
-            )}
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Crown className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-foreground">Abonelik Yönetimi</p>
+                  <p className="text-xs text-muted-foreground">Abonelik detaylarınızı görüntüleyin ve yönetin</p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 group-hover:text-primary transition-colors" />
+              </Link>
+            </motion.div>
 
             {vehicles.length === 0 ? (
               <div className="glass rounded-2xl p-8 text-center">
