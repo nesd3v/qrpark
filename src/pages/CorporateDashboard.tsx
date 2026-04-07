@@ -612,7 +612,7 @@ const CorporateDashboard = () => {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="bg-white p-4 rounded-xl">
+              <div className="bg-white p-4 rounded-xl" data-qr-modal>
                 <QRCodeSVG
                   value={`${window.location.origin}/notify?plate=${encodeURIComponent(qrModalPlate)}`}
                   size={256}
