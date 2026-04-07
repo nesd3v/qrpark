@@ -155,11 +155,11 @@ const SubscriptionDetails = () => {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <button
-                disabled={cancelRequested}
+                disabled={cancelling}
                 className="flex-1 py-2.5 rounded-xl border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                {cancelRequested ? "Talep Alındı" : "İptal Et"}
+                {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                {cancelling ? "İptal Ediliyor..." : "İptal Et"}
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
