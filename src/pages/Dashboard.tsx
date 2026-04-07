@@ -346,6 +346,16 @@ const Dashboard = () => {
               </motion.div>
             )}
 
+            {/* Subscription Details */}
+            <motion.div
+              className="mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22 }}
+            >
+              <SubscriptionDetails />
+            </motion.div>
+
             {/* Payment History - Premium only */}
             {isPremium && (
               <motion.div
