@@ -64,11 +64,18 @@ const SubscriptionDetails = () => {
     ? Math.max(0, Math.ceil((new Date(subscriptionEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  const handleCancelRequest = () => {
-    setCancelRequested(true);
-    toast.success("İptal talebiniz alındı. Destek ekibimiz en kısa sürede sizinle iletişime geçecektir.", {
-      duration: 5000,
-    });
+  const handleCancelRequest = async () => {
+    setCancelling(true);
+    try {
+      const { error } = await supabase.functions.invoke("cancel-subscription");
+      if (error) throw error;
+      toast.success("Aboneliğiniz başarıyla iptal edildi.");
+      await checkSubscription();
+    } catch {
+      toast.error("Abonelik iptal edilirken bir hata oluştu. Lütfen tekrar deneyin.");
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
