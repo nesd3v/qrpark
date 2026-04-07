@@ -56,7 +56,7 @@ const Pricing = () => {
   };
 
   const handleManageSubscription = () => {
-    navigate("/dashboard?tab=payments");
+    navigate("/subscription");
   };
 
   const handleCorporateContact = (plan: string) => {
