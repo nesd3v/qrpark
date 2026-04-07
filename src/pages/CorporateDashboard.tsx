@@ -373,12 +373,22 @@ const CorporateDashboard = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <QRCodeSVG
-                                  value={`${window.location.origin}/notify?plate=${encodeURIComponent(v.plate)}`}
-                                  size={48}
-                                  level="M"
-                                  className="rounded"
-                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setQrModalPlate(v.plate)}
+                                  className="relative group cursor-pointer rounded hover:ring-2 hover:ring-primary/50 transition-all"
+                                  title="Büyütmek için tıkla"
+                                >
+                                  <QRCodeSVG
+                                    value={`${window.location.origin}/notify?plate=${encodeURIComponent(v.plate)}`}
+                                    size={48}
+                                    level="M"
+                                    className="rounded"
+                                  />
+                                  <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
+                                    <ZoomIn className="w-4 h-4 text-foreground" />
+                                  </div>
+                                </button>
                                 {v.qr_expires_at ? (
                                   new Date(v.qr_expires_at) > new Date() ?
                                     <span className="text-xs text-emerald-500">Aktif</span> :
