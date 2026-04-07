@@ -229,6 +229,108 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // NOTIFICATIONS LIST
+    if (action === "notifications_list") {
+      const limit = 50;
+      const offset = ((page || 1) - 1) * limit;
+      let query = supabase
+        .from("notifications")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false });
+
+      if (search) {
+        query = query.ilike("plate", `%${search}%`);
+      }
+      if (issue_type && issue_type !== "all") {
+        query = query.eq("issue_type", issue_type);
+      }
+      if (date_from) {
+        query = query.gte("created_at", date_from);
+      }
+      if (date_to) {
+        query = query.lte("created_at", date_to);
+      }
+
+      const { data: notifications, count, error: listError } = await query.range(offset, offset + limit - 1);
+
+      if (listError) {
+        return new Response(JSON.stringify({ error: "Failed to fetch notifications" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Get distinct issue types for filter
+      const { data: types } = await supabase.from("notifications").select("issue_type");
+      const uniqueTypes = [...new Set((types || []).map(t => t.issue_type))].sort();
+
+      return new Response(JSON.stringify({ notifications: notifications || [], total: count || 0, issue_types: uniqueTypes }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // USERS LIST
+    if (action === "users_list") {
+      const limit = 50;
+      const offset = ((page || 1) - 1) * limit;
+
+      let query = supabase
+        .from("profiles")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false });
+
+      if (search) {
+        query = query.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
+      }
+
+      const { data: profiles, count, error: profError } = await query.range(offset, offset + limit - 1);
+
+      if (profError) {
+        return new Response(JSON.stringify({ error: "Failed to fetch users" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Get subscriptions for these users
+      const userIds = (profiles || []).map(p => p.user_id);
+      let subscriptions: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: subs } = await supabase
+          .from("subscriptions")
+          .select("*")
+          .in("user_id", userIds)
+          .order("created_at", { ascending: false });
+        if (subs) {
+          for (const sub of subs) {
+            if (!subscriptions[sub.user_id]) subscriptions[sub.user_id] = sub;
+          }
+        }
+      }
+
+      // Get vehicle counts
+      let vehicleCounts: Record<string, number> = {};
+      if (userIds.length > 0) {
+        const { data: vehicles } = await supabase
+          .from("vehicles")
+          .select("user_id")
+          .in("user_id", userIds);
+        if (vehicles) {
+          for (const v of vehicles) {
+            if (v.user_id) vehicleCounts[v.user_id] = (vehicleCounts[v.user_id] || 0) + 1;
+          }
+        }
+      }
+
+      // Get user emails from auth
+      const { data: { users: authUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      const emailMap: Record<string, string> = {};
+      for (const u of (authUsers || [])) {
+        emailMap[u.id] = u.email || "";
+      }
+
+      const enriched = (profiles || []).map(p => ({
+        ...p,
+        email: emailMap[p.user_id] || "",
+        subscription: subscriptions[p.user_id] || null,
+        vehicle_count: vehicleCounts[p.user_id] || 0,
+      }));
+
+      return new Response(JSON.stringify({ users: enriched, total: count || 0 }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // CHECK ADMIN (for frontend auth check)
     if (action === "check") {
       return new Response(
