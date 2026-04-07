@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Shield, ShieldX, Loader2, LogIn, Car, BarChart3,
-  RefreshCw, MessageCircle, Building2, LayoutDashboard,
-  ChevronLeft, ChevronRight, Search,
+  Shield, ShieldX, Loader2, LogIn, Car, RefreshCw, MessageCircle, Building2,
+  LayoutDashboard, ChevronLeft, ChevronRight, Search, Bell, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,8 @@ import AdminDashboardOverview from "@/components/admin/AdminDashboardOverview";
 import AdminVehiclePanel from "@/components/admin/AdminVehiclePanel";
 import AdminCorporatePanel from "@/components/admin/AdminCorporatePanel";
 import AdminSupportPanel from "@/components/admin/AdminSupportPanel";
+import AdminNotificationsPanel from "@/components/admin/AdminNotificationsPanel";
+import AdminUsersPanel from "@/components/admin/AdminUsersPanel";
 
 type Stats = {
   pending: number;
@@ -36,7 +37,6 @@ const AdminPanel = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [stats, setStats] = useState<Stats | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState("");
 
   const checkAdmin = useCallback(async () => {
     if (!user) { setChecking(false); return; }
@@ -66,7 +66,6 @@ const AdminPanel = () => {
     if (isAdmin) fetchStats();
   }, [isAdmin, fetchStats]);
 
-  // Loading / Auth / Forbidden screens
   if (authLoading || checking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -106,6 +105,8 @@ const AdminPanel = () => {
   const navItems: NavItem[] = [
     { key: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
     { key: "vehicles", label: "Araç Doğrulama", icon: Car, badge: stats?.pending },
+    { key: "users", label: "Kullanıcılar", icon: Users },
+    { key: "notifications", label: "Bildirim Geçmişi", icon: Bell, badge: stats?.total_notifications },
     { key: "corporate", label: "Kurumsal", icon: Building2, badge: stats?.corporate_new },
     { key: "support", label: "Canlı Destek", icon: MessageCircle },
   ];
@@ -115,12 +116,7 @@ const AdminPanel = () => {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside
-        className={`${
-          sidebarCollapsed ? "w-16" : "w-56"
-        } flex-shrink-0 border-r border-border bg-card flex flex-col transition-all duration-200 sticky top-0 h-screen`}
-      >
-        {/* Logo area */}
+      <aside className={`${sidebarCollapsed ? "w-16" : "w-56"} flex-shrink-0 border-r border-border bg-card flex flex-col transition-all duration-200 sticky top-0 h-screen`}>
         <div className="p-4 border-b border-border flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
             <Shield className="w-4 h-4 text-primary-foreground" />
@@ -133,47 +129,36 @@ const AdminPanel = () => {
           )}
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 py-3 px-2 space-y-1">
+        <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => setActiveSection(item.key)}
+            <button key={item.key} onClick={() => setActiveSection(item.key)}
               title={sidebarCollapsed ? item.label : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative ${
                 activeSection === item.key
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
+              }`}>
               <item.icon className="w-4 h-4 flex-shrink-0" />
               {!sidebarCollapsed && (
                 <>
                   <span className="flex-1 text-left truncate">{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
+                  {item.badge !== undefined && item.badge > 0 && item.key !== "notifications" && (
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      activeSection === item.key
-                        ? "bg-primary-foreground/20 text-primary-foreground"
-                        : "bg-destructive text-destructive-foreground"
-                    }`}>
-                      {item.badge}
-                    </span>
+                      activeSection === item.key ? "bg-primary-foreground/20 text-primary-foreground" : "bg-destructive text-destructive-foreground"
+                    }`}>{item.badge}</span>
                   )}
                 </>
               )}
-              {sidebarCollapsed && item.badge !== undefined && item.badge > 0 && (
-                <span className="absolute right-1 top-1 w-2 h-2 rounded-full bg-destructive" />
+              {sidebarCollapsed && item.badge !== undefined && item.badge > 0 && item.key !== "notifications" && (
+                <span className="absolute right-1.5 top-1.5 w-2 h-2 rounded-full bg-destructive" />
               )}
             </button>
           ))}
         </nav>
 
-        {/* Collapse toggle */}
         <div className="p-2 border-t border-border">
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-          >
+          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-full flex items-center justify-center py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
             {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         </div>
@@ -181,56 +166,26 @@ const AdminPanel = () => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
           <div className="px-6 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               {currentNav && <currentNav.icon className="w-5 h-5 text-primary" />}
               <h2 className="text-base font-bold text-foreground">{currentNav?.label || "Admin"}</h2>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Hızlı arama..."
-                  value={globalSearch}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  className="h-8 text-xs pl-9 w-56 bg-secondary border-border"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && globalSearch.trim()) {
-                      // Navigate to vehicles for plate search
-                      setActiveSection("vehicles");
-                    }
-                  }}
-                />
-              </div>
-              <Button variant="ghost" size="sm" onClick={fetchStats} className="text-muted-foreground hover:text-foreground">
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" onClick={fetchStats} className="text-muted-foreground hover:text-foreground">
+              <RefreshCw className="w-4 h-4" />
+            </Button>
           </div>
         </header>
 
-        {/* Content area */}
         <main className="flex-1 p-6 overflow-y-auto">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            {activeSection === "dashboard" && (
-              <AdminDashboardOverview stats={stats} onNavigate={setActiveSection} />
-            )}
-            {activeSection === "vehicles" && (
-              <AdminVehiclePanel stats={stats} onRefreshStats={fetchStats} />
-            )}
-            {activeSection === "corporate" && (
-              <AdminCorporatePanel />
-            )}
-            {activeSection === "support" && (
-              <AdminSupportPanel user={user} />
-            )}
+          <motion.div key={activeSection} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
+            {activeSection === "dashboard" && <AdminDashboardOverview stats={stats} onNavigate={setActiveSection} />}
+            {activeSection === "vehicles" && <AdminVehiclePanel stats={stats} onRefreshStats={fetchStats} />}
+            {activeSection === "users" && <AdminUsersPanel />}
+            {activeSection === "notifications" && <AdminNotificationsPanel />}
+            {activeSection === "corporate" && <AdminCorporatePanel />}
+            {activeSection === "support" && <AdminSupportPanel user={user} />}
           </motion.div>
         </main>
       </div>
