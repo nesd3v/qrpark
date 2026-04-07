@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Crown, Calendar, Clock, CreditCard, AlertTriangle, Loader2, ExternalLink } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
