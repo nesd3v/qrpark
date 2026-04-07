@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { QRCodeCanvas } from "qrcode.react";
 import VehicleVerifyDialog from "@/components/VehicleVerifyDialog";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Car, Shield, ShieldCheck, ShieldX, Clock, BarChart3,
   Upload, Download, QrCode, Bell, Loader2, RefreshCw, FileText,
   AlertTriangle, CheckCircle2, TrendingUp, ParkingCircle, Lightbulb,
   Wind, Siren, Fuel, MoreHorizontal, CarFront, DoorOpen, ShieldAlert,
-  CircleSlash, Crown,
+  CircleSlash, Crown, X, ZoomIn,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
