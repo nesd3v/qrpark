@@ -1,3 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to your QRPark Project
 
-TODO: Document your project here
+npm i
+npm run dev
