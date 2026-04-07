@@ -56,7 +56,7 @@ const Pricing = () => {
   };
 
   const handleManageSubscription = () => {
-    toast.info("Abonelik yönetimi için destek ekibiyle iletişime geçin.");
+    navigate("/dashboard?tab=payments");
   };
 
   const handleCorporateContact = (plan: string) => {
