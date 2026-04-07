@@ -1,4 +1,4 @@
-# Welcome to your QRPark Project
+# Welcome to QRPark Project
 
 npm i
 npm run dev
