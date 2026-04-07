@@ -31,6 +31,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import DashboardCharts from "@/components/DashboardCharts";
+import PaymentHistory from "@/components/PaymentHistory";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
@@ -341,6 +342,18 @@ const Dashboard = () => {
                   vehiclePlates={vehicles.map((v) => v.plate)}
                   allNotifications={allNotifications}
                 />
+              </motion.div>
+            )}
+
+            {/* Payment History - Premium only */}
+            {isPremium && (
+              <motion.div
+                className="mb-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <PaymentHistory />
               </motion.div>
             )}
 
