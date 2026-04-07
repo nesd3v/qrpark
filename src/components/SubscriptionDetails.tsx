@@ -18,9 +18,9 @@ import {
 import { toast } from "sonner";
 
 const SubscriptionDetails = () => {
-  const { isPremium, planType, subscriptionEnd, loading } = useSubscription();
+  const { isPremium, planType, subscriptionEnd, loading, checkSubscription } = useSubscription();
   const navigate = useNavigate();
-  const [cancelRequested, setCancelRequested] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   if (loading) {
     return (
