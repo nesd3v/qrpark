@@ -16,6 +16,7 @@ import Install from "./pages/Install";
 import Unsubscribe from "./pages/Unsubscribe";
 import CorporateContact from "./pages/CorporateContact";
 import CorporateDashboard from "./pages/CorporateDashboard";
+import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/SupportChatWidget";
 
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/corporate-contact" element={<CorporateContact />} />
           <Route path="/corporate" element={<CorporateDashboard />} />
+          <Route path="/subscription" element={<Subscription />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />
