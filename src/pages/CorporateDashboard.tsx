@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import VehicleVerifyDialog from "@/components/VehicleVerifyDialog";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Car, Shield, ShieldCheck, ShieldX, Clock, BarChart3,
   Upload, Download, QrCode, Bell, Loader2, RefreshCw, FileText,
   AlertTriangle, CheckCircle2, TrendingUp, ParkingCircle, Lightbulb,
   Wind, Siren, Fuel, MoreHorizontal, CarFront, DoorOpen, ShieldAlert,
-  CircleSlash, Crown,
+  CircleSlash, Crown, X, ZoomIn,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,8 @@ const CorporateDashboard = () => {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [verifyVehicle, setVerifyVehicle] = useState<Vehicle | null>(null);
+  const [qrModalPlate, setQrModalPlate] = useState<string | null>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const invoke = useCallback(async (action: string, extra: any = {}) => {
     const { data, error } = await supabase.functions.invoke("corporate-dashboard", {
       body: { action, ...extra },
@@ -371,12 +373,22 @@ const CorporateDashboard = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <QRCodeSVG
-                                  value={`${window.location.origin}/notify?plate=${encodeURIComponent(v.plate)}`}
-                                  size={48}
-                                  level="M"
-                                  className="rounded"
-                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setQrModalPlate(v.plate)}
+                                  className="relative group cursor-pointer rounded hover:ring-2 hover:ring-primary/50 transition-all"
+                                  title="Büyütmek için tıkla"
+                                >
+                                  <QRCodeSVG
+                                    value={`${window.location.origin}/notify?plate=${encodeURIComponent(v.plate)}`}
+                                    size={48}
+                                    level="M"
+                                    className="rounded"
+                                  />
+                                  <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
+                                    <ZoomIn className="w-4 h-4 text-foreground" />
+                                  </div>
+                                </button>
                                 {v.qr_expires_at ? (
                                   new Date(v.qr_expires_at) > new Date() ?
                                     <span className="text-xs text-emerald-500">Aktif</span> :
@@ -576,6 +588,79 @@ const CorporateDashboard = () => {
         )}
       </div>
       <Footer />
+
+      {/* QR Büyütme & İndirme Modalı */}
+      <AnimatePresence>
+        {qrModalPlate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setQrModalPlate(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card rounded-2xl border border-border p-6 flex flex-col items-center gap-4 max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between w-full">
+                <h3 className="text-foreground font-semibold font-display">{qrModalPlate}</h3>
+                <button onClick={() => setQrModalPlate(null)} className="p-1 rounded-lg hover:bg-secondary transition-colors text-muted-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="bg-white p-4 rounded-xl" data-qr-modal>
+                <QRCodeSVG
+                  value={`${window.location.origin}/notify?plate=${encodeURIComponent(qrModalPlate)}`}
+                  size={256}
+                  level="H"
+                  includeMargin
+                />
+              </div>
+              {/* Hidden canvas for download */}
+              <canvas ref={qrCanvasRef} className="hidden" />
+              <Button
+                className="w-full gap-2"
+                onClick={() => {
+                  const svg = document.querySelector<SVGSVGElement>(".qr-modal-svg");
+                  // Use a temporary canvas approach
+                  const canvas = qrCanvasRef.current;
+                  if (!canvas) return;
+                  const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                  // Serialize the QR SVG
+                  const qrContainer = document.querySelector("[data-qr-modal]");
+                  const qrSvg = qrContainer?.querySelector("svg");
+                  if (!qrSvg) return;
+                  const svgData = new XMLSerializer().serializeToString(qrSvg);
+                  const img = new Image();
+                  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                  const url = URL.createObjectURL(svgBlob);
+                  img.onload = () => {
+                    canvas.width = 512;
+                    canvas.height = 512;
+                    const ctx = canvas.getContext("2d");
+                    if (!ctx) return;
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, 512, 512);
+                    ctx.drawImage(img, 0, 0, 512, 512);
+                    const link = document.createElement("a");
+                    link.download = `QR-${qrModalPlate}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  };
+                  img.src = url;
+                }}
+              >
+                <Download className="w-4 h-4" /> PNG Olarak İndir
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
