@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 import VehicleVerifyDialog from "@/components/VehicleVerifyDialog";
 import { motion } from "framer-motion";
 import {
