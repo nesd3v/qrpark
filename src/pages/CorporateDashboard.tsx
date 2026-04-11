@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import VehicleVerifyDialog from "@/components/VehicleVerifyDialog";
+import VehicleVerifyDialog from "@/components/shared/VehicleVerifyDialog";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Car, Shield, ShieldCheck, ShieldX, Clock, BarChart3,
@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";

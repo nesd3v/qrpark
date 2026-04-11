@@ -4,8 +4,8 @@ import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +13,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
-import DeleteAccountDialog from "@/components/DeleteAccountDialog";
+import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 
 type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean };
 

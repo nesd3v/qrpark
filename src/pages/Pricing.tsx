@@ -2,13 +2,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, X, Crown, Zap, Loader2, Building2, User, Shield, Clock, Car, Bell, QrCode, Palette, BarChart3, Phone, Headphones } from "lucide-react";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import PayTRModal from "@/components/PayTRModal";
+import PayTRModal from "@/components/subscription/PayTRModal";
 
 type PlanTab = "bireysel" | "kurumsal";
 
