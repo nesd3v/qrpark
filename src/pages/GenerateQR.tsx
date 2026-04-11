@@ -5,12 +5,12 @@ import {
   Download, Car, RefreshCw, CheckCircle2, AlertTriangle, Crown, Palette,
   Plus, ChevronDown, Lock, Upload, FileImage, XCircle, ShieldCheck, Loader2, Phone,
 } from "lucide-react";
-import QRCustomizer, { DEFAULT_QR_STYLE, type QRStyle } from "@/components/QRCustomizer";
+import QRCustomizer, { DEFAULT_QR_STYLE, type QRStyle } from "@/components/qr/QRCustomizer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

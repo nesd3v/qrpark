@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import SubscriptionDetails from "@/components/SubscriptionDetails";
-import PaymentHistory from "@/components/PaymentHistory";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import SubscriptionDetails from "@/components/subscription/SubscriptionDetails";
+import PaymentHistory from "@/components/subscription/PaymentHistory";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 

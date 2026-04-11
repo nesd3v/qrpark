@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import DeleteAccountDialog from "@/components/DeleteAccountDialog";
+import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();

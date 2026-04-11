@@ -18,7 +18,7 @@ import CorporateContact from "./pages/CorporateContact";
 import CorporateDashboard from "./pages/CorporateDashboard";
 import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
-import SupportChatWidget from "./components/SupportChatWidget";
+import SupportChatWidget from "./components/shared/SupportChatWidget";
 
 const queryClient = new QueryClient();
 

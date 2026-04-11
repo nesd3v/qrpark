@@ -1,6 +1,6 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import CorporateContactForm from "@/components/CorporateContactForm";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import CorporateContactForm from "@/components/corporate/CorporateContactForm";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { Building2, Shield } from "lucide-react";
