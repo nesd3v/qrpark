@@ -54,9 +54,9 @@ const Dashboard = () => {
       navigate("/auth?redirect=/dashboard");
       return;
     }
-    // Web users don't have the mobile dashboard — redirect to vehicles page
+    // Web users don't have the mobile dashboard — redirect to home
     if (!authLoading && user && !isMobile) {
-      navigate("/generate", { replace: true });
+      navigate("/", { replace: true });
       return;
     }
     if (user) fetchData();

@@ -16,13 +16,12 @@ const Index = () => {
   const isMobile = useIsMobileApp();
 
   useEffect(() => {
-    if (!loading && user) {
-      // Mobile app users go to dashboard, web users go to vehicles
-      navigate(isMobile ? "/dashboard" : "/generate", { replace: true });
+    if (!loading && user && isMobile) {
+      navigate("/dashboard", { replace: true });
     }
   }, [user, loading, isMobile]);
 
-  if (loading || user) {
+  if (loading || (user && isMobile)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
