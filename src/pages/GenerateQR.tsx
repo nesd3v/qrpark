@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Car, Plus, Pencil, Trash2, ChevronLeft, Loader2, QrCode,
-  CheckCircle2, Package,
+  CheckCircle2, Package, Truck, MapPin, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,12 +109,19 @@ const GenerateQR = () => {
   const [orderingStickerFor, setOrderingStickerFor] = useState<Vehicle | null>(null);
   const [orderingSticker, setOrderingSticker] = useState(false);
 
+  // Order tracking
+  const [stickerOrders, setStickerOrders] = useState<Record<string, any>>({});
+  const [trackingVehicle, setTrackingVehicle] = useState<Vehicle | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/generate");
       return;
     }
-    if (user) fetchVehicles();
+    if (user) {
+      fetchVehicles();
+      fetchStickerOrders();
+    }
   }, [user, authLoading]);
 
   const fetchVehicles = async () => {
@@ -126,6 +133,19 @@ const GenerateQR = () => {
       .order("created_at", { ascending: true });
     setVehicles((data as Vehicle[]) || []);
     setLoadingVehicle(false);
+  };
+
+  const fetchStickerOrders = async () => {
+    const { data } = await supabase
+      .from("sticker_orders")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: false });
+    if (data) {
+      const map: Record<string, any> = {};
+      data.forEach((o: any) => { if (!map[o.vehicle_id]) map[o.vehicle_id] = o; });
+      setStickerOrders(map);
+    }
   };
 
   const resetForm = () => {
@@ -233,6 +253,7 @@ const GenerateQR = () => {
       setStickerAddress("");
       setStickerNote("");
       setOrderingStickerFor(null);
+      await fetchStickerOrders();
     } catch (err: any) {
       toast.error(err.message || "Sipariş oluşturulamadı");
     } finally {
@@ -252,6 +273,102 @@ const GenerateQR = () => {
         <div className="flex items-center justify-center pt-40">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
+      </div>
+    );
+  }
+
+  // ========== ORDER TRACKING VIEW ==========
+  if (trackingVehicle) {
+    const order = stickerOrders[trackingVehicle.id];
+    const statusSteps = [
+      { key: "pending", label: "Sipariş Alındı", icon: Package },
+      { key: "preparing", label: "Hazırlanıyor", icon: QrCode },
+      { key: "shipped", label: "Kargoya Verildi", icon: Truck },
+      { key: "delivered", label: "Teslim Edildi", icon: CheckCircle2 },
+    ];
+    const currentIdx = statusSteps.findIndex(s => s.key === order?.status);
+
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-28 pb-16">
+          <div className="container mx-auto px-6">
+            <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <button onClick={() => setTrackingVehicle(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
+                <ChevronLeft className="w-4 h-4" /> Geri
+              </button>
+
+              <div className="glass rounded-2xl p-8 border border-border">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Truck className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-display font-bold text-foreground">Sipariş Takibi</h1>
+                    <p className="text-sm text-muted-foreground">{trackingVehicle.plate} — {trackingVehicle.brand} {trackingVehicle.model}</p>
+                  </div>
+                </div>
+
+                {/* Progress steps */}
+                <div className="space-y-0 mb-8">
+                  {statusSteps.map((step, i) => {
+                    const isActive = i <= currentIdx;
+                    const isCurrent = i === currentIdx;
+                    return (
+                      <div key={step.key} className="flex items-start gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                            isActive ? "border-primary bg-primary/10" : "border-border bg-secondary"
+                          } ${isCurrent ? "ring-4 ring-primary/20" : ""}`}>
+                            <step.icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                          </div>
+                          {i < statusSteps.length - 1 && (
+                            <div className={`w-0.5 h-8 ${i < currentIdx ? "bg-primary" : "bg-border"}`} />
+                          )}
+                        </div>
+                        <div className="pt-2">
+                          <p className={`text-sm font-semibold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                            {step.label}
+                          </p>
+                          {isCurrent && (
+                            <p className="text-xs text-primary mt-0.5">Mevcut durum</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Order details */}
+                {order && (
+                  <div className="space-y-3 text-sm">
+                    <div className="bg-secondary rounded-lg px-4 py-3 flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Teslimat Adresi</p>
+                        <p className="text-foreground">{order.address}</p>
+                      </div>
+                    </div>
+                    <div className="bg-secondary rounded-lg px-4 py-3 flex items-start gap-3">
+                      <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Sipariş Tarihi</p>
+                        <p className="text-foreground">{new Date(order.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</p>
+                      </div>
+                    </div>
+                    {order.note && (
+                      <div className="bg-secondary rounded-lg px-4 py-3">
+                        <p className="text-xs text-muted-foreground mb-1">Notunuz</p>
+                        <p className="text-foreground">{order.note}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -323,13 +440,23 @@ const GenerateQR = () => {
                       Bu QR kodu sticker olarak aracınızın camına yapıştırın
                     </p>
 
-                    {/* Sticker order button */}
-                    <Button
-                      onClick={() => { setOrderingStickerFor(v); setStickerModalOpen(true); }}
-                      className="w-full gradient-primary text-primary-foreground font-semibold py-5 glow-primary"
-                    >
-                      <Package className="w-4 h-4 mr-2" /> Sticker Sipariş Et
-                    </Button>
+                    {/* Sticker order / tracking button */}
+                    {stickerOrders[v.id] ? (
+                      <Button
+                        onClick={() => setTrackingVehicle(v)}
+                        variant="outline"
+                        className="w-full border-primary/30 text-primary font-semibold py-5"
+                      >
+                        <Truck className="w-4 h-4 mr-2" /> Siparişi Takip Et
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => { setOrderingStickerFor(v); setStickerModalOpen(true); }}
+                        className="w-full gradient-primary text-primary-foreground font-semibold py-5 glow-primary"
+                      >
+                        <Package className="w-4 h-4 mr-2" /> Sticker Sipariş Et
+                      </Button>
+                    )}
                   </div>
                 )}
 
