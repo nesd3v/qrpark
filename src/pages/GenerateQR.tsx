@@ -113,6 +113,9 @@ const GenerateQR = () => {
   const [stickerOrders, setStickerOrders] = useState<Record<string, any>>({});
   const [trackingVehicle, setTrackingVehicle] = useState<Vehicle | null>(null);
 
+  // PayTR payment
+  const [paytrToken, setPaytrToken] = useState<string | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/generate");
