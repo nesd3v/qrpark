@@ -125,6 +125,15 @@ const GenerateQR = () => {
       fetchVehicles();
       fetchStickerOrders();
     }
+    // Check for payment result in URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      toast.success("Ödeme başarılı! Sticker siparişiniz onaylandı 🎉");
+      window.history.replaceState({}, "", "/generate");
+    } else if (params.get("checkout") === "failed") {
+      toast.error("Ödeme başarısız oldu. Lütfen tekrar deneyin.");
+      window.history.replaceState({}, "", "/generate");
+    }
   }, [user, authLoading]);
 
   const fetchVehicles = async () => {
