@@ -6,7 +6,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import MobileLayout from "@/components/layout/MobileLayout";
+import AppLayout from "@/components/layout/AppLayout";
 
 type Conversation = {
   id: string;

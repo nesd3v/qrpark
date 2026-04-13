@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
-import MobileLayout from "@/components/layout/MobileLayout";
+import AppLayout from "@/components/layout/AppLayout";
+import { useIsMobileApp } from "@/hooks/useIsMobileApp";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },

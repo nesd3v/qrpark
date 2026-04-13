@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { ScanLine, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
-import MobileLayout from "@/components/layout/MobileLayout";
+import AppLayout from "@/components/layout/AppLayout";
 
 const Scan = () => {
   const navigate = useNavigate();
