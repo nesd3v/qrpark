@@ -135,6 +135,19 @@ const GenerateQR = () => {
     setLoadingVehicle(false);
   };
 
+  const fetchStickerOrders = async () => {
+    const { data } = await supabase
+      .from("sticker_orders")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: false });
+    if (data) {
+      const map: Record<string, any> = {};
+      data.forEach((o: any) => { if (!map[o.vehicle_id]) map[o.vehicle_id] = o; });
+      setStickerOrders(map);
+    }
+  };
+
   const resetForm = () => {
     setFormBrand(""); setFormModel(""); setFormColor(""); setFormPlate("");
     setEditingVehicle(null);
