@@ -4,8 +4,7 @@ import { User, Mail, Car, Phone, Save, CheckCircle2, Plus, Trash2, Lock, Setting
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -137,24 +136,20 @@ const Profile = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center pt-40">
+      <MobileLayout>
+        <div className="flex items-center justify-center pt-20">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </div>
+      </MobileLayout>
     );
   }
 
   const userInitial = fullName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "?";
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-
-      <div className="pt-28 pb-16">
-        <div className="container mx-auto px-6">
-          <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <MobileLayout>
+      <div className="py-6">
+        <div className="max-w-lg mx-auto px-4">
             
             {/* Profile Header with Avatar */}
             <div className="text-center mb-10">
