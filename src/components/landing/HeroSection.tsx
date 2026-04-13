@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, QrCode, Bell, Crown, Package, Truck, Zap } from "lucide-react";
+import { ArrowRight, QrCode, Bell, Package, Truck, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -111,7 +111,7 @@ const HeroSection = () => {
 
         {/* Feature cards */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-4 gap-5 mt-8 max-w-5xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-8 max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.8 }}
@@ -121,7 +121,6 @@ const HeroSection = () => {
             { icon: QrCode, title: "QR Oluştur", desc: "Plakanıza özel benzersiz QR kodu oluşturun" },
             { icon: Bell, title: "Anlık Bildirim", desc: "SMS ile anında haberdar olun" },
             { icon: Package, title: "Sticker Gönderimi", desc: "QR sticker'ınızı adresinize gönderelim" },
-            { icon: Crown, title: "Premium Avantajlar", desc: "Sınırsız araç, özel tema, detaylı istatistikler" },
           ].map((item, i) => (
             <motion.div
               key={item.title}

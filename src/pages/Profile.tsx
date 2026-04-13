@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, Shield, Settings, MessageSquare, PhoneCall } from "lucide-react";
+import { User, Mail, Car, Phone, Save, CheckCircle2, Plus, Trash2, Lock, Settings, MessageSquare, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,6 @@ import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +18,6 @@ type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean;
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -65,7 +63,6 @@ const Profile = () => {
     const phoneMap: Record<string, string> = {};
     allVehicles.forEach((v) => {
       let ph = v.phone || "";
-      // Format existing phones for display
       const digits = ph.replace(/\D/g, "");
       let d = digits;
       if (d.startsWith("90") && d.length >= 12) d = d.slice(2);
@@ -170,27 +167,11 @@ const Profile = () => {
                 <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center text-2xl font-display font-bold text-primary-foreground shadow-lg">
                   {userInitial}
                 </div>
-                {isPremium && (
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-background border-2 border-primary flex items-center justify-center">
-                    <Crown className="w-3.5 h-3.5 text-primary fill-primary/20" />
-                  </div>
-                )}
               </motion.div>
               <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-1">
                 <span className="text-primary">Profil</span> Ayarları
               </h1>
               <p className="text-muted-foreground text-sm">Hesap ve araç bilgilerinizi yönetin</p>
-              {isPremium && (
-                <motion.div
-                  className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <Crown className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-xs font-bold text-primary">Premium Üye</span>
-                </motion.div>
-              )}
             </div>
 
             {/* Personal Info Card */}
@@ -254,11 +235,6 @@ const Profile = () => {
                     <Car className="w-4 h-4 text-primary" />
                   </div>
                   <h2 className="text-base font-display font-bold text-foreground">Araçlarım</h2>
-                  {isPremium && (
-                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                      PREMIUM
-                    </span>
-                  )}
                 </div>
                 <span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">
                   {vehicles.length} araç
@@ -283,7 +259,7 @@ const Profile = () => {
                           {v.plate}
                         </span>
                       </div>
-                      {isPremium && vehicles.length > 1 && (
+                      {vehicles.length > 1 && (
                         <button
                           onClick={() => handleDeleteVehicle(v.id)}
                           className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-lg hover:bg-destructive/10"
@@ -353,43 +329,20 @@ const Profile = () => {
                   </motion.div>
                 ))}
 
-                {/* Add vehicle info */}
-                {!isPremium && vehicles.length >= 1 && (
-                  <motion.div
-                    className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-dashed border-border"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
+                {/* Add vehicle link */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Link
+                    to="/generate"
+                    className="flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-primary/30 text-sm font-medium text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <Lock className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">
-                        Birden fazla araç eklemek için{" "}
-                        <Link to="/pricing" className="text-primary font-semibold hover:underline">
-                          Premium'a geçin →
-                        </Link>
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-
-                {isPremium && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    <Link
-                      to="/generate"
-                      className="flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-primary/30 text-sm font-medium text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                      QR sayfasından yeni araç ekle
-                    </Link>
-                  </motion.div>
-                )}
+                    <Plus className="w-4 h-4" />
+                    Yeni araç ekle
+                  </Link>
+                </motion.div>
               </div>
             </motion.div>
 
@@ -430,7 +383,7 @@ const Profile = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45 }}
             >
-              <DeleteAccountDialog isPremium={isPremium} userEmail={user?.email || ""} />
+              <DeleteAccountDialog isPremium={false} userEmail={user?.email || ""} />
             </motion.div>
           </motion.div>
         </div>
