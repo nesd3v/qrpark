@@ -344,13 +344,23 @@ const GenerateQR = () => {
                       Bu QR kodu sticker olarak aracınızın camına yapıştırın
                     </p>
 
-                    {/* Sticker order button */}
-                    <Button
-                      onClick={() => { setOrderingStickerFor(v); setStickerModalOpen(true); }}
-                      className="w-full gradient-primary text-primary-foreground font-semibold py-5 glow-primary"
-                    >
-                      <Package className="w-4 h-4 mr-2" /> Sticker Sipariş Et
-                    </Button>
+                    {/* Sticker order / tracking button */}
+                    {stickerOrders[v.id] ? (
+                      <Button
+                        onClick={() => setTrackingVehicle(v)}
+                        variant="outline"
+                        className="w-full border-primary/30 text-primary font-semibold py-5"
+                      >
+                        <Truck className="w-4 h-4 mr-2" /> Siparişi Takip Et
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => { setOrderingStickerFor(v); setStickerModalOpen(true); }}
+                        className="w-full gradient-primary text-primary-foreground font-semibold py-5 glow-primary"
+                      >
+                        <Package className="w-4 h-4 mr-2" /> Sticker Sipariş Et
+                      </Button>
+                    )}
                   </div>
                 )}
 
