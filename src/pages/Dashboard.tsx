@@ -135,13 +135,15 @@ const Dashboard = () => {
     );
   }
 
+  const pendingOrderCount = stickerOrders.filter(o => o.status !== "delivered").length;
+
   const quickActions = [
-    { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary" },
-    { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary" },
-    { icon: MessageSquare, label: "Mesajlar", action: () => navigate("/dashboard"), color: "text-primary" },
-    { icon: ScanLine, label: "QR Aktivasyon", action: () => navigate("/generate"), color: "text-primary" },
-    { icon: Truck, label: "Sipariş Takibi", action: () => navigate("/generate"), color: "text-primary" },
-    { icon: Package, label: "Sticker Sipariş", action: () => navigate("/generate"), color: "text-primary" },
+    { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary", badge: vehicles.length > 0 ? vehicles.length : null, pulse: false },
+    { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
+    { icon: MessageSquare, label: "Mesajlar", action: () => navigate("/messages"), color: "text-primary", badge: null, pulse: false },
+    { icon: ScanLine, label: "QR Aktivasyon", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: true },
+    { icon: Truck, label: "Sipariş Takibi", action: () => navigate("/generate"), color: "text-primary", badge: pendingOrderCount > 0 ? pendingOrderCount : null, pulse: pendingOrderCount > 0 },
+    { icon: Package, label: "Sticker Sipariş", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
   ];
 
   return (
@@ -284,13 +286,26 @@ const Dashboard = () => {
                 <motion.button
                   key={item.label}
                   onClick={item.action}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all active:scale-95"
-                  whileTap={{ scale: 0.95 }}
+                  className="relative flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all"
+                  whileTap={{ scale: 0.93 }}
+                  whileHover={{ y: -2 }}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.25 + i * 0.05 }}
                 >
-                  <item.icon className={`w-6 h-6 ${item.color}`} />
+                  {/* Badge */}
+                  {item.badge !== null && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center px-1">
+                      {item.badge}
+                    </span>
+                  )}
+                  {/* Animated icon container */}
+                  <motion.div
+                    className={`w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center ${item.pulse ? "animate-pulse" : ""}`}
+                    whileHover={{ rotate: [0, -10, 10, 0], transition: { duration: 0.4 } }}
+                  >
+                    <item.icon className={`w-5 h-5 ${item.color}`} />
+                  </motion.div>
                   <span className="text-xs font-medium text-foreground text-center leading-tight">{item.label}</span>
                 </motion.button>
               ))}
@@ -361,8 +376,8 @@ const Dashboard = () => {
           {[
             { id: "home", icon: Home, label: "Ana Sayfa", path: "/dashboard" },
             { id: "vehicles", icon: Car, label: "Araçlarım", path: "/generate" },
-            { id: "scan", icon: ScanLine, label: "Tara", path: null },
-            { id: "messages", icon: MessageSquare, label: "Mesajlar", path: "/dashboard" },
+            { id: "scan", icon: ScanLine, label: "Tara", path: "/scan" },
+            { id: "messages", icon: MessageSquare, label: "Mesajlar", path: "/messages" },
             { id: "profile", icon: User, label: "Profil", path: "/profile" },
           ].map((tab) => {
             const isCenter = tab.id === "scan";
@@ -370,19 +385,16 @@ const Dashboard = () => {
 
             if (isCenter) {
               return (
-                <button
+                <Link
                   key={tab.id}
+                  to="/scan"
                   className="flex flex-col items-center -mt-5"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    // Could open camera/scanner
-                  }}
                 >
                   <div className="w-14 h-14 rounded-full gradient-primary glow-primary flex items-center justify-center shadow-lg">
                     <ScanLine className="w-6 h-6 text-primary-foreground" />
                   </div>
                   <span className="text-[10px] text-primary font-medium mt-1">{tab.label}</span>
-                </button>
+                </Link>
               );
             }
 

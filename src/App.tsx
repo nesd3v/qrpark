@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import GenerateQR from "./pages/GenerateQR";
 import Notify from "./pages/Notify";
 import Auth from "./pages/Auth";
+import Messages from "./pages/Messages";
+import Scan from "./pages/Scan";
 
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
@@ -33,6 +35,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/scan" element={<Scan />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/pricing" element={<Pricing />} />

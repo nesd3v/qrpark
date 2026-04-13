@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, Image as ImageIcon, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -18,8 +19,12 @@ type Message = {
 const isImageType = (type: string | null | undefined) =>
   type === "image" || type?.startsWith("image/");
 
+const TABBAR_PAGES = ["/dashboard", "/messages", "/scan", "/generate", "/profile"];
+
 const SupportChatWidget = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const hasTabBar = TABBAR_PAGES.some(p => location.pathname.startsWith(p));
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -228,7 +233,7 @@ const SupportChatWidget = () => {
       {/* Floating button */}
       <motion.button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+        className={`fixed ${hasTabBar ? "bottom-20" : "bottom-6"} right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
