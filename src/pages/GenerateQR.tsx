@@ -255,26 +255,41 @@ const GenerateQR = () => {
     setDeleting(null);
   };
 
+  const buildFullAddress = () => {
+    const parts = [
+      addrNeighborhood && `${addrNeighborhood} Mah.`,
+      addrStreet && `${addrStreet}`,
+      addrBuildingNo && `No: ${addrBuildingNo}`,
+      addrFloor && `Kat: ${addrFloor}`,
+      addrApartment && `Daire: ${addrApartment}`,
+      addrDistrict,
+      addrCity,
+      addrPostalCode,
+    ].filter(Boolean);
+    return parts.join(", ");
+  };
+
+  const isAddressValid = () => {
+    return addrCity.trim() && addrDistrict.trim() && addrNeighborhood.trim() && addrStreet.trim() && addrBuildingNo.trim();
+  };
+
   const handleOrderSticker = async () => {
-    if (!orderingStickerFor || !stickerAddress.trim()) {
-      toast.error("Adres gerekli");
-      return;
-    }
+    if (!orderingStickerFor) return;
+    const fullAddress = buildFullAddress();
+    if (!fullAddress) { toast.error("Adres gerekli"); return; }
     setOrderingSticker(true);
     try {
-      // Call edge function to create PayTR payment token
       const { data, error } = await supabase.functions.invoke("create-sticker-payment", {
         body: {
           vehicleId: orderingStickerFor.id,
           plate: orderingStickerFor.plate,
-          address: stickerAddress.trim(),
+          address: fullAddress,
           note: stickerNote.trim() || null,
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Open PayTR payment iframe
       setStickerModalOpen(false);
       setPaytrToken(data.token);
       toast.info("Ödeme sayfası açılıyor...");
@@ -287,11 +302,16 @@ const GenerateQR = () => {
 
   const handlePaymentClose = () => {
     setPaytrToken(null);
-    setStickerAddress("");
-    setStickerNote("");
+    resetAddressForm();
     setOrderingStickerFor(null);
-    // Refresh sticker orders to check if payment was successful
     fetchStickerOrders();
+  };
+
+  const resetAddressForm = () => {
+    setAddrCity(""); setAddrDistrict(""); setAddrNeighborhood("");
+    setAddrStreet(""); setAddrBuildingNo(""); setAddrFloor("");
+    setAddrApartment(""); setAddrPostalCode(""); setStickerNote("");
+    setStickerStep("address");
   };
 
   const notifyUrl = (plate: string) => `${window.location.origin}/notify/${encodeURIComponent(plate)}`;
