@@ -35,9 +35,9 @@ const AppLayout = ({ children, title, hideHeader, forceMinimal }: AppLayoutProps
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <div className="pt-24 pb-16">
+      <div className="flex-1 pt-24 pb-16">
         {children}
       </div>
       <Footer />
