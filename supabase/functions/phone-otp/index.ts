@@ -17,11 +17,22 @@ function normalizePhone(raw: string): string {
   return `+90${digits}`;
 }
 
+function deriveEmail(phone: string): string {
+  return `${phone.replace("+", "")}@phone.qrpark.app`;
+}
+
 function getSupabase() {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 Deno.serve(async (req) => {
@@ -31,49 +42,39 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action, phone, code } = body;
+    const { action, phone, code, full_name, email } = body;
 
     if (!action || !phone) {
-      return new Response(
-        JSON.stringify({ error: "action and phone are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "action and phone are required" }, 400);
     }
 
     const normalizedPhone = normalizePhone(phone);
     const supabase = getSupabase();
 
+    // ========== SEND OTP ==========
     if (action === "send") {
-      // Check cooldown - any code created in last 30 seconds
       const { data: recent } = await supabase
         .from("otp_codes")
         .select("created_at")
         .eq("phone", normalizedPhone)
+        .neq("code", "VERIFIED")
         .gte("created_at", new Date(Date.now() - 30 * 1000).toISOString())
         .limit(1);
 
       if (recent && recent.length > 0) {
-        return new Response(
-          JSON.stringify({ error: "Lütfen 30 saniye bekleyin" }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Lütfen 30 saniye bekleyin" }, 429);
       }
 
-      // Delete old codes for this phone
       await supabase.from("otp_codes").delete().eq("phone", normalizedPhone);
 
-      // Generate 6-digit code
       const otpCode = String(Math.floor(100000 + Math.random() * 900000));
 
-      // Store in DB with 5 min expiry
       await supabase.from("otp_codes").insert({
         phone: normalizedPhone,
         code: otpCode,
-        vehicle_id: body.vehicle_id || null,
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       });
 
-      // Send via Twilio
       const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
       const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
       const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER")!;
@@ -93,89 +94,155 @@ Deno.serve(async (req) => {
       if (!res.ok) {
         const errJson = await res.json().catch(() => null);
         console.error("Twilio OTP error:", errJson);
-        return new Response(
-          JSON.stringify({ error: "SMS gönderilemedi" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "SMS gönderilemedi" }, 500);
       }
 
       console.log("OTP sent to", normalizedPhone);
-      return new Response(
-        JSON.stringify({ success: true, message: "Doğrulama kodu gönderildi" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ success: true, message: "Doğrulama kodu gönderildi" });
     }
 
+    // ========== VERIFY OTP ==========
     if (action === "verify") {
-      if (!code) {
-        return new Response(
-          JSON.stringify({ error: "code is required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      if (!code) return jsonResponse({ error: "code is required" }, 400);
 
-      // Find valid OTP entry
       const { data: entry } = await supabase
         .from("otp_codes")
         .select("*")
         .eq("phone", normalizedPhone)
+        .neq("code", "VERIFIED")
         .gte("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (!entry) {
-        return new Response(
-          JSON.stringify({ error: "Doğrulama kodu bulunamadı veya süresi doldu. Lütfen yeni kod isteyin." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Doğrulama kodu bulunamadı veya süresi doldu" }, 400);
       }
 
       if (entry.attempts >= 5) {
         await supabase.from("otp_codes").delete().eq("id", entry.id);
-        return new Response(
-          JSON.stringify({ error: "Çok fazla deneme. Lütfen yeni kod isteyin." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Çok fazla deneme. Lütfen yeni kod isteyin." }, 429);
       }
 
-      // Increment attempts
       await supabase.from("otp_codes").update({ attempts: entry.attempts + 1 }).eq("id", entry.id);
 
       if (entry.code !== code.trim()) {
-        return new Response(
-          JSON.stringify({ error: "Yanlış doğrulama kodu", remaining: 4 - entry.attempts }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Yanlış doğrulama kodu", remaining: 4 - entry.attempts }, 400);
       }
 
-      // Success - delete OTP
+      // OTP verified - delete old code
       await supabase.from("otp_codes").delete().eq("id", entry.id);
 
-      // If vehicle_id provided (from send or from verify body), mark vehicle as verified
-      const vehicleId = body.vehicle_id || entry.vehicle_id;
-      if (vehicleId) {
-        await supabase
-          .from("vehicles")
-          .update({ verification_status: "verified", verification_note: "SMS ile araç sahibi tarafından doğrulandı" })
-          .eq("id", vehicleId);
-      }
+      // Check if user exists
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .eq("phone", normalizedPhone)
+        .maybeSingle();
 
-      return new Response(
-        JSON.stringify({ success: true, verified: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (profile) {
+        // Existing user - get their email and generate magic link
+        const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
+        const userEmail = userData?.user?.email || deriveEmail(normalizedPhone);
+
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: "magiclink",
+          email: userEmail,
+        });
+
+        if (linkError) {
+          console.error("Magic link error:", linkError);
+          return jsonResponse({ error: "Giriş bağlantısı oluşturulamadı" }, 500);
+        }
+
+        return jsonResponse({
+          verified: true,
+          isNewUser: false,
+          token_hash: linkData.properties.hashed_token,
+          email: userEmail,
+        });
+      } else {
+        // New user - store verification record for 10 minutes
+        await supabase.from("otp_codes").insert({
+          phone: normalizedPhone,
+          code: "VERIFIED",
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        });
+
+        return jsonResponse({ verified: true, isNewUser: true });
+      }
     }
 
-    return new Response(
-      JSON.stringify({ error: "Invalid action. Use 'send' or 'verify'" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // ========== COMPLETE PROFILE (new user registration) ==========
+    if (action === "complete-profile") {
+      if (!full_name?.trim()) return jsonResponse({ error: "İsim gerekli" }, 400);
+
+      // Check verification
+      const { data: verifiedEntry } = await supabase
+        .from("otp_codes")
+        .select("id")
+        .eq("phone", normalizedPhone)
+        .eq("code", "VERIFIED")
+        .gte("expires_at", new Date().toISOString())
+        .maybeSingle();
+
+      if (!verifiedEntry) {
+        return jsonResponse({ error: "Telefon doğrulaması bulunamadı. Lütfen tekrar deneyin." }, 400);
+      }
+
+      const userEmail = email?.trim() || deriveEmail(normalizedPhone);
+
+      // Create user
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: userEmail,
+        email_confirm: true,
+        phone: normalizedPhone,
+        phone_confirm: true,
+        user_metadata: {
+          full_name: full_name.trim(),
+          phone: normalizedPhone,
+        },
+      });
+
+      if (createError) {
+        console.error("Create user error:", createError);
+        if (createError.message?.includes("already")) {
+          return jsonResponse({ error: "Bu telefon veya e-posta zaten kayıtlı" }, 400);
+        }
+        return jsonResponse({ error: "Hesap oluşturulamadı" }, 500);
+      }
+
+      // Update profile with optional email
+      if (email?.trim()) {
+        await supabase.from("profiles")
+          .update({ email: email.trim() })
+          .eq("user_id", newUser.user.id);
+      }
+
+      // Clean up verification record
+      await supabase.from("otp_codes").delete().eq("id", verifiedEntry.id);
+
+      // Generate magic link for auto sign-in
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email: userEmail,
+      });
+
+      if (linkError) {
+        console.error("Magic link error after registration:", linkError);
+        return jsonResponse({ error: "Hesap oluşturuldu ama giriş yapılamadı. Tekrar deneyin." }, 500);
+      }
+
+      return jsonResponse({
+        success: true,
+        token_hash: linkData.properties.hashed_token,
+        email: userEmail,
+      });
+    }
+
+    return jsonResponse({ error: "Invalid action" }, 400);
   } catch (err) {
     console.error("OTP error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });
