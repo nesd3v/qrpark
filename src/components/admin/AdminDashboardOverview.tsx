@@ -1,5 +1,5 @@
 import {
-  ShieldCheck, ShieldX, Clock, BarChart3, Building2, MessageCircle, Car, ArrowRight,
+  ShieldCheck, ShieldX, Clock, BarChart3, MessageCircle, Car, ArrowRight, Package,
 } from "lucide-react";
 
 type Stats = {
@@ -52,21 +52,12 @@ const AdminDashboardOverview = ({
       color: "text-accent-foreground",
       bgColor: "bg-accent/10",
     },
-    {
-      label: "Yeni Kurumsal Başvuru",
-      value: stats.corporate_new,
-      icon: Building2,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-      action: () => onNavigate("corporate"),
-      urgent: stats.corporate_new > 0,
-    },
   ];
 
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Genel Bakış</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {cards.map((c) => (
           <button
             key={c.label}
@@ -96,7 +87,7 @@ const AdminDashboardOverview = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "Araç Doğrulama", desc: "Bekleyen araçları incele ve onayla", icon: Car, tab: "vehicles" },
-          { label: "Kurumsal Başvurular", desc: "Filo ve AVM başvurularını yönet", icon: Building2, tab: "corporate" },
+          { label: "Sticker Siparişleri", desc: "Gelen siparişleri yönet ve gönder", icon: Package, tab: "stickers" },
           { label: "Canlı Destek", desc: "Kullanıcı mesajlarını yanıtla", icon: MessageCircle, tab: "support" },
         ].map((item) => (
           <button

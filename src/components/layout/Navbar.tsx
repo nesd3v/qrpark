@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { Car, QrCode, LogIn, LogOut, Bell, User, Crown, Trash2 } from "lucide-react";
+import { Car, QrCode, LogIn, LogOut, Bell, User, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -12,7 +11,6 @@ import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
-  const { isPremium } = useSubscription();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hasVehicles, setHasVehicles] = useState(false);
 
@@ -58,15 +56,6 @@ const Navbar = () => {
                   <span className="hidden sm:inline">Bildirimler</span>
                 </Button>
               </Link>
-              <Link to="/pricing">
-                <Button variant="ghost" size="sm" className={isPremium ? "text-yellow-500 hover:text-yellow-400" : "text-muted-foreground hover:text-foreground"}>
-                  <Crown className={`w-4 h-4 sm:mr-1.5 ${isPremium ? "fill-yellow-500/20 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)]" : ""}`} />
-                  <span className="hidden sm:inline">Premium</span>
-                  {isPremium && (
-                    <span className="hidden sm:inline-flex ml-1 text-[9px] font-bold bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded-full leading-none">✓</span>
-                  )}
-                </Button>
-              </Link>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -92,7 +81,7 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DeleteAccountDialog isPremium={isPremium} userEmail={user?.email || ""}
+              <DeleteAccountDialog isPremium={false} userEmail={user?.email || ""}
                 externalOpen={deleteOpen} onExternalOpenChange={setDeleteOpen} />
             </>
           ) : (
@@ -101,12 +90,6 @@ const Navbar = () => {
                 <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10">
                   <QrCode className="w-4 h-4 mr-1.5" />
                   <span className="hidden sm:inline">QR Oluştur</span>
-                </Button>
-              </Link>
-              <Link to="/pricing">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                  <Crown className="w-4 h-4 mr-1.5" />
-                  <span className="hidden sm:inline">Premium</span>
                 </Button>
               </Link>
               <Link to="/auth">
