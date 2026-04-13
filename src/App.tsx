@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import GenerateQR from "./pages/GenerateQR";
 import Notify from "./pages/Notify";
 import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
+
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
@@ -31,7 +31,7 @@ const App = () => (
           <Route path="/generate" element={<GenerateQR />} />
           <Route path="/notify/:plateId" element={<Notify />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminPanel />} />
