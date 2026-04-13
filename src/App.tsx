@@ -17,6 +17,9 @@ import Pricing from "./pages/Pricing";
 import Install from "./pages/Install";
 import Unsubscribe from "./pages/Unsubscribe";
 import Subscription from "./pages/Subscription";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/shared/SupportChatWidget";
 
@@ -43,6 +46,9 @@ const App = () => (
           <Route path="/install" element={<Install />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/help" element={<HelpCenter />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />
