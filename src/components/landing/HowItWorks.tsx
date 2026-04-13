@@ -5,26 +5,26 @@ const steps = [
   {
     icon: QrCode,
     step: "01",
-    title: "QR Kodu Oluşturun",
-    desc: "Plaka numaranızı girin ve size özel QR kodunuzu indirin.",
+    title: "Aracınızı Kaydedin",
+    desc: "Marka, model ve plaka bilgilerinizi girerek aracınızı sisteme ekleyin.",
   },
   {
     icon: Scan,
     step: "02",
-    title: "Aracınıza Yerleştirin",
-    desc: "QR kodunu arabanızın camına yapıştırın.",
+    title: "Sticker Sipariş Edin",
+    desc: "QR kodlu sticker'ınızı sipariş edin, adresinize gönderelim.",
   },
   {
     icon: Send,
     step: "03",
-    title: "Birisi Okuttuğunda",
-    desc: "Sorun türünü seçip bildirim gönderir.",
+    title: "Aracınıza Yapıştırın",
+    desc: "Sticker'ı arabanızın camına yapıştırın, herkes okutabilsin.",
   },
   {
     icon: Bell,
     step: "04",
-    title: "Anında Haberdar Olun",
-    desc: "WhatsApp veya SMS ile bilgilendirme alın.",
+    title: "SMS ile Haberdar Olun",
+    desc: "Birisi QR kodu okuttuğunda anında SMS bildirimi alın.",
   },
 ];
 

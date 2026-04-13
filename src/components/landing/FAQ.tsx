@@ -9,11 +9,11 @@ import {
 const faqs = [
   {
     q: "QRPark ücretsiz mi?",
-    a: "Evet! QR kodu oluşturmak ve bildirim almak tamamen ücretsizdir. Premium özellikler için ileride ücretli planlar sunulabilir.",
+    a: "Evet! Araç kaydı oluşturmak ve bildirim almak tamamen ücretsizdir. Sadece fiziksel sticker siparişi için ücret alınır.",
   },
   {
-    q: "QR kodu nereden edinebilirim?",
-    a: "Sitemizden 'QR Oluştur' butonuna tıklayarak plaka numaranızı girip QR kodunuzu anında oluşturabilir ve indirebilirsiniz.",
+    q: "QR kodlu sticker'ı nasıl edinebilirim?",
+    a: "Aracınızı kaydettikten sonra 'Sticker Sipariş Et' butonuna tıklayarak teslimat adresinizi girin. Sticker'ınız kapınıza kadar gönderilir.",
   },
   {
     q: "QR kodu okutan kişi bilgilerimi görebilir mi?",
@@ -21,15 +21,15 @@ const faqs = [
   },
   {
     q: "Bildirimler nasıl geliyor?",
-    a: "Kayıt sırasında verdiğiniz telefon numarasına WhatsApp mesajı veya SMS olarak bildirim gönderilir.",
+    a: "Kayıt sırasında verdiğiniz telefon numarasına SMS olarak bildirim gönderilir.",
   },
   {
-    q: "QR kodum kaybolursa ne yapmalıyım?",
-    a: "Aynı plaka numarasıyla yeni bir QR kodu oluşturabilirsiniz. Eski QR kodunuz da çalışmaya devam edecektir.",
+    q: "Sticker'ım kaybolursa ne yapmalıyım?",
+    a: "Yeni bir sticker sipariş edebilirsiniz. Aynı QR kodunuz yeni sticker'ınızda da geçerli olacaktır.",
   },
   {
-    q: "Birden fazla araç için QR kodu oluşturabilir miyim?",
-    a: "Evet, her araç için farklı plaka numarasıyla ayrı QR kodları oluşturabilirsiniz.",
+    q: "Birden fazla araç için sticker alabilir miyim?",
+    a: "Evet, her araç için ayrı kayıt oluşturup her birine sticker sipariş edebilirsiniz.",
   },
   {
     q: "Sahte bildirim gönderilmesini nasıl engelliyorsunuz?",
