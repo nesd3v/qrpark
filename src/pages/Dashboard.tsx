@@ -130,9 +130,11 @@ const Dashboard = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
+      <MobileLayout hideHeader>
+        <div className="flex items-center justify-center pt-20">
+          <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </MobileLayout>
     );
   }
 
@@ -148,7 +150,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <MobileLayout hideHeader>
       {/* ===== TOP BAR ===== */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
@@ -174,9 +176,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* ===== SCROLLABLE CONTENT ===== */}
-      <main className="flex-1 overflow-y-auto pb-24">
-        <div className="max-w-lg mx-auto px-4 py-5 space-y-6">
+      <div className="max-w-lg mx-auto px-4 py-5 space-y-6">
 
           {/* ===== GREETING ===== */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
