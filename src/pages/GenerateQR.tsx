@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Car, Plus, Pencil, Trash2, ChevronLeft, Loader2, QrCode,
-  CheckCircle2, Package, Truck, MapPin, Clock,
+  CheckCircle2, Package, Truck, MapPin, Clock, CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import AppLayout from "@/components/layout/AppLayout";
+import PayTRModal from "@/components/subscription/PayTRModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -112,6 +113,9 @@ const GenerateQR = () => {
   const [stickerOrders, setStickerOrders] = useState<Record<string, any>>({});
   const [trackingVehicle, setTrackingVehicle] = useState<Vehicle | null>(null);
 
+  // PayTR payment
+  const [paytrToken, setPaytrToken] = useState<string | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/generate");
@@ -120,6 +124,15 @@ const GenerateQR = () => {
     if (user) {
       fetchVehicles();
       fetchStickerOrders();
+    }
+    // Check for payment result in URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      toast.success("Ödeme başarılı! Sticker siparişiniz onaylandı 🎉");
+      window.history.replaceState({}, "", "/generate");
+    } else if (params.get("checkout") === "failed") {
+      toast.error("Ödeme başarısız oldu. Lütfen tekrar deneyin.");
+      window.history.replaceState({}, "", "/generate");
     }
   }, [user, authLoading]);
 
@@ -239,25 +252,36 @@ const GenerateQR = () => {
     }
     setOrderingSticker(true);
     try {
-      const { error } = await supabase.from("sticker_orders" as any).insert({
-        user_id: user!.id,
-        vehicle_id: orderingStickerFor.id,
-        plate: orderingStickerFor.plate,
-        address: stickerAddress.trim(),
-        note: stickerNote.trim() || null,
-      } as any);
+      // Call edge function to create PayTR payment token
+      const { data, error } = await supabase.functions.invoke("create-sticker-payment", {
+        body: {
+          vehicleId: orderingStickerFor.id,
+          plate: orderingStickerFor.plate,
+          address: stickerAddress.trim(),
+          note: stickerNote.trim() || null,
+        },
+      });
       if (error) throw error;
-      toast.success("Sticker siparişiniz alındı! En kısa sürede gönderilecek.");
+      if (data?.error) throw new Error(data.error);
+
+      // Open PayTR payment iframe
       setStickerModalOpen(false);
-      setStickerAddress("");
-      setStickerNote("");
-      setOrderingStickerFor(null);
-      await fetchStickerOrders();
+      setPaytrToken(data.token);
+      toast.info("Ödeme sayfası açılıyor...");
     } catch (err: any) {
-      toast.error(err.message || "Sipariş oluşturulamadı");
+      toast.error(err.message || "Ödeme başlatılamadı");
     } finally {
       setOrderingSticker(false);
     }
+  };
+
+  const handlePaymentClose = () => {
+    setPaytrToken(null);
+    setStickerAddress("");
+    setStickerNote("");
+    setOrderingStickerFor(null);
+    // Refresh sticker orders to check if payment was successful
+    fetchStickerOrders();
   };
 
   const notifyUrl = (plate: string) => `${window.location.origin}/notify/${encodeURIComponent(plate)}`;
@@ -490,14 +514,21 @@ const GenerateQR = () => {
                 <Label>Not (opsiyonel)</Label>
                 <Input placeholder="Özel not..." value={stickerNote} onChange={(e) => setStickerNote(e.target.value)} />
               </div>
+              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-display font-bold text-foreground">₺49.00</p>
+                <p className="text-xs text-muted-foreground">Sticker + Kargo ücreti dahil</p>
+              </div>
               <Button onClick={handleOrderSticker} disabled={orderingSticker || !stickerAddress.trim()}
                 className="w-full gradient-primary text-primary-foreground font-semibold">
-                {orderingSticker ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Package className="w-4 h-4 mr-2" />}
-                Siparişi Gönder
+                {orderingSticker ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                Ödemeye Geç — ₺49.00
               </Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* PayTR Payment Modal */}
+        <PayTRModal token={paytrToken} onClose={handlePaymentClose} />
 
         {/* Edit Modal */}
         <VehicleFormModal
