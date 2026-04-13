@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
-import { ArrowRight, QrCode, Bell, Shield, Clock, Crown } from "lucide-react";
+import { ArrowRight, QrCode, Bell, Crown, Package, Truck, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const HeroSection = () => {
+  const { user } = useAuth();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden gradient-hero pt-20">
       {/* Grid background */}
@@ -45,7 +48,7 @@ const HeroSection = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/generate">
+            <Link to={user ? "/generate" : "/auth"}>
               <Button size="lg" className="gradient-primary text-primary-foreground font-semibold px-8 py-6 text-base glow-primary hover:opacity-90 transition-opacity">
                 Hemen Başla
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -59,25 +62,72 @@ const HeroSection = () => {
           </div>
         </motion.div>
 
-        {/* Feature cards */}
+        {/* Action cards */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-4 gap-5 mt-24 max-w-5xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-20 max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          <Link to={user ? "/generate" : "/auth?redirect=/generate"}>
+            <motion.div
+              className="glass rounded-xl p-6 hover:border-primary/30 transition-colors group cursor-pointer h-full"
+              whileHover={{ y: -4 }}
+            >
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <Zap className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">QR Aktivasyon</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">Aracınızı kaydedin ve QR kodunuzu hemen aktifleştirin</p>
+            </motion.div>
+          </Link>
+
+          <Link to={user ? "/generate" : "/auth?redirect=/generate"}>
+            <motion.div
+              className="glass rounded-xl p-6 hover:border-primary/30 transition-colors group cursor-pointer h-full"
+              whileHover={{ y: -4 }}
+            >
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <Package className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">Sticker Sipariş Et</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">QR kodlu sticker'ınızı kapınıza kadar gönderelim</p>
+            </motion.div>
+          </Link>
+
+          <Link to={user ? "/generate" : "/auth?redirect=/generate"}>
+            <motion.div
+              className="glass rounded-xl p-6 hover:border-primary/30 transition-colors group cursor-pointer h-full"
+              whileHover={{ y: -4 }}
+            >
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <Truck className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">Sipariş Takibi</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">Sticker siparişinizin durumunu anlık olarak takip edin</p>
+            </motion.div>
+          </Link>
+        </motion.div>
+
+        {/* Feature cards */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-4 gap-5 mt-8 max-w-5xl mx-auto"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.8 }}
           id="features"
         >
           {[
             { icon: QrCode, title: "QR Oluştur", desc: "Plakanıza özel benzersiz QR kodu oluşturun" },
             { icon: Bell, title: "Anlık Bildirim", desc: "SMS ile anında haberdar olun" },
-            { icon: Clock, title: "7 Gün Ücretsiz", desc: "QR kodunuz 7 gün geçerli, Premium ile süresiz" },
+            { icon: Package, title: "Sticker Gönderimi", desc: "QR sticker'ınızı adresinize gönderelim" },
             { icon: Crown, title: "Premium Avantajlar", desc: "Sınırsız araç, özel tema, detaylı istatistikler" },
           ].map((item, i) => (
             <motion.div
               key={item.title}
               className="glass rounded-xl p-6 hover:border-primary/30 transition-colors group"
               whileHover={{ y: -4 }}
-              transition={{ delay: 0.6 + i * 0.1 }}
+              transition={{ delay: 0.8 + i * 0.1 }}
             >
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                 <item.icon className="w-6 h-6 text-primary" />
