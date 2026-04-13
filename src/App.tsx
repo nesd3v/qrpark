@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import GenerateQR from "./pages/GenerateQR";
 import Notify from "./pages/Notify";
+import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
 import Messages from "./pages/Messages";
 import Scan from "./pages/Scan";
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/scan" element={<Scan />} />
           <Route path="/profile" element={<Profile />} />
