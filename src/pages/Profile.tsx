@@ -380,7 +380,7 @@ const Profile = () => {
             >
               <DeleteAccountDialog isPremium={false} userEmail={user?.email || ""} />
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </MobileLayout>
