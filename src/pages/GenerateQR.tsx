@@ -118,7 +118,10 @@ const GenerateQR = () => {
       navigate("/auth?redirect=/generate");
       return;
     }
-    if (user) fetchVehicles();
+    if (user) {
+      fetchVehicles();
+      fetchStickerOrders();
+    }
   }, [user, authLoading]);
 
   const fetchVehicles = async () => {
