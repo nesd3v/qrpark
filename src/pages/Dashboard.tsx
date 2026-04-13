@@ -4,12 +4,13 @@ import {
   Bell, Car, ParkingCircle, Lightbulb, AlertTriangle, Wind,
   MoreHorizontal, Clock, CheckCircle2, XCircle, QrCode,
   CircleSlash, CarFront, DoorOpen, Siren, ShieldAlert, Fuel,
-  Home, MessageSquare, User, ScanLine, Plus, Package, Truck, ChevronDown,
+  MessageSquare, ScanLine, Plus, Package, Truck, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
+import MobileLayout from "@/components/layout/MobileLayout";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
