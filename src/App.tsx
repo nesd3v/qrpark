@@ -14,8 +14,6 @@ import AdminPanel from "./pages/AdminPanel";
 import Pricing from "./pages/Pricing";
 import Install from "./pages/Install";
 import Unsubscribe from "./pages/Unsubscribe";
-import CorporateContact from "./pages/CorporateContact";
-import CorporateDashboard from "./pages/CorporateDashboard";
 import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/shared/SupportChatWidget";
@@ -40,8 +38,6 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/install" element={<Install />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
-          <Route path="/corporate-contact" element={<CorporateContact />} />
-          <Route path="/corporate" element={<CorporateDashboard />} />
           <Route path="/subscription" element={<Subscription />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
