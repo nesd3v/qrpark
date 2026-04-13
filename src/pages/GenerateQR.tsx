@@ -505,24 +505,21 @@ const GenerateQR = () => {
                 <Label>Not (opsiyonel)</Label>
                 <Input placeholder="Özel not..." value={stickerNote} onChange={(e) => setStickerNote(e.target.value)} />
               </div>
+              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-display font-bold text-foreground">₺49.00</p>
+                <p className="text-xs text-muted-foreground">Sticker + Kargo ücreti dahil</p>
+              </div>
               <Button onClick={handleOrderSticker} disabled={orderingSticker || !stickerAddress.trim()}
                 className="w-full gradient-primary text-primary-foreground font-semibold">
-                {orderingSticker ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Package className="w-4 h-4 mr-2" />}
-                Siparişi Gönder
+                {orderingSticker ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                Ödemeye Geç — ₺49.00
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Edit Modal */}
-        <VehicleFormModal
-          open={modalOpen} onOpenChange={setModalOpen}
-          editing={editingVehicle} brand={formBrand} model={formModel} color={formColor}
-          plate={formPlate} saving={saving}
-          setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
-          setPlate={setFormPlate}
-          onSave={handleSave}
-        />
+        {/* PayTR Payment Modal */}
+        <PayTRModal token={paytrToken} onClose={handlePaymentClose} />
       </AppLayout>
     );
   }
