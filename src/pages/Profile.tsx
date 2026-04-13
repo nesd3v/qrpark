@@ -329,9 +329,9 @@ const Profile = () => {
 
           {[
             { icon: MessageCircle, label: "Bize Ulaşın", action: () => navigate("/messages") },
-            { icon: Shield, label: "Gizlilik Politikası", action: () => toast.info("Gizlilik politikası sayfası yakında eklenecek") },
-            { icon: FileText, label: "Şartlar ve Koşullar", action: () => toast.info("Şartlar ve koşullar sayfası yakında eklenecek") },
-            { icon: HelpCircle, label: "Yardım Merkezi", action: () => toast.info("Yardım merkezi yakında eklenecek") },
+            { icon: Shield, label: "Gizlilik Politikası", action: () => navigate("/privacy") },
+            { icon: FileText, label: "Şartlar ve Koşullar", action: () => navigate("/terms") },
+            { icon: HelpCircle, label: "Yardım Merkezi", action: () => navigate("/help") },
           ].map((item, i) => (
             <button
               key={item.label}
