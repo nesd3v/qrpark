@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
-import MobileLayout from "@/components/layout/MobileLayout";
+import AppLayout from "@/components/layout/AppLayout";
+import { useIsMobileApp } from "@/hooks/useIsMobileApp";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
@@ -37,6 +38,7 @@ type StickerOrder = { id: string; status: string; plate: string };
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const isMobile = useIsMobileApp();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/dashboard");
+      return;
+    }
+    // Web users don't have the mobile dashboard — redirect to vehicles page
+    if (!authLoading && user && !isMobile) {
+      navigate("/generate", { replace: true });
       return;
     }
     if (user) fetchData();
@@ -130,11 +137,11 @@ const Dashboard = () => {
 
   if (authLoading || loading) {
     return (
-      <MobileLayout hideHeader>
+      <AppLayout hideHeader>
         <div className="flex items-center justify-center pt-20">
           <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
@@ -150,7 +157,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <MobileLayout hideHeader>
+    <AppLayout hideHeader>
       {/* ===== TOP BAR ===== */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
@@ -369,7 +376,7 @@ const Dashboard = () => {
             )}
           </motion.div>
         </div>
-    </MobileLayout>
+    </AppLayout>
   );
 };
 

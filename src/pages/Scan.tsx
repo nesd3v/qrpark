@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { ScanLine, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
-import MobileLayout from "@/components/layout/MobileLayout";
+import AppLayout from "@/components/layout/AppLayout";
 
 const Scan = () => {
   const navigate = useNavigate();
@@ -58,7 +58,7 @@ const Scan = () => {
   };
 
   return (
-    <MobileLayout hideHeader>
+    <AppLayout hideHeader>
       {/* Custom top bar */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
@@ -128,7 +128,7 @@ const Scan = () => {
           )}
         </div>
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 };
 

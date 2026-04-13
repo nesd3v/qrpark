@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import MobileLayout from "@/components/layout/MobileLayout";
+import AppLayout from "@/components/layout/AppLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -129,18 +129,18 @@ const Profile = () => {
 
   if (authLoading || loading) {
     return (
-      <MobileLayout>
+      <AppLayout>
         <div className="flex items-center justify-center pt-20">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
   const userInitial = fullName?.charAt(0)?.toUpperCase() || "?";
 
   return (
-    <MobileLayout>
+    <AppLayout>
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
 
         {/* ===== PROFILE HEADER ===== */}
@@ -329,9 +329,9 @@ const Profile = () => {
 
           {[
             { icon: MessageCircle, label: "Bize Ulaşın", action: () => navigate("/messages") },
-            { icon: Shield, label: "Gizlilik Politikası", action: () => toast.info("Gizlilik politikası sayfası yakında eklenecek") },
-            { icon: FileText, label: "Şartlar ve Koşullar", action: () => toast.info("Şartlar ve koşullar sayfası yakında eklenecek") },
-            { icon: HelpCircle, label: "Yardım Merkezi", action: () => toast.info("Yardım merkezi yakında eklenecek") },
+            { icon: Shield, label: "Gizlilik Politikası", action: () => navigate("/privacy") },
+            { icon: FileText, label: "Şartlar ve Koşullar", action: () => navigate("/terms") },
+            { icon: HelpCircle, label: "Yardım Merkezi", action: () => navigate("/help") },
           ].map((item, i) => (
             <button
               key={item.label}
@@ -370,7 +370,7 @@ const Profile = () => {
         {/* Bottom spacing */}
         <div className="h-4" />
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 };
 
