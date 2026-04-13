@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobileApp } from "@/hooks/useIsMobileApp";
 import Navbar from "@/components/layout/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorks from "@/components/landing/HowItWorks";
@@ -9,16 +10,17 @@ import FAQ from "@/components/landing/FAQ";
 import CTA from "@/components/landing/CTA";
 import Footer from "@/components/layout/Footer";
 
-// Auto-deploy test
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobileApp();
 
   useEffect(() => {
     if (!loading && user) {
-      navigate("/dashboard", { replace: true });
+      // Mobile app users go to dashboard, web users go to vehicles
+      navigate(isMobile ? "/dashboard" : "/generate", { replace: true });
     }
-  }, [user, loading]);
+  }, [user, loading, isMobile]);
 
   if (loading || user) {
     return (
