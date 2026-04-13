@@ -27,18 +27,16 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
 
-    const userId = claimsData.claims.sub as string;
-    const email = claimsData.claims.email as string;
-    if (!userId) throw new Error("User not authenticated");
+    const userId = user.id;
+    const email = user.email || "";
 
     const { vehicleId, plate, address, note } = await req.json();
     if (!vehicleId || !plate || !address?.trim()) {
@@ -61,7 +59,6 @@ serve(async (req) => {
     const merchantOkUrl = `${origin}/generate?checkout=success`;
     const merchantFailUrl = `${origin}/generate?checkout=failed`;
 
-    // Save pending sticker order with merchant_oid reference
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -76,7 +73,6 @@ serve(async (req) => {
       status: "payment_pending",
     });
 
-    // Also store in subscriptions table for PayTR callback to find
     await supabaseAdmin.from("subscriptions").insert({
       user_id: userId,
       merchant_oid: merchantOid,
@@ -86,9 +82,9 @@ serve(async (req) => {
     });
 
     const userEmail = email || `${userId}@qrpark.app`;
-    const userName = userEmail.split("@")[0];
+    const userName = user.user_metadata?.full_name || userEmail.split("@")[0];
     const userAddress = address.trim();
-    const userPhone = "05000000000";
+    const userPhone = user.user_metadata?.phone || user.phone || "05000000000";
     const userBasket = base64Encode(
       JSON.stringify([["QRPark Sticker", paymentAmount / 100, 1]])
     );
@@ -137,6 +133,8 @@ serve(async (req) => {
     const callbackUrl = `${supabaseUrl}/functions/v1/paytr-callback`;
     formData.append("merchant_notify_url", callbackUrl);
 
+    console.log("[STICKER-PAYMENT] Requesting PayTR token for", merchantOid);
+
     const paytrResponse = await fetch("https://www.paytr.com/odeme/api/get-token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -146,15 +144,18 @@ serve(async (req) => {
     const paytrResult = await paytrResponse.json();
 
     if (paytrResult.status !== "success") {
+      console.error("[STICKER-PAYMENT] PayTR error:", paytrResult.reason);
       throw new Error(paytrResult.reason || "PayTR token alınamadı");
     }
+
+    console.log("[STICKER-PAYMENT] Token received successfully");
 
     return new Response(JSON.stringify({ token: paytrResult.token, merchantOid }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error("[STICKER-PAYMENT]", error.message);
+    console.error("[STICKER-PAYMENT] Error:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
