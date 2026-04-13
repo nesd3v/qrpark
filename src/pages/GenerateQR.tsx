@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+
 import AppLayout from "@/components/layout/AppLayout";
 import PayTRModal from "@/components/subscription/PayTRModal";
 import { toast } from "sonner";
@@ -104,10 +104,20 @@ const GenerateQR = () => {
 
   // Sticker order
   const [stickerModalOpen, setStickerModalOpen] = useState(false);
-  const [stickerAddress, setStickerAddress] = useState("");
   const [stickerNote, setStickerNote] = useState("");
   const [orderingStickerFor, setOrderingStickerFor] = useState<Vehicle | null>(null);
   const [orderingSticker, setOrderingSticker] = useState(false);
+  const [stickerStep, setStickerStep] = useState<"address" | "summary">("address");
+
+  // Address form fields
+  const [addrCity, setAddrCity] = useState("");
+  const [addrDistrict, setAddrDistrict] = useState("");
+  const [addrNeighborhood, setAddrNeighborhood] = useState("");
+  const [addrStreet, setAddrStreet] = useState("");
+  const [addrBuildingNo, setAddrBuildingNo] = useState("");
+  const [addrFloor, setAddrFloor] = useState("");
+  const [addrApartment, setAddrApartment] = useState("");
+  const [addrPostalCode, setAddrPostalCode] = useState("");
 
   // Order tracking
   const [stickerOrders, setStickerOrders] = useState<Record<string, any>>({});
@@ -245,26 +255,41 @@ const GenerateQR = () => {
     setDeleting(null);
   };
 
+  const buildFullAddress = () => {
+    const parts = [
+      addrNeighborhood && `${addrNeighborhood} Mah.`,
+      addrStreet && `${addrStreet}`,
+      addrBuildingNo && `No: ${addrBuildingNo}`,
+      addrFloor && `Kat: ${addrFloor}`,
+      addrApartment && `Daire: ${addrApartment}`,
+      addrDistrict,
+      addrCity,
+      addrPostalCode,
+    ].filter(Boolean);
+    return parts.join(", ");
+  };
+
+  const isAddressValid = () => {
+    return addrCity.trim() && addrDistrict.trim() && addrNeighborhood.trim() && addrStreet.trim() && addrBuildingNo.trim();
+  };
+
   const handleOrderSticker = async () => {
-    if (!orderingStickerFor || !stickerAddress.trim()) {
-      toast.error("Adres gerekli");
-      return;
-    }
+    if (!orderingStickerFor) return;
+    const fullAddress = buildFullAddress();
+    if (!fullAddress) { toast.error("Adres gerekli"); return; }
     setOrderingSticker(true);
     try {
-      // Call edge function to create PayTR payment token
       const { data, error } = await supabase.functions.invoke("create-sticker-payment", {
         body: {
           vehicleId: orderingStickerFor.id,
           plate: orderingStickerFor.plate,
-          address: stickerAddress.trim(),
+          address: fullAddress,
           note: stickerNote.trim() || null,
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Open PayTR payment iframe
       setStickerModalOpen(false);
       setPaytrToken(data.token);
       toast.info("Ödeme sayfası açılıyor...");
@@ -277,11 +302,16 @@ const GenerateQR = () => {
 
   const handlePaymentClose = () => {
     setPaytrToken(null);
-    setStickerAddress("");
-    setStickerNote("");
+    resetAddressForm();
     setOrderingStickerFor(null);
-    // Refresh sticker orders to check if payment was successful
     fetchStickerOrders();
+  };
+
+  const resetAddressForm = () => {
+    setAddrCity(""); setAddrDistrict(""); setAddrNeighborhood("");
+    setAddrStreet(""); setAddrBuildingNo(""); setAddrFloor("");
+    setAddrApartment(""); setAddrPostalCode(""); setStickerNote("");
+    setStickerStep("address");
   };
 
   const notifyUrl = (plate: string) => `${window.location.origin}/notify/${encodeURIComponent(plate)}`;
@@ -494,36 +524,112 @@ const GenerateQR = () => {
           </div>
         </div>
         {/* Sticker Order Modal */}
-        <Dialog open={stickerModalOpen} onOpenChange={setStickerModalOpen}>
-          <DialogContent className="sm:max-w-md">
+        <Dialog open={stickerModalOpen} onOpenChange={(open) => { setStickerModalOpen(open); if (!open) resetAddressForm(); }}>
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" /> Sticker Sipariş Et
+                <Package className="w-5 h-5 text-primary" />
+                {stickerStep === "address" ? "Teslimat Adresi" : "Sipariş Özeti"}
               </DialogTitle>
               <DialogDescription>
                 {orderingStickerFor?.plate} plakalı aracınız için QR sticker gönderelim.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Teslimat Adresi</Label>
-                <Textarea placeholder="Adresinizi girin..." value={stickerAddress}
-                  onChange={(e) => setStickerAddress(e.target.value)} className="min-h-[80px]" />
+
+            {stickerStep === "address" ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">İl *</Label>
+                    <Input placeholder="Ankara" value={addrCity} onChange={(e) => setAddrCity(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">İlçe *</Label>
+                    <Input placeholder="Çankaya" value={addrDistrict} onChange={(e) => setAddrDistrict(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Mahalle *</Label>
+                  <Input placeholder="Kızılay Mahallesi" value={addrNeighborhood} onChange={(e) => setAddrNeighborhood(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Sokak / Cadde *</Label>
+                  <Input placeholder="Atatürk Bulvarı" value={addrStreet} onChange={(e) => setAddrStreet(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Bina No *</Label>
+                    <Input placeholder="12" value={addrBuildingNo} onChange={(e) => setAddrBuildingNo(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Kat</Label>
+                    <Input placeholder="3" value={addrFloor} onChange={(e) => setAddrFloor(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Daire</Label>
+                    <Input placeholder="5" value={addrApartment} onChange={(e) => setAddrApartment(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Posta Kodu</Label>
+                  <Input placeholder="06420" value={addrPostalCode} onChange={(e) => setAddrPostalCode(e.target.value)} maxLength={5} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Not (opsiyonel)</Label>
+                  <Input placeholder="Kapıda zil yok, lütfen arayın..." value={stickerNote} onChange={(e) => setStickerNote(e.target.value)} />
+                </div>
+                <Button onClick={() => setStickerStep("summary")} disabled={!isAddressValid()}
+                  className="w-full gradient-primary text-primary-foreground font-semibold py-5">
+                  Devam Et
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Not (opsiyonel)</Label>
-                <Input placeholder="Özel not..." value={stickerNote} onChange={(e) => setStickerNote(e.target.value)} />
+            ) : (
+              <div className="space-y-4">
+                {/* Vehicle info */}
+                <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
+                  <Car className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-display font-bold text-foreground tracking-wider text-sm">{orderingStickerFor?.plate}</p>
+                    <p className="text-xs text-muted-foreground">{orderingStickerFor?.brand} {orderingStickerFor?.model}</p>
+                  </div>
+                </div>
+
+                {/* Address summary */}
+                <div className="bg-secondary rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Teslimat Adresi</p>
+                      <p className="text-sm text-foreground">{buildFullAddress()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {stickerNote && (
+                  <div className="bg-secondary rounded-lg p-3 text-sm">
+                    <p className="text-xs text-muted-foreground mb-1">Not</p>
+                    <p className="text-foreground">{stickerNote}</p>
+                  </div>
+                )}
+
+                {/* Price */}
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-display font-bold text-foreground">₺49.00</p>
+                  <p className="text-xs text-muted-foreground">Sticker + Kargo ücreti dahil</p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStickerStep("address")} className="flex-1">
+                    Geri
+                  </Button>
+                  <Button onClick={handleOrderSticker} disabled={orderingSticker}
+                    className="flex-1 gradient-primary text-primary-foreground font-semibold">
+                    {orderingSticker ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                    Ödemeye Geç
+                  </Button>
+                </div>
               </div>
-              <div className="bg-secondary/50 rounded-lg p-3 text-center">
-                <p className="text-lg font-display font-bold text-foreground">₺49.00</p>
-                <p className="text-xs text-muted-foreground">Sticker + Kargo ücreti dahil</p>
-              </div>
-              <Button onClick={handleOrderSticker} disabled={orderingSticker || !stickerAddress.trim()}
-                className="w-full gradient-primary text-primary-foreground font-semibold">
-                {orderingSticker ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
-                Ödemeye Geç — ₺49.00
-              </Button>
-            </div>
+            )}
           </DialogContent>
         </Dialog>
 
