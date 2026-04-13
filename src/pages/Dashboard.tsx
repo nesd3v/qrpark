@@ -45,7 +45,7 @@ const Dashboard = () => {
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
   const [profileName, setProfileName] = useState<string>("");
   const [stickerOrders, setStickerOrders] = useState<StickerOrder[]>([]);
-  const [activeTab, setActiveTab] = useState("home");
+  
 
   useEffect(() => {
     if (!authLoading && !user) {
