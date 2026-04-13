@@ -109,6 +109,10 @@ const GenerateQR = () => {
   const [orderingStickerFor, setOrderingStickerFor] = useState<Vehicle | null>(null);
   const [orderingSticker, setOrderingSticker] = useState(false);
 
+  // Order tracking
+  const [stickerOrders, setStickerOrders] = useState<Record<string, any>>({});
+  const [trackingVehicle, setTrackingVehicle] = useState<Vehicle | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/generate");
