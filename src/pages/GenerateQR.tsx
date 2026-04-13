@@ -365,8 +365,8 @@ const GenerateQR = () => {
             </motion.div>
           </div>
         </div>
-        </div>
       </MobileLayout>
+    );
     );
   }
 
@@ -593,8 +593,7 @@ const GenerateQR = () => {
         setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
         setPlate={setFormPlate}
         onSave={handleSave}
-      />
-    </div>
+    </MobileLayout>
   );
 };
 
