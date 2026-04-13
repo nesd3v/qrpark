@@ -289,7 +289,7 @@ const GenerateQR = () => {
     return (
       <MobileLayout>
         <div className="py-6">
-          <div className="container mx-auto px-6">
+          <div className="max-w-lg mx-auto px-4">
             <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setTrackingVehicle(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
                 <ChevronLeft className="w-4 h-4" /> Geri
@@ -377,7 +377,7 @@ const GenerateQR = () => {
     return (
       <MobileLayout>
         <div className="py-6">
-          <div className="container mx-auto px-6">
+          <div className="max-w-lg mx-auto px-4">
             <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setSelectedVehicle(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
                 <ChevronLeft className="w-4 h-4" /> Araçlarıma Dön
