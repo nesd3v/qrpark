@@ -1,16 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Shield, ShieldX, Loader2, LogIn, Car, RefreshCw, MessageCircle, Building2,
-  LayoutDashboard, ChevronLeft, ChevronRight, Search, Bell, Users,
+  Shield, ShieldX, Loader2, LogIn, Car, RefreshCw, MessageCircle, Package,
+  LayoutDashboard, ChevronLeft, ChevronRight, Bell, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AdminDashboardOverview from "@/components/admin/AdminDashboardOverview";
 import AdminVehiclePanel from "@/components/admin/AdminVehiclePanel";
-import AdminCorporatePanel from "@/components/admin/AdminCorporatePanel";
 import AdminSupportPanel from "@/components/admin/AdminSupportPanel";
 import AdminNotificationsPanel from "@/components/admin/AdminNotificationsPanel";
 import AdminUsersPanel from "@/components/admin/AdminUsersPanel";
@@ -107,7 +105,6 @@ const AdminPanel = () => {
     { key: "vehicles", label: "Araç Doğrulama", icon: Car, badge: stats?.pending },
     { key: "users", label: "Kullanıcılar", icon: Users },
     { key: "notifications", label: "Bildirim Geçmişi", icon: Bell, badge: stats?.total_notifications },
-    { key: "corporate", label: "Kurumsal", icon: Building2, badge: stats?.corporate_new },
     { key: "support", label: "Canlı Destek", icon: MessageCircle },
   ];
 
@@ -115,7 +112,6 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
       <aside className={`${sidebarCollapsed ? "w-16" : "w-56"} flex-shrink-0 border-r border-border bg-card flex flex-col transition-all duration-200 sticky top-0 h-screen`}>
         <div className="p-4 border-b border-border flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
@@ -164,7 +160,6 @@ const AdminPanel = () => {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
           <div className="px-6 py-3 flex items-center justify-between gap-4">
@@ -184,7 +179,6 @@ const AdminPanel = () => {
             {activeSection === "vehicles" && <AdminVehiclePanel stats={stats} onRefreshStats={fetchStats} />}
             {activeSection === "users" && <AdminUsersPanel />}
             {activeSection === "notifications" && <AdminNotificationsPanel />}
-            {activeSection === "corporate" && <AdminCorporatePanel />}
             {activeSection === "support" && <AdminSupportPanel user={user} />}
           </motion.div>
         </main>

@@ -282,6 +282,50 @@ export type Database = {
         }
         Relationships: []
       }
+      sticker_orders: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          note: string | null
+          plate: string
+          status: string
+          updated_at: string
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          plate: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          plate?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sticker_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           amount: number
@@ -442,10 +486,13 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          brand: string | null
           call_enabled: boolean
+          color: string | null
           created_at: string
           id: string
           last_qr_generated_at: string | null
+          model: string | null
           phone: string
           plate: string
           qr_expires_at: string | null
@@ -456,10 +503,13 @@ export type Database = {
           verification_status: string
         }
         Insert: {
+          brand?: string | null
           call_enabled?: boolean
+          color?: string | null
           created_at?: string
           id?: string
           last_qr_generated_at?: string | null
+          model?: string | null
           phone: string
           plate: string
           qr_expires_at?: string | null
@@ -470,10 +520,13 @@ export type Database = {
           verification_status?: string
         }
         Update: {
+          brand?: string | null
           call_enabled?: boolean
+          color?: string | null
           created_at?: string
           id?: string
           last_qr_generated_at?: string | null
+          model?: string | null
           phone?: string
           plate?: string
           qr_expires_at?: string | null
