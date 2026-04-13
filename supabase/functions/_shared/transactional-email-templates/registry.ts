@@ -13,10 +13,12 @@ import { template as welcomeEmail } from './welcome-email.tsx'
 import { template as vehicleNotification } from './vehicle-notification.tsx'
 import { template as qrExpiryReminder } from './qr-expiry-reminder.tsx'
 import { template as corporateInquiryNotification } from './corporate-inquiry-notification.tsx'
+import { template as stickerOrderConfirmation } from './sticker-order-confirmation.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome-email': welcomeEmail,
   'vehicle-notification': vehicleNotification,
   'qr-expiry-reminder': qrExpiryReminder,
   'corporate-inquiry-notification': corporateInquiryNotification,
+  'sticker-order-confirmation': stickerOrderConfirmation,
 }

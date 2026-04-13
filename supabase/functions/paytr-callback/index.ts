@@ -6,6 +6,40 @@ const logStep = (step: string, details?: any) => {
   console.log(`[PAYTR-CALLBACK] ${step}${detailsStr}`);
 };
 
+function normalizePhone(raw: string): string {
+  const trimmed = raw.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (trimmed.startsWith("+")) return `+${digits}`;
+  if (digits.startsWith("90")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+90${digits.slice(1)}`;
+  return `+${digits}`;
+}
+
+async function sendStickerOrderSMS(phone: string, plate: string): Promise<void> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER")!;
+
+  const body = `QRPark - Sticker siparisinniz basariyla alindi!\n\nPlaka: ${plate}\nSiparisinniz en kisa surede hazirlanip kargoya verilecektir.\n\nTesekkur ederiz!`;
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
+    },
+    body: new URLSearchParams({ To: normalizePhone(phone), From: fromNumber, Body: body }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    logStep("Sticker SMS failed", err);
+  } else {
+    logStep("Sticker order SMS sent", { phone, plate });
+  }
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -77,11 +111,55 @@ serve(async (req) => {
           .limit(1);
 
         if (pendingOrders && pendingOrders.length > 0) {
+          const orderId = pendingOrders[0].id;
           await supabaseAdmin
             .from("sticker_orders")
             .update({ status: "pending", updated_at: new Date().toISOString() })
-            .eq("id", pendingOrders[0].id);
-          logStep("Sticker order activated", { orderId: pendingOrders[0].id, userId });
+            .eq("id", orderId);
+          logStep("Sticker order activated", { orderId, userId });
+
+          // Fetch order details for notification
+          const { data: orderData } = await supabaseAdmin
+            .from("sticker_orders")
+            .select("plate")
+            .eq("id", orderId)
+            .single();
+
+          const plate = orderData?.plate ?? "";
+
+          // Send SMS to user's phone
+          try {
+            const { data: profile } = await supabaseAdmin
+              .from("profiles")
+              .select("phone, email")
+              .eq("user_id", userId)
+              .single();
+
+            if (profile?.phone) {
+              await sendStickerOrderSMS(profile.phone, plate);
+            }
+
+            // Send email notification if user has email
+            const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+            const ownerEmail = userData?.user?.email || profile?.email;
+            if (ownerEmail) {
+              try {
+                await supabaseAdmin.functions.invoke("send-transactional-email", {
+                  body: {
+                    templateName: "sticker-order-confirmation",
+                    recipientEmail: ownerEmail,
+                    idempotencyKey: `sticker-confirm-${orderId}`,
+                    templateData: { plate },
+                  },
+                });
+                logStep("Sticker order email sent", { ownerEmail, plate });
+              } catch (emailErr) {
+                logStep("Sticker order email failed", { error: emailErr.message });
+              }
+            }
+          } catch (notifErr) {
+            logStep("Sticker notification error", { error: notifErr.message });
+          }
         }
       } else {
         // Payment failed - remove pending sticker order
