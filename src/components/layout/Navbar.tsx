@@ -50,7 +50,7 @@ const Navbar = () => {
                   )}
                 </Button>
               </Link>
-              <Link to="/dashboard">
+              <Link to="/notifications">
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                   <Bell className="w-4 h-4 sm:mr-1.5" />
                   <span className="hidden sm:inline">Bildirimler</span>
