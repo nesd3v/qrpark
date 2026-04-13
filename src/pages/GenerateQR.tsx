@@ -267,12 +267,11 @@ const GenerateQR = () => {
 
   if (authLoading || loadingVehicle) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center pt-40">
+      <MobileLayout>
+        <div className="flex items-center justify-center pt-20">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </div>
+      </MobileLayout>
     );
   }
 
@@ -288,9 +287,8 @@ const GenerateQR = () => {
     const currentIdx = statusSteps.findIndex(s => s.key === order?.status);
 
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="pt-28 pb-16">
+      <MobileLayout>
+        <div className="py-6">
           <div className="container mx-auto px-6">
             <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setTrackingVehicle(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -367,8 +365,8 @@ const GenerateQR = () => {
             </motion.div>
           </div>
         </div>
-        <Footer />
-      </div>
+        </div>
+      </MobileLayout>
     );
   }
 
@@ -378,9 +376,8 @@ const GenerateQR = () => {
     const hasQR = !!v.last_qr_generated_at;
 
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="pt-28 pb-16">
+      <MobileLayout>
+        <div className="py-6">
           <div className="container mx-auto px-6">
             <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <button onClick={() => setSelectedVehicle(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -473,8 +470,6 @@ const GenerateQR = () => {
             </motion.div>
           </div>
         </div>
-        <Footer />
-
         {/* Sticker Order Modal */}
         <Dialog open={stickerModalOpen} onOpenChange={setStickerModalOpen}>
           <DialogContent className="sm:max-w-md">
@@ -514,16 +509,15 @@ const GenerateQR = () => {
           setPlate={setFormPlate}
           onSave={handleSave}
         />
-      </div>
+      </MobileLayout>
     );
   }
 
   // ========== VEHICLE LIST (Araçlarım) ==========
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="pt-28 pb-16">
-        <div className="container mx-auto px-6">
+    <MobileLayout>
+      <div className="py-6">
+        <div className="max-w-lg mx-auto px-4">
           <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="text-center mb-8">
               <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
@@ -591,8 +585,6 @@ const GenerateQR = () => {
           </motion.div>
         </div>
       </div>
-      <Footer />
-
       {/* Add/Edit Vehicle Modal */}
       <VehicleFormModal
         open={modalOpen} onOpenChange={setModalOpen}
