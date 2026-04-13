@@ -111,11 +111,55 @@ serve(async (req) => {
           .limit(1);
 
         if (pendingOrders && pendingOrders.length > 0) {
+          const orderId = pendingOrders[0].id;
           await supabaseAdmin
             .from("sticker_orders")
             .update({ status: "pending", updated_at: new Date().toISOString() })
-            .eq("id", pendingOrders[0].id);
-          logStep("Sticker order activated", { orderId: pendingOrders[0].id, userId });
+            .eq("id", orderId);
+          logStep("Sticker order activated", { orderId, userId });
+
+          // Fetch order details for notification
+          const { data: orderData } = await supabaseAdmin
+            .from("sticker_orders")
+            .select("plate")
+            .eq("id", orderId)
+            .single();
+
+          const plate = orderData?.plate ?? "";
+
+          // Send SMS to user's phone
+          try {
+            const { data: profile } = await supabaseAdmin
+              .from("profiles")
+              .select("phone, email")
+              .eq("user_id", userId)
+              .single();
+
+            if (profile?.phone) {
+              await sendStickerOrderSMS(profile.phone, plate);
+            }
+
+            // Send email notification if user has email
+            const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+            const ownerEmail = userData?.user?.email || profile?.email;
+            if (ownerEmail) {
+              try {
+                await supabaseAdmin.functions.invoke("send-transactional-email", {
+                  body: {
+                    templateName: "sticker-order-confirmation",
+                    recipientEmail: ownerEmail,
+                    idempotencyKey: `sticker-confirm-${orderId}`,
+                    templateData: { plate },
+                  },
+                });
+                logStep("Sticker order email sent", { ownerEmail, plate });
+              } catch (emailErr) {
+                logStep("Sticker order email failed", { error: emailErr.message });
+              }
+            }
+          } catch (notifErr) {
+            logStep("Sticker notification error", { error: notifErr.message });
+          }
         }
       } else {
         // Payment failed - remove pending sticker order
