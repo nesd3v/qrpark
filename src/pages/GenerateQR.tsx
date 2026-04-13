@@ -277,6 +277,102 @@ const GenerateQR = () => {
     );
   }
 
+  // ========== ORDER TRACKING VIEW ==========
+  if (trackingVehicle) {
+    const order = stickerOrders[trackingVehicle.id];
+    const statusSteps = [
+      { key: "pending", label: "Sipariş Alındı", icon: Package },
+      { key: "preparing", label: "Hazırlanıyor", icon: QrCode },
+      { key: "shipped", label: "Kargoya Verildi", icon: Truck },
+      { key: "delivered", label: "Teslim Edildi", icon: CheckCircle2 },
+    ];
+    const currentIdx = statusSteps.findIndex(s => s.key === order?.status);
+
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-28 pb-16">
+          <div className="container mx-auto px-6">
+            <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <button onClick={() => setTrackingVehicle(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
+                <ChevronLeft className="w-4 h-4" /> Geri
+              </button>
+
+              <div className="glass rounded-2xl p-8 border border-border">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Truck className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-display font-bold text-foreground">Sipariş Takibi</h1>
+                    <p className="text-sm text-muted-foreground">{trackingVehicle.plate} — {trackingVehicle.brand} {trackingVehicle.model}</p>
+                  </div>
+                </div>
+
+                {/* Progress steps */}
+                <div className="space-y-0 mb-8">
+                  {statusSteps.map((step, i) => {
+                    const isActive = i <= currentIdx;
+                    const isCurrent = i === currentIdx;
+                    return (
+                      <div key={step.key} className="flex items-start gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                            isActive ? "border-primary bg-primary/10" : "border-border bg-secondary"
+                          } ${isCurrent ? "ring-4 ring-primary/20" : ""}`}>
+                            <step.icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                          </div>
+                          {i < statusSteps.length - 1 && (
+                            <div className={`w-0.5 h-8 ${i < currentIdx ? "bg-primary" : "bg-border"}`} />
+                          )}
+                        </div>
+                        <div className="pt-2">
+                          <p className={`text-sm font-semibold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                            {step.label}
+                          </p>
+                          {isCurrent && (
+                            <p className="text-xs text-primary mt-0.5">Mevcut durum</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Order details */}
+                {order && (
+                  <div className="space-y-3 text-sm">
+                    <div className="bg-secondary rounded-lg px-4 py-3 flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Teslimat Adresi</p>
+                        <p className="text-foreground">{order.address}</p>
+                      </div>
+                    </div>
+                    <div className="bg-secondary rounded-lg px-4 py-3 flex items-start gap-3">
+                      <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Sipariş Tarihi</p>
+                        <p className="text-foreground">{new Date(order.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</p>
+                      </div>
+                    </div>
+                    {order.note && (
+                      <div className="bg-secondary rounded-lg px-4 py-3">
+                        <p className="text-xs text-muted-foreground mb-1">Notunuz</p>
+                        <p className="text-foreground">{order.note}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   // ========== VEHICLE DETAIL VIEW ==========
   if (selectedVehicle) {
     const v = selectedVehicle;
