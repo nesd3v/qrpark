@@ -2,10 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  Car, Plus, Pencil, Trash2, ChevronLeft, Loader2, Phone, QrCode,
-  CheckCircle2, Crown, Palette, AlertTriangle, Package,
+  Car, Plus, Pencil, Trash2, ChevronLeft, Loader2, QrCode,
+  CheckCircle2, Package,
 } from "lucide-react";
-import QRCustomizer, { DEFAULT_QR_STYLE, type QRStyle } from "@/components/qr/QRCustomizer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +16,7 @@ import Footer from "@/components/layout/Footer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -85,13 +83,11 @@ type Vehicle = {
 
 const GenerateQR = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
   const navigate = useNavigate();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicle, setLoadingVehicle] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<QRStyle>(DEFAULT_QR_STYLE);
   const qrRef = useRef<HTMLDivElement>(null);
 
   // Modal state
@@ -103,7 +99,6 @@ const GenerateQR = () => {
   const [formModel, setFormModel] = useState("");
   const [formColor, setFormColor] = useState("");
   const [formPlate, setFormPlate] = useState("");
-  const [formPhone, setFormPhone] = useState("+90 ");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -133,19 +128,8 @@ const GenerateQR = () => {
     setLoadingVehicle(false);
   };
 
-  const formatPhone = (val: string) => {
-    if (!val.startsWith("+90")) val = "+90 " + val.replace(/^\+?9?0?\s*/, "");
-    const digits = val.slice(3).replace(/[^\d]/g, "");
-    let f = "+90 ";
-    if (digits.length > 0) f += digits.slice(0, 3);
-    if (digits.length > 3) f += " " + digits.slice(3, 6);
-    if (digits.length > 6) f += " " + digits.slice(6, 8);
-    if (digits.length > 8) f += " " + digits.slice(8, 10);
-    return f;
-  };
-
   const resetForm = () => {
-    setFormBrand(""); setFormModel(""); setFormColor(""); setFormPlate(""); setFormPhone("+90 ");
+    setFormBrand(""); setFormModel(""); setFormColor(""); setFormPlate("");
     setEditingVehicle(null);
   };
 
@@ -160,7 +144,6 @@ const GenerateQR = () => {
     setFormModel(v.model || "");
     setFormColor(v.color || "");
     setFormPlate(v.plate);
-    setFormPhone(v.phone);
     setModalOpen(true);
   };
 
@@ -169,41 +152,40 @@ const GenerateQR = () => {
     if (!formBrand) { toast.error("Marka seçin"); return; }
     if (!formModel) { toast.error("Model seçin"); return; }
     if (!formColor) { toast.error("Renk seçin"); return; }
-    const phoneDigits = formPhone.replace(/\D/g, "");
-    if (phoneDigits.length < 12) { toast.error("Geçerli telefon girin"); return; }
+
+    // Get user's phone from profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("phone")
+      .eq("user_id", user!.id)
+      .single();
+    const userPhone = profile?.phone || "";
 
     setSaving(true);
     try {
       if (editingVehicle) {
         const { error } = await supabase.from("vehicles").update({
           plate: formPlate.trim().toUpperCase(),
-          phone: formPhone.trim(),
           brand: formBrand, model: formModel, color: formColor,
         }).eq("id", editingVehicle.id);
         if (error) throw error;
         toast.success("Araç güncellendi");
       } else {
-        // Check vehicle limit for free users
-        if (!isPremium && vehicles.length >= 1) {
-          toast.error("Ücretsiz planda 1 araç kaydedebilirsiniz. Premium'a geçin.");
-          setSaving(false);
-          return;
-        }
         const { data, error } = await supabase.from("vehicles").insert({
           plate: formPlate.trim().toUpperCase(),
-          phone: formPhone.trim(),
+          phone: userPhone,
           brand: formBrand, model: formModel, color: formColor,
           user_id: user!.id,
-          verification_status: "verified", // No ruhsat needed anymore
+          verification_status: "verified",
         }).select("id, plate, phone, brand, model, color, last_qr_generated_at, verification_status").single();
         if (error) {
           if (error.code === "23505") { toast.error("Bu plaka zaten kayıtlı"); setSaving(false); return; }
           throw error;
         }
 
-        // Auto-generate QR
+        // Auto-generate QR with 7-day expiry
         const now = new Date().toISOString();
-        const qrExpiresAt = isPremium ? null : new Date(Date.now() + WEEK_MS).toISOString();
+        const qrExpiresAt = new Date(Date.now() + WEEK_MS).toISOString();
         await supabase.from("vehicles").update({ last_qr_generated_at: now, qr_expires_at: qrExpiresAt }).eq("id", data.id);
 
         toast.success("Araç kaydedildi ve QR oluşturuldu!");
@@ -327,26 +309,13 @@ const GenerateQR = () => {
                       <CheckCircle2 className="w-4 h-4" /> QR Kodunuz Aktif
                     </div>
 
-                    <QRCustomizer isPremium={isPremium} selectedStyle={selectedStyle} onStyleChange={setSelectedStyle} />
-
-                    {!isPremium && (
-                      <div className="w-full flex items-center gap-2 px-4 py-3 rounded-lg bg-muted border border-border">
-                        <Palette className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <p className="text-xs text-muted-foreground">
-                          Özel QR renkleri için{" "}
-                          <Link to="/pricing" className="text-primary font-medium hover:underline">Premium'a geçin</Link>
-                        </p>
-                      </div>
-                    )}
-
-                    <div ref={qrRef} className="p-6 rounded-xl" style={{ backgroundColor: selectedStyle.bg }}>
+                    <div ref={qrRef} className="p-6 rounded-xl bg-[#e8ecf0]">
                       <QRCodeSVG
                         value={notifyUrl(v.plate)}
                         size={200}
-                        bgColor={selectedStyle.bg}
-                        fgColor={selectedStyle.fg}
+                        bgColor="#e8ecf0"
+                        fgColor="#0a0f1a"
                         level="H"
-                        {...(selectedStyle.logoUrl ? { imageSettings: { src: selectedStyle.logoUrl, height: 40, width: 40, excavate: true } } : {})}
                       />
                     </div>
 
@@ -361,22 +330,6 @@ const GenerateQR = () => {
                     >
                       <Package className="w-4 h-4 mr-2" /> Sticker Sipariş Et
                     </Button>
-
-                    {!isPremium && (
-                      <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-destructive/5 border border-destructive/20 w-full">
-                        <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-                        <p className="text-xs text-destructive">
-                          Ücretsiz planda QR kodunuz <span className="font-bold">7 gün</span> geçerlidir.{" "}
-                          <Link to="/pricing" className="font-medium underline">Premium ile süresiz kullanın</Link>
-                        </p>
-                      </div>
-                    )}
-                    {isPremium && (
-                      <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20 w-full">
-                        <Crown className="w-4 h-4 text-primary flex-shrink-0" />
-                        <p className="text-xs text-primary">Premium: Süresiz QR kod hakkınız var</p>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -430,9 +383,9 @@ const GenerateQR = () => {
         <VehicleFormModal
           open={modalOpen} onOpenChange={setModalOpen}
           editing={editingVehicle} brand={formBrand} model={formModel} color={formColor}
-          plate={formPlate} phone={formPhone} saving={saving}
+          plate={formPlate} saving={saving}
           setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
-          setPlate={setFormPlate} setPhone={(v) => setFormPhone(formatPhone(v))}
+          setPlate={setFormPlate}
           onSave={handleSave}
         />
       </div>
@@ -500,25 +453,13 @@ const GenerateQR = () => {
                   </motion.button>
                 ))}
 
-                {/* Add more button */}
-                {(isPremium || vehicles.length < 1) ? (
-                  <button
-                    onClick={openAddModal}
-                    className="w-full rounded-xl p-4 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:bg-primary/5 transition-colors border border-dashed border-primary/30"
-                  >
-                    <Plus className="w-4 h-4" /> Yeni Araç Ekle
-                  </button>
-                ) : (
-                  <div className="rounded-xl p-4 flex items-center gap-3 bg-muted border border-border">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">Birden fazla araç eklemek için</p>
-                      <p className="text-xs text-muted-foreground">Premium ile sınırsız araç kaydedebilirsiniz</p>
-                    </div>
-                    <Link to="/pricing">
-                      <span className="text-xs font-bold text-primary hover:underline">Geç →</span>
-                    </Link>
-                  </div>
-                )}
+                {/* Add more button - no limit */}
+                <button
+                  onClick={openAddModal}
+                  className="w-full rounded-xl p-4 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:bg-primary/5 transition-colors border border-dashed border-primary/30"
+                >
+                  <Plus className="w-4 h-4" /> Yeni Araç Ekle
+                </button>
               </div>
             )}
           </motion.div>
@@ -530,25 +471,25 @@ const GenerateQR = () => {
       <VehicleFormModal
         open={modalOpen} onOpenChange={setModalOpen}
         editing={editingVehicle} brand={formBrand} model={formModel} color={formColor}
-        plate={formPlate} phone={formPhone} saving={saving}
+        plate={formPlate} saving={saving}
         setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
-        setPlate={setFormPlate} setPhone={(v) => setFormPhone(formatPhone(v))}
+        setPlate={setFormPlate}
         onSave={handleSave}
       />
     </div>
   );
 };
 
-// ========== VEHICLE FORM MODAL ==========
+// ========== VEHICLE FORM MODAL (no phone field) ==========
 function VehicleFormModal({
-  open, onOpenChange, editing, brand, model, color, plate, phone, saving,
-  setBrand, setModel, setColor, setPlate, setPhone, onSave,
+  open, onOpenChange, editing, brand, model, color, plate, saving,
+  setBrand, setModel, setColor, setPlate, onSave,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
   editing: Vehicle | null;
-  brand: string; model: string; color: string; plate: string; phone: string; saving: boolean;
+  brand: string; model: string; color: string; plate: string; saving: boolean;
   setBrand: (v: string) => void; setModel: (v: string) => void; setColor: (v: string) => void;
-  setPlate: (v: string) => void; setPhone: (v: string) => void; onSave: () => void;
+  setPlate: (v: string) => void; onSave: () => void;
 }) {
   const models = brand ? (CAR_BRANDS[brand] || []) : [];
 
@@ -572,17 +513,6 @@ function VehicleFormModal({
             <Input placeholder="34 ABC 123" value={plate}
               onChange={(e) => setPlate(e.target.value.toUpperCase())}
               className="tracking-widest font-display" maxLength={15} />
-          </div>
-
-          {/* Phone */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary" /> Telefon</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">🇹🇷</span>
-              <Input placeholder="5XX XXX XX XX" value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="pl-10 tracking-wide" maxLength={17} />
-            </div>
           </div>
 
           {/* Brand */}
