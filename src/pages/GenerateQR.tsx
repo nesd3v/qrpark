@@ -104,10 +104,20 @@ const GenerateQR = () => {
 
   // Sticker order
   const [stickerModalOpen, setStickerModalOpen] = useState(false);
-  const [stickerAddress, setStickerAddress] = useState("");
   const [stickerNote, setStickerNote] = useState("");
   const [orderingStickerFor, setOrderingStickerFor] = useState<Vehicle | null>(null);
   const [orderingSticker, setOrderingSticker] = useState(false);
+  const [stickerStep, setStickerStep] = useState<"address" | "summary">("address");
+
+  // Address form fields
+  const [addrCity, setAddrCity] = useState("");
+  const [addrDistrict, setAddrDistrict] = useState("");
+  const [addrNeighborhood, setAddrNeighborhood] = useState("");
+  const [addrStreet, setAddrStreet] = useState("");
+  const [addrBuildingNo, setAddrBuildingNo] = useState("");
+  const [addrFloor, setAddrFloor] = useState("");
+  const [addrApartment, setAddrApartment] = useState("");
+  const [addrPostalCode, setAddrPostalCode] = useState("");
 
   // Order tracking
   const [stickerOrders, setStickerOrders] = useState<Record<string, any>>({});
