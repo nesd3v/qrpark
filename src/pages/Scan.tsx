@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ScanLine, X, Flashlight, Home, Car, MessageSquare, User,
-} from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { ScanLine, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
+import MobileLayout from "@/components/layout/MobileLayout";
 
 const Scan = () => {
   const navigate = useNavigate();
@@ -21,54 +20,46 @@ const Scan = () => {
   const startScanner = async () => {
     setError(null);
     try {
+      if (scannerRef.current) {
+        try { await scannerRef.current.stop(); } catch {}
+      }
       const scanner = new Html5Qrcode("qr-reader");
       scannerRef.current = scanner;
 
       await scanner.start(
         { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
-          // QR code scanned — check if it's a QRPark URL
           stopScanner();
-          if (decodedText.includes("/notify/")) {
-            // Extract plate path and navigate
+          let target = decodedText;
+          try {
             const url = new URL(decodedText);
-            navigate(url.pathname);
-          } else {
-            // Try as a direct plate path
-            navigate(`/notify/${decodedText}`);
+            if (url.pathname.includes("/notify/")) target = url.pathname;
+            else target = `/notify/${decodedText}`;
+          } catch {
+            target = `/notify/${decodedText}`;
           }
+          navigate(target);
         },
-        () => {
-          // Ignore scan failures (ongoing scanning)
-        }
+        () => {}
       );
       setScanning(true);
     } catch (err: any) {
-      console.error("Scanner error:", err);
-      setError(
-        err?.message?.includes("NotAllowedError") || err?.message?.includes("Permission")
-          ? "Kamera izni gerekli. Tarayıcı ayarlarından kamera iznini verin."
-          : "Kamera başlatılamadı. Lütfen kameranızın çalıştığından emin olun."
-      );
+      setError(err?.message || "Kamera erişimi sağlanamadı. Lütfen kamera izinlerini kontrol edin.");
     }
   };
 
   const stopScanner = async () => {
-    if (scannerRef.current?.isScanning) {
-      try {
-        await scannerRef.current.stop();
-      } catch {}
+    if (scannerRef.current) {
+      try { await scannerRef.current.stop(); } catch {}
+      scannerRef.current = null;
     }
     setScanning(false);
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top bar */}
+    <MobileLayout hideHeader>
+      {/* Custom top bar */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div className="flex items-center gap-2.5">
@@ -86,26 +77,21 @@ const Scan = () => {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pb-24">
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="max-w-lg w-full space-y-6">
-          {/* Scanner viewport */}
           <motion.div
             className="relative rounded-2xl overflow-hidden border border-border bg-card"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
           >
             <div id="qr-reader" className="w-full" style={{ minHeight: 300 }} />
-
-            {/* Scanner overlay frame */}
             {scanning && (
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <div className="w-[250px] h-[250px] relative">
-                  {/* Corner brackets */}
                   <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary rounded-tl-lg" />
                   <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary rounded-tr-lg" />
                   <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary rounded-bl-lg" />
                   <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary rounded-br-lg" />
-                  {/* Scanning line animation */}
                   <motion.div
                     className="absolute left-2 right-2 h-0.5 bg-primary/60"
                     animate={{ top: ["10%", "90%", "10%"] }}
@@ -141,49 +127,8 @@ const Scan = () => {
             </motion.p>
           )}
         </div>
-      </main>
-
-      {/* Bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border">
-        <div className="max-w-lg mx-auto flex items-center justify-around py-2 px-2">
-          {[
-            { id: "home", icon: Home, label: "Ana Sayfa", path: "/dashboard" },
-            { id: "vehicles", icon: Car, label: "Araçlarım", path: "/generate" },
-            { id: "scan", icon: ScanLine, label: "Tara", path: "/scan" },
-            { id: "messages", icon: MessageSquare, label: "Mesajlar", path: "/messages" },
-            { id: "profile", icon: User, label: "Profil", path: "/profile" },
-          ].map((tab) => {
-            const isCenter = tab.id === "scan";
-            const isActive = tab.id === "scan";
-
-            if (isCenter) {
-              return (
-                <button key={tab.id} className="flex flex-col items-center -mt-5">
-                  <div className="w-14 h-14 rounded-full gradient-primary glow-primary flex items-center justify-center shadow-lg">
-                    <ScanLine className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <span className="text-[10px] text-primary font-medium mt-1">{tab.label}</span>
-                </button>
-              );
-            }
-
-            return (
-              <Link
-                key={tab.id}
-                to={tab.path}
-                className={`flex flex-col items-center py-1 px-2 transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                <tab.icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium mt-0.5">{tab.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="h-safe-area-bottom" />
-      </nav>
-    </div>
+      </div>
+    </MobileLayout>
   );
 };
 
