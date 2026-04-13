@@ -38,6 +38,7 @@ type StickerOrder = { id: string; status: string; plate: string };
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const isMobile = useIsMobileApp();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/dashboard");
+      return;
+    }
+    // Web users don't have the mobile dashboard — redirect to vehicles page
+    if (!authLoading && user && !isMobile) {
+      navigate("/generate", { replace: true });
       return;
     }
     if (user) fetchData();
