@@ -15,7 +15,7 @@ const Scan = () => {
 
   useEffect(() => {
     startScanner();
-    return () => stopScanner();
+    return () => { stopScanner(); };
   }, []);
 
   const startScanner = async () => {
