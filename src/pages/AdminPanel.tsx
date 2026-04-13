@@ -12,6 +12,7 @@ import AdminVehiclePanel from "@/components/admin/AdminVehiclePanel";
 import AdminSupportPanel from "@/components/admin/AdminSupportPanel";
 import AdminNotificationsPanel from "@/components/admin/AdminNotificationsPanel";
 import AdminUsersPanel from "@/components/admin/AdminUsersPanel";
+import AdminStickerPanel from "@/components/admin/AdminStickerPanel";
 
 type Stats = {
   pending: number;
@@ -103,6 +104,7 @@ const AdminPanel = () => {
   const navItems: NavItem[] = [
     { key: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
     { key: "vehicles", label: "Araç Doğrulama", icon: Car, badge: stats?.pending },
+    { key: "stickers", label: "Sticker Siparişleri", icon: Package },
     { key: "users", label: "Kullanıcılar", icon: Users },
     { key: "notifications", label: "Bildirim Geçmişi", icon: Bell, badge: stats?.total_notifications },
     { key: "support", label: "Canlı Destek", icon: MessageCircle },
@@ -177,6 +179,7 @@ const AdminPanel = () => {
           <motion.div key={activeSection} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
             {activeSection === "dashboard" && <AdminDashboardOverview stats={stats} onNavigate={setActiveSection} />}
             {activeSection === "vehicles" && <AdminVehiclePanel stats={stats} onRefreshStats={fetchStats} />}
+            {activeSection === "stickers" && <AdminStickerPanel />}
             {activeSection === "users" && <AdminUsersPanel />}
             {activeSection === "notifications" && <AdminNotificationsPanel />}
             {activeSection === "support" && <AdminSupportPanel user={user} />}

@@ -11,9 +11,7 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Crown,
   BarChart3,
-  Lock,
   ChevronDown,
   CircleSlash,
   CarFront,
@@ -27,10 +25,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import DashboardCharts from "@/components/dashboard/DashboardCharts";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
@@ -60,14 +55,10 @@ type Notification = {
   created_at: string;
 };
 
-const FREE_NOTIFICATION_LIMIT = 5;
-
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [allNotifications, setAllNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -129,17 +120,6 @@ const Dashboard = () => {
       await fetchNotifications(active.plate);
     }
 
-    // Fetch all notifications across all vehicles for charts
-    if (allVehicles.length > 0) {
-      const plates = allVehicles.map((v) => v.plate);
-      const { data: allNotifData } = await supabase
-        .from("notifications")
-        .select("*")
-        .in("plate", plates)
-        .order("created_at", { ascending: false });
-      setAllNotifications((allNotifData as Notification[]) || []);
-    }
-
     setLoading(false);
   };
 
@@ -188,11 +168,6 @@ const Dashboard = () => {
 
     return { total, thisMonth, topLabel };
   };
-
-  const visibleNotifications = isPremium
-    ? notifications
-    : notifications.slice(0, FREE_NOTIFICATION_LIMIT);
-  const hiddenCount = isPremium ? 0 : Math.max(0, notifications.length - FREE_NOTIFICATION_LIMIT);
 
   if (authLoading || loading) {
     return (
@@ -264,19 +239,7 @@ const Dashboard = () => {
                   </div>
                 ) : null}
 
-                {isPremium ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
-                    <Crown className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs font-bold text-primary">PREMIUM</span>
-                  </div>
-                ) : (
-                  <Link to="/pricing" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted border border-border hover:border-primary/30 transition-colors">
-                    <Crown className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">Premium'a Geç</span>
-                  </Link>
-                )}
-
-                {isPremium && vehicles.length > 0 && (
+                {vehicles.length > 0 && (
                   <div className="text-xs text-muted-foreground">
                     {vehicles.length} araç kayıtlı
                   </div>
@@ -284,86 +247,28 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Stats Section */}
-            {isPremium ? (
-              <motion.div
-                className="grid grid-cols-3 gap-3 mb-6"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <div className="glass rounded-xl p-4 text-center">
-                  <BarChart3 className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                  <p className="text-[11px] text-muted-foreground">Toplam Bildirim</p>
-                </div>
-                <div className="glass rounded-xl p-4 text-center">
-                  <Bell className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-foreground">{stats.thisMonth}</p>
-                  <p className="text-[11px] text-muted-foreground">Bu Ay</p>
-                </div>
-                <div className="glass rounded-xl p-4 text-center">
-                  <AlertTriangle className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <p className="text-sm font-bold text-foreground mt-1">{stats.topLabel}</p>
-                  <p className="text-[11px] text-muted-foreground">En Sık Sorun</p>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                className="glass rounded-xl p-4 mb-6 flex items-center gap-3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Lock className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">İstatistikler Premium'a özel</p>
-                  <p className="text-xs text-muted-foreground">Bildirim istatistiklerini görmek için Premium'a geçin</p>
-                </div>
-                <Link to="/pricing">
-                  <span className="text-xs font-bold text-primary hover:underline">Geç →</span>
-                </Link>
-              </motion.div>
-            )}
-
-            {/* Charts - Premium only */}
-            {isPremium && notifications.length > 0 && (
-              <motion.div
-                className="mb-6"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <DashboardCharts
-                  notifications={notifications}
-                  vehiclePlates={vehicles.map((v) => v.plate)}
-                  allNotifications={allNotifications}
-                />
-              </motion.div>
-            )}
-
-            {/* Subscription link */}
+            {/* Stats Section - available to everyone */}
             <motion.div
-              className="mb-6"
+              className="grid grid-cols-3 gap-3 mb-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.22 }}
+              transition={{ delay: 0.1 }}
             >
-              <Link
-                to="/subscription"
-                className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/30 border border-border transition-colors group block"
-              >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Crown className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-foreground">Abonelik Yönetimi</p>
-                  <p className="text-xs text-muted-foreground">Abonelik detaylarınızı görüntüleyin ve yönetin</p>
-                </div>
-                <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 group-hover:text-primary transition-colors" />
-              </Link>
+              <div className="glass rounded-xl p-4 text-center">
+                <BarChart3 className="w-5 h-5 text-primary mx-auto mb-1" />
+                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                <p className="text-[11px] text-muted-foreground">Toplam Bildirim</p>
+              </div>
+              <div className="glass rounded-xl p-4 text-center">
+                <Bell className="w-5 h-5 text-primary mx-auto mb-1" />
+                <p className="text-2xl font-bold text-foreground">{stats.thisMonth}</p>
+                <p className="text-[11px] text-muted-foreground">Bu Ay</p>
+              </div>
+              <div className="glass rounded-xl p-4 text-center">
+                <AlertTriangle className="w-5 h-5 text-primary mx-auto mb-1" />
+                <p className="text-sm font-bold text-foreground mt-1">{stats.topLabel}</p>
+                <p className="text-[11px] text-muted-foreground">En Sık Sorun</p>
+              </div>
             </motion.div>
 
             {vehicles.length === 0 ? (
@@ -385,14 +290,10 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground mb-4">
-                  {isPremium ? (
-                    <>Toplam <span className="text-foreground font-medium">{notifications.length}</span> bildirim</>
-                  ) : (
-                    <>Son <span className="text-foreground font-medium">{visibleNotifications.length}</span> / {notifications.length} bildirim</>
-                  )}
+                  Toplam <span className="text-foreground font-medium">{notifications.length}</span> bildirim
                 </p>
 
-                {visibleNotifications.map((notif, index) => {
+                {notifications.map((notif, index) => {
                   const issueInfo = issueIcons[notif.issue_type] || issueIcons["other"];
                   const Icon = issueInfo.icon;
 
@@ -437,29 +338,6 @@ const Dashboard = () => {
                     </motion.div>
                   );
                 })}
-
-                {hiddenCount > 0 && (
-                  <motion.div
-                    className="glass rounded-xl p-5 text-center border border-dashed border-primary/30"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <Lock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm font-medium text-foreground mb-1">
-                      +{hiddenCount} bildirim daha var
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Tüm bildirim geçmişinizi görmek için Premium'a geçin
-                    </p>
-                    <Link
-                      to="/pricing"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
-                    >
-                      <Crown className="w-3.5 h-3.5" />
-                      Premium'a Geç
-                    </Link>
-                  </motion.div>
-                )}
               </div>
             )}
           </motion.div>
