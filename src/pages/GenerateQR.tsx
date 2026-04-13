@@ -520,6 +520,16 @@ const GenerateQR = () => {
 
         {/* PayTR Payment Modal */}
         <PayTRModal token={paytrToken} onClose={handlePaymentClose} />
+
+        {/* Edit Modal */}
+        <VehicleFormModal
+          open={modalOpen} onOpenChange={setModalOpen}
+          editing={editingVehicle} brand={formBrand} model={formModel} color={formColor}
+          plate={formPlate} saving={saving}
+          setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
+          setPlate={setFormPlate}
+          onSave={handleSave}
+        />
       </AppLayout>
     );
   }
