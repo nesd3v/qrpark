@@ -383,9 +383,7 @@ const Profile = () => {
           </motion.div>
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </MobileLayout>
   );
 };
 
