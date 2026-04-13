@@ -6,6 +6,40 @@ const logStep = (step: string, details?: any) => {
   console.log(`[PAYTR-CALLBACK] ${step}${detailsStr}`);
 };
 
+function normalizePhone(raw: string): string {
+  const trimmed = raw.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (trimmed.startsWith("+")) return `+${digits}`;
+  if (digits.startsWith("90")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+90${digits.slice(1)}`;
+  return `+${digits}`;
+}
+
+async function sendStickerOrderSMS(phone: string, plate: string): Promise<void> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER")!;
+
+  const body = `QRPark - Sticker siparisinniz basariyla alindi!\n\nPlaka: ${plate}\nSiparisinniz en kisa surede hazirlanip kargoya verilecektir.\n\nTesekkur ederiz!`;
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
+    },
+    body: new URLSearchParams({ To: normalizePhone(phone), From: fromNumber, Body: body }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    logStep("Sticker SMS failed", err);
+  } else {
+    logStep("Sticker order SMS sent", { phone, plate });
+  }
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
