@@ -243,25 +243,36 @@ const GenerateQR = () => {
     }
     setOrderingSticker(true);
     try {
-      const { error } = await supabase.from("sticker_orders" as any).insert({
-        user_id: user!.id,
-        vehicle_id: orderingStickerFor.id,
-        plate: orderingStickerFor.plate,
-        address: stickerAddress.trim(),
-        note: stickerNote.trim() || null,
-      } as any);
+      // Call edge function to create PayTR payment token
+      const { data, error } = await supabase.functions.invoke("create-sticker-payment", {
+        body: {
+          vehicleId: orderingStickerFor.id,
+          plate: orderingStickerFor.plate,
+          address: stickerAddress.trim(),
+          note: stickerNote.trim() || null,
+        },
+      });
       if (error) throw error;
-      toast.success("Sticker siparişiniz alındı! En kısa sürede gönderilecek.");
+      if (data?.error) throw new Error(data.error);
+
+      // Open PayTR payment iframe
       setStickerModalOpen(false);
-      setStickerAddress("");
-      setStickerNote("");
-      setOrderingStickerFor(null);
-      await fetchStickerOrders();
+      setPaytrToken(data.token);
+      toast.info("Ödeme sayfası açılıyor...");
     } catch (err: any) {
-      toast.error(err.message || "Sipariş oluşturulamadı");
+      toast.error(err.message || "Ödeme başlatılamadı");
     } finally {
       setOrderingSticker(false);
     }
+  };
+
+  const handlePaymentClose = () => {
+    setPaytrToken(null);
+    setStickerAddress("");
+    setStickerNote("");
+    setOrderingStickerFor(null);
+    // Refresh sticker orders to check if payment was successful
+    fetchStickerOrders();
   };
 
   const notifyUrl = (plate: string) => `${window.location.origin}/notify/${encodeURIComponent(plate)}`;
