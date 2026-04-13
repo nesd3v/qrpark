@@ -369,14 +369,8 @@ Deno.serve(async (req) => {
 
     // STICKER ORDERS - UPDATE STATUS
     if (action === "update-sticker-order") {
-      const orderId = await (async () => {
-        try { return (await req.clone().json()).order_id; } catch { return null; }
-      })();
-      // Re-parse since we already consumed json above
-      if (!vehicle_id && !note) {
-        // order_id and status come from the already parsed body
-      }
-      const { order_id: oid, status: orderStatus } = { order_id: vehicle_id, status: newStatus };
+      const oid = order_id;
+      const orderStatus = newStatus;
       
       if (!oid || !orderStatus) {
         return new Response(JSON.stringify({ error: "order_id and status required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
