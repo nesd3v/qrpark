@@ -19,8 +19,12 @@ type Message = {
 const isImageType = (type: string | null | undefined) =>
   type === "image" || type?.startsWith("image/");
 
+const TABBAR_PAGES = ["/dashboard", "/messages", "/scan", "/generate", "/profile"];
+
 const SupportChatWidget = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const hasTabBar = TABBAR_PAGES.some(p => location.pathname.startsWith(p));
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
