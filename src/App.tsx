@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import GenerateQR from "./pages/GenerateQR";
 import Notify from "./pages/Notify";
+import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
 import Messages from "./pages/Messages";
 import Scan from "./pages/Scan";

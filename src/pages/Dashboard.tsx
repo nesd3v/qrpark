@@ -170,7 +170,7 @@ const Dashboard = () => {
             </span>
           </div>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/notifications")}
             className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
           >
             <Bell className="w-5 h-5 text-muted-foreground" />
