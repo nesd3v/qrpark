@@ -1,31 +1,15 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bell,
-  Car,
-  ParkingCircle,
-  Lightbulb,
-  AlertTriangle,
-  Wind,
-  MoreHorizontal,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  BarChart3,
-  ChevronDown,
-  CircleSlash,
-  CarFront,
-  DoorOpen,
-  Siren,
-  ShieldAlert,
-  Fuel,
+  Bell, Car, ParkingCircle, Lightbulb, AlertTriangle, Wind,
+  MoreHorizontal, Clock, CheckCircle2, XCircle, QrCode,
+  CircleSlash, CarFront, DoorOpen, Siren, ShieldAlert, Fuel,
+  Home, MessageSquare, User, ScanLine, Plus, Package, Truck, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
@@ -44,16 +28,11 @@ const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg
   "other": { icon: MoreHorizontal, label: "Diğer", color: "text-primary", bg: "bg-primary/10" },
 };
 
-type Vehicle = { id: string; plate: string; phone: string };
-
+type Vehicle = { id: string; plate: string; phone: string; brand?: string; model?: string };
 type Notification = {
-  id: string;
-  plate: string;
-  issue_type: string;
-  note: string | null;
-  status: string;
-  created_at: string;
+  id: string; plate: string; issue_type: string; note: string | null; status: string; created_at: string;
 };
+type StickerOrder = { id: string; status: string; plate: string };
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -63,55 +42,44 @@ const Dashboard = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
+  const [profileName, setProfileName] = useState<string>("");
+  const [stickerOrders, setStickerOrders] = useState<StickerOrder[]>([]);
+  const [activeTab, setActiveTab] = useState("home");
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/dashboard");
       return;
     }
-    if (user) {
-      fetchData();
-    }
+    if (user) fetchData();
   }, [user, authLoading]);
 
-  // Realtime subscription
   useEffect(() => {
     if (!selectedVehicle) return;
-
     const channel = supabase
       .channel("dashboard-notifications")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `plate=eq.${selectedVehicle.plate}`,
-        },
-        (payload) => {
-          const newNotif = payload.new as Notification;
-          setNotifications((prev) => [newNotif, ...prev]);
-          toast.info("Yeni bir bildirim alındı!");
-        }
-      )
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "notifications",
+        filter: `plate=eq.${selectedVehicle.plate}`,
+      }, (payload) => {
+        setNotifications((prev) => [payload.new as Notification, ...prev]);
+        toast.info("Yeni bir bildirim alındı!");
+      })
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [selectedVehicle]);
 
   const fetchData = async () => {
     setLoading(true);
 
-    const { data: vehicleData } = await supabase
-      .from("vehicles")
-      .select("id, plate, phone")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: true });
+    const [vehicleRes, profileRes] = await Promise.all([
+      supabase.from("vehicles").select("id, plate, phone, brand, model").eq("user_id", user!.id).order("created_at", { ascending: true }),
+      supabase.from("profiles").select("full_name").eq("user_id", user!.id).single(),
+    ]);
 
-    const allVehicles = (vehicleData as Vehicle[]) || [];
+    const allVehicles = (vehicleRes.data as Vehicle[]) || [];
     setVehicles(allVehicles);
+    setProfileName(profileRes.data?.full_name || user?.email?.split("@")[0] || "");
 
     const active = allVehicles[0] || null;
     setSelectedVehicle(active);
@@ -120,18 +88,21 @@ const Dashboard = () => {
       await fetchNotifications(active.plate);
     }
 
+    // Fetch sticker orders
+    const { data: orders } = await supabase
+      .from("sticker_orders")
+      .select("id, status, plate")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: false });
+    setStickerOrders((orders as StickerOrder[]) || []);
+
     setLoading(false);
   };
 
   const fetchNotifications = async (plate: string) => {
-    const { data: notifData } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("plate", plate)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    setNotifications((notifData as Notification[]) || []);
+    const { data } = await supabase.from("notifications").select("*").eq("plate", plate)
+      .order("created_at", { ascending: false }).limit(50);
+    setNotifications((data as Notification[]) || []);
   };
 
   const handleSelectVehicle = async (v: Vehicle) => {
@@ -141,199 +112,239 @@ const Dashboard = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("tr-TR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Az önce";
+    if (mins < 60) return `${mins} dk önce`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} saat önce`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} gün önce`;
+    return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
   };
 
-  const getStats = () => {
-    const total = notifications.length;
-    const thisMonth = notifications.filter((n) => {
-      const d = new Date(n.created_at);
-      const now = new Date();
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).length;
-
-    const typeCounts: Record<string, number> = {};
-    notifications.forEach((n) => {
-      typeCounts[n.issue_type] = (typeCounts[n.issue_type] || 0) + 1;
-    });
-    const topType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
-    const topLabel = topType ? (issueIcons[topType[0]]?.label || "Diğer") : "-";
-
-    return { total, thisMonth, topLabel };
-  };
+  const hasPendingOrder = stickerOrders.some(o => o.status !== "delivered");
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center pt-40">
-          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
-  const stats = getStats();
+  const quickActions = [
+    { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary" },
+    { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary" },
+    { icon: MessageSquare, label: "Mesajlar", action: () => navigate("/dashboard"), color: "text-primary" },
+    { icon: ScanLine, label: "QR Aktivasyon", action: () => navigate("/generate"), color: "text-primary" },
+    { icon: Truck, label: "Sipariş Takibi", action: () => navigate("/generate"), color: "text-primary" },
+    { icon: Package, label: "Sticker Sipariş", action: () => navigate("/generate"), color: "text-primary" },
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-
-      <div className="pt-28 pb-16">
-        <div className="container mx-auto px-6">
-          <motion.div className="max-w-2xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="text-center mb-10">
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
-                Bildirim <span className="text-primary">Paneli</span>
-              </h1>
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                {/* Vehicle selector */}
-                {vehicles.length > 1 ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowVehicleSelector(!showVehicleSelector)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary hover:bg-secondary/80 transition-colors"
-                    >
-                      <Car className="w-4 h-4 text-primary" />
-                      <span className="font-display font-bold text-foreground tracking-wider">
-                        {selectedVehicle?.plate}
-                      </span>
-                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                    <AnimatePresence>
-                      {showVehicleSelector && (
-                        <motion.div
-                          className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-10 glass rounded-xl border border-border p-2 min-w-[180px]"
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                        >
-                          {vehicles.map((v) => (
-                            <button
-                              key={v.id}
-                              onClick={() => handleSelectVehicle(v)}
-                              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-display tracking-wider transition-colors ${
-                                selectedVehicle?.id === v.id
-                                  ? "bg-primary/10 text-primary font-bold"
-                                  : "text-foreground hover:bg-secondary"
-                              }`}
-                            >
-                              {v.plate}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ) : selectedVehicle ? (
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary">
-                    <Car className="w-4 h-4 text-primary" />
-                    <span className="font-display font-bold text-foreground tracking-wider">{selectedVehicle.plate}</span>
-                  </div>
-                ) : null}
-
-                {vehicles.length > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    {vehicles.length} araç kayıtlı
-                  </div>
-                )}
-              </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ===== TOP BAR ===== */}
+      <header className="sticky top-0 z-50 glass px-4 py-3">
+        <div className="flex items-center justify-between max-w-lg mx-auto">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+              <Car className="w-5 h-5 text-primary-foreground" />
             </div>
+            <span className="text-lg font-display font-bold text-foreground">
+              QR<span className="text-primary">Park</span>
+            </span>
+          </div>
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
+          >
+            <Bell className="w-5 h-5 text-muted-foreground" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center">
+                {notifications.length > 9 ? "9+" : notifications.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </header>
 
-            {/* Stats Section - available to everyone */}
-            <motion.div
-              className="grid grid-cols-3 gap-3 mb-6"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="glass rounded-xl p-4 text-center">
-                <BarChart3 className="w-5 h-5 text-primary mx-auto mb-1" />
-                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                <p className="text-[11px] text-muted-foreground">Toplam Bildirim</p>
-              </div>
-              <div className="glass rounded-xl p-4 text-center">
-                <Bell className="w-5 h-5 text-primary mx-auto mb-1" />
-                <p className="text-2xl font-bold text-foreground">{stats.thisMonth}</p>
-                <p className="text-[11px] text-muted-foreground">Bu Ay</p>
-              </div>
-              <div className="glass rounded-xl p-4 text-center">
-                <AlertTriangle className="w-5 h-5 text-primary mx-auto mb-1" />
-                <p className="text-sm font-bold text-foreground mt-1">{stats.topLabel}</p>
-                <p className="text-[11px] text-muted-foreground">En Sık Sorun</p>
-              </div>
-            </motion.div>
+      {/* ===== SCROLLABLE CONTENT ===== */}
+      <main className="flex-1 overflow-y-auto pb-24">
+        <div className="max-w-lg mx-auto px-4 py-5 space-y-6">
 
+          {/* ===== GREETING ===== */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <p className="text-muted-foreground text-sm">Merhaba,</p>
+            <h1 className="text-2xl font-display font-bold text-foreground">
+              {profileName || "Kullanıcı"} 👋
+            </h1>
+          </motion.div>
+
+          {/* ===== VEHICLE HERO CARD ===== */}
+          <motion.div
+            className="rounded-2xl border border-border bg-card p-6"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             {vehicles.length === 0 ? (
-              <div className="glass rounded-2xl p-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-                  <AlertTriangle className="w-8 h-8 text-destructive" />
+              <div className="text-center">
+                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-7 h-7 text-muted-foreground" />
                 </div>
-                <h2 className="text-xl font-display font-bold text-foreground mb-2">Araç Bulunamadı</h2>
-                <p className="text-muted-foreground text-sm">Hesabınıza bağlı bir araç kaydı bulunamadı.</p>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="glass rounded-2xl p-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Bell className="w-8 h-8 text-primary" />
-                </div>
-                <h2 className="text-xl font-display font-bold text-foreground mb-2">Henüz Bildirim Yok</h2>
-                <p className="text-muted-foreground text-sm">Aracınıza henüz bir bildirim gönderilmemiş.</p>
+                <h2 className="text-lg font-display font-bold text-foreground mb-1">Araç Ekleyin</h2>
+                <p className="text-sm text-muted-foreground mb-5">
+                  İlk aracınızı ekleyerek QR kodunuzu oluşturun.
+                </p>
+                <button
+                  onClick={() => navigate("/generate")}
+                  className="w-full py-3 rounded-xl bg-foreground text-background font-semibold text-sm hover:opacity-90 transition-opacity"
+                >
+                  Araç Ekle
+                </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Toplam <span className="text-foreground font-medium">{notifications.length}</span> bildirim
-                </p>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                      <Car className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedVehicle?.brand} {selectedVehicle?.model}
+                      </p>
+                      <p className="font-display font-bold text-lg text-foreground tracking-wider">
+                        {selectedVehicle?.plate}
+                      </p>
+                    </div>
+                  </div>
+                  {vehicles.length > 1 && (
+                    <button
+                      onClick={() => setShowVehicleSelector(!showVehicleSelector)}
+                      className="px-3 py-1.5 rounded-lg bg-secondary text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    >
+                      Değiştir <ChevronDown className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
 
-                {notifications.map((notif, index) => {
-                  const issueInfo = issueIcons[notif.issue_type] || issueIcons["other"];
-                  const Icon = issueInfo.icon;
+                <AnimatePresence>
+                  {showVehicleSelector && (
+                    <motion.div
+                      className="mt-2 space-y-1"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      {vehicles.filter(v => v.id !== selectedVehicle?.id).map((v) => (
+                        <button
+                          key={v.id}
+                          onClick={() => handleSelectVehicle(v)}
+                          className="w-full text-left px-3 py-2.5 rounded-lg bg-secondary/50 hover:bg-secondary text-sm text-foreground font-display tracking-wider transition-colors"
+                        >
+                          {v.plate}
+                          <span className="text-xs text-muted-foreground ml-2">{v.brand} {v.model}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-foreground">{notifications.length}</p>
+                    <p className="text-[10px] text-muted-foreground">Bildirim</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-foreground">{vehicles.length}</p>
+                    <p className="text-[10px] text-muted-foreground">Araç</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-foreground">{stickerOrders.length}</p>
+                    <p className="text-[10px] text-muted-foreground">Sipariş</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+
+          {/* ===== QUICK ACTIONS ===== */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h2 className="text-sm font-display font-semibold text-foreground mb-3">Hızlı İşlemler</h2>
+            <div className="grid grid-cols-3 gap-3">
+              {quickActions.map((item, i) => (
+                <motion.button
+                  key={item.label}
+                  onClick={item.action}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all active:scale-95"
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 + i * 0.05 }}
+                >
+                  <item.icon className={`w-6 h-6 ${item.color}`} />
+                  <span className="text-xs font-medium text-foreground text-center leading-tight">{item.label}</span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ===== RECENT NOTIFICATIONS ===== */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-display font-semibold text-foreground">Son Bildirimler</h2>
+              {notifications.length > 3 && (
+                <button className="text-xs text-primary font-medium">Tümünü Gör</button>
+              )}
+            </div>
+
+            {notifications.length === 0 ? (
+              <div className="rounded-xl bg-card border border-border p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Bell className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground">Henüz bildirim yok</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {notifications.slice(0, 5).map((notif, index) => {
+                  const info = issueIcons[notif.issue_type] || issueIcons["other"];
+                  const Icon = info.icon;
                   return (
                     <motion.div
                       key={notif.id}
-                      className="glass rounded-xl p-5"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center gap-3 p-3.5 rounded-xl bg-card border border-border"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 + index * 0.05 }}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className={`w-11 h-11 rounded-lg ${issueInfo.bg} flex items-center justify-center flex-shrink-0`}>
-                          <Icon className={`w-5 h-5 ${issueInfo.color}`} />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <h3 className="font-medium text-foreground">{issueInfo.label}</h3>
-                            <div className="flex items-center gap-1.5">
-                              {notif.status === "sent" ? (
-                                <CheckCircle2 className="w-4 h-4 text-primary" />
-                              ) : (
-                                <XCircle className="w-4 h-4 text-destructive" />
-                              )}
-                              <span className={`text-xs ${notif.status === "sent" ? "text-primary" : "text-destructive"}`}>
-                                {notif.status === "sent" ? "Gönderildi" : "Başarısız"}
-                              </span>
-                            </div>
-                          </div>
-
-                          {notif.note && (
-                            <p className="text-sm text-muted-foreground mb-2">{notif.note}</p>
-                          )}
-
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Clock className="w-3.5 h-3.5" />
-                            {formatDate(notif.created_at)}
+                      <div className={`w-10 h-10 rounded-lg ${info.bg} flex items-center justify-center flex-shrink-0`}>
+                        <Icon className={`w-5 h-5 ${info.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-foreground">{info.label}</p>
+                          <div className="flex items-center gap-1">
+                            {notif.status === "sent" ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                            ) : (
+                              <XCircle className="w-3.5 h-3.5 text-destructive" />
+                            )}
                           </div>
                         </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(notif.created_at)}</p>
                       </div>
                     </motion.div>
                   );
@@ -342,9 +353,58 @@ const Dashboard = () => {
             )}
           </motion.div>
         </div>
-      </div>
+      </main>
 
-      <Footer />
+      {/* ===== BOTTOM TAB BAR ===== */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border">
+        <div className="max-w-lg mx-auto flex items-center justify-around py-2 px-2">
+          {[
+            { id: "home", icon: Home, label: "Ana Sayfa", path: "/dashboard" },
+            { id: "vehicles", icon: Car, label: "Araçlarım", path: "/generate" },
+            { id: "scan", icon: ScanLine, label: "Tara", path: null },
+            { id: "messages", icon: MessageSquare, label: "Mesajlar", path: "/dashboard" },
+            { id: "profile", icon: User, label: "Profil", path: "/profile" },
+          ].map((tab) => {
+            const isCenter = tab.id === "scan";
+            const isActive = activeTab === tab.id;
+
+            if (isCenter) {
+              return (
+                <button
+                  key={tab.id}
+                  className="flex flex-col items-center -mt-5"
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    // Could open camera/scanner
+                  }}
+                >
+                  <div className="w-14 h-14 rounded-full gradient-primary glow-primary flex items-center justify-center shadow-lg">
+                    <ScanLine className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <span className="text-[10px] text-primary font-medium mt-1">{tab.label}</span>
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={tab.id}
+                to={tab.path!}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center py-1 px-2 transition-colors ${
+                  isActive ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <tab.icon className="w-5 h-5" />
+                <span className="text-[10px] font-medium mt-0.5">{tab.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Safe area spacer for notched phones */}
+        <div className="h-safe-area-bottom" />
+      </nav>
     </div>
   );
 };
