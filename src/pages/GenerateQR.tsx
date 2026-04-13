@@ -253,6 +253,7 @@ const GenerateQR = () => {
       setStickerAddress("");
       setStickerNote("");
       setOrderingStickerFor(null);
+      await fetchStickerOrders();
     } catch (err: any) {
       toast.error(err.message || "Sipariş oluşturulamadı");
     } finally {
