@@ -367,7 +367,6 @@ const GenerateQR = () => {
         </div>
       </MobileLayout>
     );
-    );
   }
 
   // ========== VEHICLE DETAIL VIEW ==========
@@ -593,6 +592,7 @@ const GenerateQR = () => {
         setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
         setPlate={setFormPlate}
         onSave={handleSave}
+      />
     </MobileLayout>
   );
 };
