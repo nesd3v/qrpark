@@ -58,7 +58,7 @@ const Scan = () => {
   };
 
   return (
-    <MobileLayout hideHeader>
+    <AppLayout hideHeader>
       {/* Custom top bar */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
@@ -128,7 +128,7 @@ const Scan = () => {
           )}
         </div>
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 };
 

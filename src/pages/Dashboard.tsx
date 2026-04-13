@@ -131,11 +131,11 @@ const Dashboard = () => {
 
   if (authLoading || loading) {
     return (
-      <MobileLayout hideHeader>
+      <AppLayout hideHeader>
         <div className="flex items-center justify-center pt-20">
           <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
@@ -151,7 +151,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <MobileLayout hideHeader>
+    <AppLayout hideHeader>
       {/* ===== TOP BAR ===== */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
@@ -370,7 +370,7 @@ const Dashboard = () => {
             )}
           </motion.div>
         </div>
-    </MobileLayout>
+    </AppLayout>
   );
 };
 

@@ -267,11 +267,11 @@ const GenerateQR = () => {
 
   if (authLoading || loadingVehicle) {
     return (
-      <MobileLayout>
+      <AppLayout>
         <div className="flex items-center justify-center pt-20">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
@@ -287,7 +287,7 @@ const GenerateQR = () => {
     const currentIdx = statusSteps.findIndex(s => s.key === order?.status);
 
     return (
-      <MobileLayout>
+      <AppLayout>
         <div className="py-6">
           <div className="max-w-lg mx-auto px-4">
             <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -365,7 +365,7 @@ const GenerateQR = () => {
             </motion.div>
           </div>
         </div>
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
@@ -375,7 +375,7 @@ const GenerateQR = () => {
     const hasQR = !!v.last_qr_generated_at;
 
     return (
-      <MobileLayout>
+      <AppLayout>
         <div className="py-6">
           <div className="max-w-lg mx-auto px-4">
             <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -508,13 +508,13 @@ const GenerateQR = () => {
           setPlate={setFormPlate}
           onSave={handleSave}
         />
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
   // ========== VEHICLE LIST (Araçlarım) ==========
   return (
-    <MobileLayout>
+    <AppLayout>
       <div className="py-6">
         <div className="max-w-lg mx-auto px-4">
           <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -593,7 +593,7 @@ const GenerateQR = () => {
         setPlate={setFormPlate}
         onSave={handleSave}
       />
-    </MobileLayout>
+    </AppLayout>
   );
 };
 

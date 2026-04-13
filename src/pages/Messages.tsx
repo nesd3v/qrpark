@@ -70,16 +70,16 @@ const Messages = () => {
 
   if (authLoading || loading) {
     return (
-      <MobileLayout>
+      <AppLayout>
         <div className="flex items-center justify-center pt-20">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
-      </MobileLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <MobileLayout title="Mesajlar">
+    <AppLayout title="Mesajlar">
       <div className="max-w-lg mx-auto px-4 py-5 space-y-3">
         {conversations.length === 0 ? (
           <motion.div
@@ -130,7 +130,7 @@ const Messages = () => {
           ))
         )}
       </div>
-    </MobileLayout>
+    </AppLayout>
   );
 };
 
