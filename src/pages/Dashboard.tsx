@@ -101,6 +101,10 @@ const Dashboard = () => {
       .order("created_at", { ascending: false });
     setStickerOrders((orders as StickerOrder[]) || []);
 
+    // Load seen order count from localStorage
+    const savedSeen = localStorage.getItem(`seen_order_count_${user!.id}`);
+    setSeenOrderCount(savedSeen ? parseInt(savedSeen, 10) : 0);
+
     setLoading(false);
   };
 
