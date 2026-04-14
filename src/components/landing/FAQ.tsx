@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const faqs = [
+const faqData = [
   {
     q: "QRPark ücretsiz mi?",
     a: "Evet! Araç kaydı oluşturmak ve bildirim almak tamamen ücretsizdir. Sadece fiziksel sticker siparişi için ücret alınır.",
