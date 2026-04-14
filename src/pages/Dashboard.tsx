@@ -136,6 +136,14 @@ const Dashboard = () => {
 
   const hasPendingOrder = stickerOrders.some(o => o.status !== "delivered");
 
+  const handleToggleStickerOrders = () => {
+    setShowStickerOrders(!showStickerOrders);
+    // Mark as seen
+    const pending = stickerOrders.filter(o => o.status !== "delivered").length;
+    localStorage.setItem(`seen_order_count_${user!.id}`, String(pending));
+    setSeenOrderCount(pending);
+  };
+
   if (authLoading || loading) {
     return (
       <AppLayout hideHeader>
@@ -147,13 +155,21 @@ const Dashboard = () => {
   }
 
   const pendingOrderCount = stickerOrders.filter(o => o.status !== "delivered").length;
+  const unseenOrderCount = Math.max(0, pendingOrderCount - seenOrderCount);
+
+  const stickerStatusMap: Record<string, { label: string; color: string; icon: typeof Package }> = {
+    pending: { label: "Sipariş Alındı", color: "text-yellow-400", icon: Clock },
+    preparing: { label: "Hazırlanıyor", color: "text-blue-400", icon: Package },
+    shipped: { label: "Kargoda", color: "text-primary", icon: Truck },
+    delivered: { label: "Teslim Edildi", color: "text-primary", icon: CheckCircle2 },
+  };
 
   const quickActions = [
     { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary", badge: vehicles.length > 0 ? vehicles.length : null, pulse: false },
     { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
     { icon: Bell, label: "Bildirimler", action: () => navigate("/messages"), color: "text-primary", badge: null, pulse: false },
     { icon: ScanLine, label: "QR Aktivasyon", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: true },
-    { icon: Truck, label: "Sipariş Takibi", action: () => navigate("/generate"), color: "text-primary", badge: pendingOrderCount > 0 ? pendingOrderCount : null, pulse: pendingOrderCount > 0 },
+    { icon: Truck, label: "Sipariş Takibi", action: handleToggleStickerOrders, color: "text-primary", badge: unseenOrderCount > 0 ? unseenOrderCount : null, pulse: unseenOrderCount > 0 },
     { icon: Package, label: "Sticker Sipariş", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
   ];
 
