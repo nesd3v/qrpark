@@ -31,8 +31,10 @@ const SupportChatWidget = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastSeenRef = useRef<string | null>(null);
 
   const isAdminPage = location.pathname.startsWith("/admin");
 
