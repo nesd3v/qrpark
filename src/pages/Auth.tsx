@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Car, Phone, User, Mail, CheckCircle2, ArrowRight, Loader2,
