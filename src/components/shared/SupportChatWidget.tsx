@@ -55,6 +55,46 @@ const SupportChatWidget = () => {
     }
   }, []);
 
+  // Check for unread admin messages on mount
+  const checkUnread = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data: convs } = await supabase
+        .from("support_conversations")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "open")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (convs && convs.length > 0) {
+        const convId = convs[0].id;
+        if (!conversationId) setConversationId(convId);
+        // Get latest admin message
+        const { data: adminMsgs } = await supabase
+          .from("support_messages")
+          .select("created_at")
+          .eq("conversation_id", convId)
+          .eq("sender_type", "admin")
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (adminMsgs && adminMsgs.length > 0) {
+          const lastSeen = localStorage.getItem(`support_last_seen_${user.id}`);
+          if (!lastSeen || new Date(adminMsgs[0].created_at) > new Date(lastSeen)) {
+            setHasUnread(true);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [user, conversationId]);
+
+  useEffect(() => {
+    if (user) checkUnread();
+  }, [user, checkUnread]);
+
   const loadConversation = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -77,8 +117,13 @@ const SupportChatWidget = () => {
     setLoading(false);
   }, [user, fetchMessages]);
 
+  // Mark as read when opening chat
   useEffect(() => {
-    if (open && user) loadConversation();
+    if (open && user) {
+      loadConversation();
+      setHasUnread(false);
+      localStorage.setItem(`support_last_seen_${user.id}`, new Date().toISOString());
+    }
   }, [open, user, loadConversation]);
 
   useEffect(() => {
@@ -93,8 +138,12 @@ const SupportChatWidget = () => {
           table: "support_messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        () => {
+        (payload: any) => {
           fetchMessages(conversationId);
+          // If admin sent a message and chat is closed, show unread badge
+          if (payload?.new?.sender_type === "admin" && !open) {
+            setHasUnread(true);
+          }
         }
       )
       .subscribe();
@@ -102,7 +151,7 @@ const SupportChatWidget = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, fetchMessages]);
+  }, [conversationId, fetchMessages, open]);
 
   const ensureConversation = async (): Promise<string | null> => {
     if (conversationId) return conversationId;
