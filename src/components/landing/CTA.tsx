@@ -1,11 +1,12 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, QrCode, Package, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-const CTA = () => {
+const CTA = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <section className="py-24 border-t border-border">
+    <section ref={ref} className="py-24 border-t border-border">
       <div className="container mx-auto px-6">
         <motion.div
           className="max-w-3xl mx-auto text-center glass rounded-2xl p-12 relative overflow-hidden"
@@ -54,6 +55,8 @@ const CTA = () => {
       </div>
     </section>
   );
-};
+});
+
+CTA.displayName = "CTA";
 
 export default CTA;
