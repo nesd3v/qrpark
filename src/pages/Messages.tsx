@@ -142,7 +142,7 @@ const Messages = () => {
 
   if (authLoading || loading) {
     return (
-      <AppLayout title="Mesajlar">
+      <AppLayout title="Bildirimler">
         <div className="flex items-center justify-center pt-20">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
@@ -151,7 +151,7 @@ const Messages = () => {
   }
 
   return (
-    <AppLayout title="Mesajlar">
+    <AppLayout title="Bildirimler">
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
 
         {/* Tabs */}

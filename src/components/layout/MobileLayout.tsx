@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Car, ScanLine, MessageSquare, User } from "lucide-react";
+import { Home, Car, ScanLine, Bell, User } from "lucide-react";
 
 const tabs = [
   { id: "home", icon: Home, label: "Ana Sayfa", path: "/dashboard" },
   { id: "vehicles", icon: Car, label: "Araçlarım", path: "/generate" },
   { id: "scan", icon: ScanLine, label: "Tara", path: "/scan" },
-  { id: "messages", icon: MessageSquare, label: "Mesajlar", path: "/messages" },
+  { id: "messages", icon: Bell, label: "Bildirimler", path: "/messages" },
   { id: "profile", icon: User, label: "Profil", path: "/profile" },
 ];
 
