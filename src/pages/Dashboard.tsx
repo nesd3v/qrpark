@@ -152,31 +152,33 @@ const Dashboard = () => {
   ];
 
   return (
-    <AppLayout hideHeader>
-      {/* ===== TOP BAR ===== */}
-      <header className="sticky top-0 z-50 glass px-4 py-3">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Car className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-display font-bold text-foreground">
-              QR<span className="text-primary">Park</span>
-            </span>
-          </div>
-          <button
-            onClick={() => navigate("/notifications")}
-            className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
-          >
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            {notifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center">
-                {notifications.length > 9 ? "9+" : notifications.length}
+    <AppLayout hideHeader={isMobile}>
+      {/* ===== TOP BAR (mobile only) ===== */}
+      {isMobile && (
+        <header className="sticky top-0 z-50 glass px-4 py-3">
+          <div className="flex items-center justify-between max-w-lg mx-auto">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+                <Car className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-display font-bold text-foreground">
+                QR<span className="text-primary">Park</span>
               </span>
-            )}
-          </button>
-        </div>
-      </header>
+            </div>
+            <button
+              onClick={() => navigate("/notifications")}
+              className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
+            >
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center">
+                  {notifications.length > 9 ? "9+" : notifications.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
+      )}
 
       <div className="max-w-lg mx-auto px-4 py-5 space-y-6">
 
