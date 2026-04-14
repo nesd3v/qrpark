@@ -47,6 +47,8 @@ const Dashboard = () => {
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
   const [profileName, setProfileName] = useState<string>("");
   const [stickerOrders, setStickerOrders] = useState<StickerOrder[]>([]);
+  const [showStickerOrders, setShowStickerOrders] = useState(false);
+  const [seenOrderCount, setSeenOrderCount] = useState<number>(0);
   
 
   useEffect(() => {
