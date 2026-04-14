@@ -34,8 +34,7 @@ const SupportChatWidget = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Hide on admin page
-  if (location.pathname.startsWith("/admin")) return null;
+  const isAdminPage = location.pathname.startsWith("/admin");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
