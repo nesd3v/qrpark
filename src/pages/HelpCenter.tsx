@@ -107,7 +107,7 @@ const HelpCenter = () => {
           {/* Quick links */}
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => navigate("/messages")}
+              onClick={() => window.dispatchEvent(new Event("open-support-chat"))}
               className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors text-left"
             >
               <MessageCircle className="w-5 h-5 text-primary flex-shrink-0" />
@@ -179,7 +179,7 @@ const HelpCenter = () => {
               Uygulama içi destek sohbetinden veya <span className="text-primary">destek@qrpark.xyz</span> adresinden bize ulaşın.
             </p>
             <button
-              onClick={() => navigate("/messages")}
+              onClick={() => window.dispatchEvent(new Event("open-support-chat"))}
               className="px-5 py-2 rounded-lg gradient-primary text-primary-foreground text-sm font-semibold"
             >
               Destek Sohbeti Başlat

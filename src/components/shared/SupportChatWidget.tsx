@@ -26,6 +26,13 @@ const SupportChatWidget = () => {
   const location = useLocation();
   const isMobileApp = useIsMobileApp();
   const [open, setOpen] = useState(false);
+
+  // Listen for external open requests
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("open-support-chat", handler);
+    return () => window.removeEventListener("open-support-chat", handler);
+  }, []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
