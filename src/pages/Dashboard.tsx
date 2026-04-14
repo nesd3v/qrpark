@@ -339,6 +339,44 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
+          {/* ===== INLINE STICKER ORDERS ===== */}
+          <AnimatePresence>
+            {showStickerOrders && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="rounded-2xl border border-border bg-card overflow-hidden"
+              >
+                <div className="flex items-center gap-3 p-4 border-b border-border">
+                  <Package className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Sipariş Takibi</span>
+                </div>
+                {stickerOrders.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Henüz sipariş yok</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {stickerOrders.map((order) => {
+                      const status = stickerStatusMap[order.status] || stickerStatusMap.pending;
+                      const StatusIcon = status.icon;
+                      return (
+                        <div key={order.id} className="flex items-center gap-3 p-4">
+                          <StatusIcon className={`w-5 h-5 ${status.color} flex-shrink-0`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground">{order.plate}</p>
+                            <p className={`text-xs ${status.color}`}>{status.label}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* ===== RECENT NOTIFICATIONS ===== */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
