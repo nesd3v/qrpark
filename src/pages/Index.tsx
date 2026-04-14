@@ -16,12 +16,23 @@ const Index = () => {
   const isMobile = useIsMobileApp();
 
   useEffect(() => {
-    if (!loading && user) {
+    // Only redirect to dashboard on native mobile app, not on web browser
+    if (!loading && user && isMobile) {
       navigate("/dashboard", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isMobile]);
 
-  if (loading || user) {
+  // Show loading spinner only for mobile app users while checking auth
+  if (loading && isMobile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // On mobile app, if user is logged in, show spinner while redirecting
+  if (isMobile && user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
