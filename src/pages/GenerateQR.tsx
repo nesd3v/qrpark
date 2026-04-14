@@ -304,6 +304,7 @@ const GenerateQR = () => {
           plate: orderingStickerFor.plate,
           address: fullAddress,
           note: stickerNote.trim() || null,
+          stickerPackage,
         },
       });
       if (error) throw error;
