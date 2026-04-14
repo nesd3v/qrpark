@@ -285,6 +285,44 @@ export type Database = {
         }
         Relationships: []
       }
+      sticker_codes: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          code: string
+          created_at: string
+          id: string
+          status: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          status?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          status?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sticker_codes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sticker_orders: {
         Row: {
           address: string | null
