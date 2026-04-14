@@ -375,7 +375,7 @@ const SupportChatWidget = () => {
                         {["Sticker siparişim nerede?", "Hesabımla ilgili sorun var", "QR kodum çalışmıyor"].map((q) => (
                           <button
                             key={q}
-                            onClick={() => setInput(q)}
+                            onClick={() => sendMessage(undefined, undefined, q)}
                             className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
                           >
                             {q}
