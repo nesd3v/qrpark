@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   User, Phone, Save, CheckCircle2, ChevronRight, Pencil, X,
-  Bell, BellRing, Package, Truck, HelpCircle, Shield, FileText,
+  Package, Truck, HelpCircle, Shield, FileText,
   MessageCircle, Trash2, LogOut, MapPin, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -98,29 +98,6 @@ const Profile = () => {
     }
   };
 
-  const handleNotificationSettings = () => {
-    // Try to open app notification settings on native
-    if ("Notification" in window) {
-      if (Notification.permission === "default") {
-        Notification.requestPermission().then((perm) => {
-          if (perm === "granted") {
-            toast.success("Bildirimler açıldı!");
-            // Send a test notification
-            new Notification("QRPark", { body: "Bildirimler başarıyla açıldı! 🎉", icon: "/pwa-192x192.png" });
-          } else {
-            toast.info("Bildirimleri açmak için tarayıcı ayarlarından izin verin");
-          }
-        });
-      } else if (Notification.permission === "granted") {
-        toast.info("Bildirimler zaten açık");
-        new Notification("QRPark", { body: "Bildirimleriniz aktif 🔔", icon: "/pwa-192x192.png" });
-      } else {
-        toast.info("Bildirimleri açmak için tarayıcı/telefon ayarlarına gidin");
-      }
-    } else {
-      toast.info("Bu cihaz bildirimleri desteklemiyor");
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -285,33 +262,6 @@ const Profile = () => {
           )}
         </motion.div>
 
-        {/* ===== PUSH BİLDİRİMLERİ ===== */}
-        <motion.div
-          className="rounded-2xl bg-card border border-border overflow-hidden"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-        >
-          <button
-            onClick={handleNotificationSettings}
-            className="w-full flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <BellRing className="w-4 h-4 text-primary" />
-              </div>
-              <div className="text-left">
-                <span className="text-sm font-medium text-foreground block">Push Bildirimleri</span>
-                <span className="text-[11px] text-muted-foreground">
-                  {"Notification" in window && Notification.permission === "granted"
-                    ? "Bildirimler açık"
-                    : "Bildirimleri aç"}
-                </span>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
-        </motion.div>
 
         {/* ===== DESTEK ===== */}
         <motion.div
