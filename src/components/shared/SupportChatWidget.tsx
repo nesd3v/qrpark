@@ -31,8 +31,10 @@ const SupportChatWidget = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastSeenRef = useRef<string | null>(null);
 
   const isAdminPage = location.pathname.startsWith("/admin");
 
@@ -52,6 +54,46 @@ const SupportChatWidget = () => {
       setMessages(data.messages);
     }
   }, []);
+
+  // Check for unread admin messages on mount
+  const checkUnread = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data: convs } = await supabase
+        .from("support_conversations")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "open")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (convs && convs.length > 0) {
+        const convId = convs[0].id;
+        if (!conversationId) setConversationId(convId);
+        // Get latest admin message
+        const { data: adminMsgs } = await supabase
+          .from("support_messages")
+          .select("created_at")
+          .eq("conversation_id", convId)
+          .eq("sender_type", "admin")
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (adminMsgs && adminMsgs.length > 0) {
+          const lastSeen = localStorage.getItem(`support_last_seen_${user.id}`);
+          if (!lastSeen || new Date(adminMsgs[0].created_at) > new Date(lastSeen)) {
+            setHasUnread(true);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [user, conversationId]);
+
+  useEffect(() => {
+    if (user) checkUnread();
+  }, [user, checkUnread]);
 
   const loadConversation = useCallback(async () => {
     if (!user) return;
@@ -75,8 +117,13 @@ const SupportChatWidget = () => {
     setLoading(false);
   }, [user, fetchMessages]);
 
+  // Mark as read when opening chat
   useEffect(() => {
-    if (open && user) loadConversation();
+    if (open && user) {
+      loadConversation();
+      setHasUnread(false);
+      localStorage.setItem(`support_last_seen_${user.id}`, new Date().toISOString());
+    }
   }, [open, user, loadConversation]);
 
   useEffect(() => {
@@ -91,8 +138,12 @@ const SupportChatWidget = () => {
           table: "support_messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        () => {
+        (payload: any) => {
           fetchMessages(conversationId);
+          // If admin sent a message and chat is closed, show unread badge
+          if (payload?.new?.sender_type === "admin" && !open) {
+            setHasUnread(true);
+          }
         }
       )
       .subscribe();
@@ -100,7 +151,7 @@ const SupportChatWidget = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, fetchMessages]);
+  }, [conversationId, fetchMessages, open]);
 
   const ensureConversation = async (): Promise<string | null> => {
     if (conversationId) return conversationId;
@@ -226,10 +277,16 @@ const SupportChatWidget = () => {
       {/* Floating button */}
       <motion.button
         onClick={() => setOpen(!open)}
-        className={`fixed ${fabBottom} right-4 z-[60] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors`}
+        className={`fixed ${fabBottom} right-4 z-[60] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
+        {/* Unread badge */}
+        {hasUnread && !open && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center animate-pulse shadow-md">
+            !
+          </span>
+        )}
         <AnimatePresence mode="wait">
           {open ? (
             <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
