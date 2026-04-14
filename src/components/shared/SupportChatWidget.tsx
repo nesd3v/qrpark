@@ -278,8 +278,8 @@ const SupportChatWidget = () => {
       {/* Floating button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 relative"
-        style={{ right: '1.5rem', bottom: isMobileApp ? '6rem' : '1.5rem' }}
+        className="fixed z-[9999] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+        style={{ left: 'calc(100vw - 80px)', bottom: isMobileApp ? '6rem' : '1.5rem' }}
       >
         {/* Unread badge */}
         {hasUnread && !open && (
