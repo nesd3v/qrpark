@@ -479,6 +479,28 @@ const GenerateQR = () => {
                   </div>
                 </div>
 
+                {/* QR Type Badge */}
+                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                  <div className={`rounded-lg px-3 py-2.5 border ${activatedStickers[v.id] ? "border-primary/30 bg-primary/5" : "border-border bg-secondary"}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Sticker className={`w-3.5 h-3.5 ${activatedStickers[v.id] ? "text-primary" : "text-muted-foreground"}`} />
+                      <p className="text-xs font-medium text-muted-foreground">Fiziksel QR</p>
+                    </div>
+                    <p className={`font-semibold text-sm ${activatedStickers[v.id] ? "text-primary" : "text-muted-foreground"}`}>
+                      {activatedStickers[v.id] ? "Aktif ✓" : "Yok"}
+                    </p>
+                  </div>
+                  <div className={`rounded-lg px-3 py-2.5 border ${hasQR ? "border-primary/30 bg-primary/5" : "border-border bg-secondary"}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Monitor className={`w-3.5 h-3.5 ${hasQR ? "text-primary" : "text-muted-foreground"}`} />
+                      <p className="text-xs font-medium text-muted-foreground">Dijital QR</p>
+                    </div>
+                    <p className={`font-semibold text-sm ${hasQR ? "text-primary" : "text-muted-foreground"}`}>
+                      {hasQR ? "Aktif ✓" : "Yok"}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
                   <div className="bg-secondary rounded-lg px-3 py-2">
                     <p className="text-muted-foreground text-xs">Telefon</p>
