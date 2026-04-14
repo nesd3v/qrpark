@@ -273,7 +273,7 @@ const SupportChatWidget = () => {
 
   if (isAdminPage) return null;
 
-  return (
+  return createPortal(
     <>
       {/* Floating button */}
       <motion.button
