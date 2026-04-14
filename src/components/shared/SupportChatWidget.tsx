@@ -277,10 +277,16 @@ const SupportChatWidget = () => {
       {/* Floating button */}
       <motion.button
         onClick={() => setOpen(!open)}
-        className={`fixed ${fabBottom} right-4 z-[60] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors`}
+        className={`fixed ${fabBottom} right-4 z-[60] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
+        {/* Unread badge */}
+        {hasUnread && !open && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center animate-pulse shadow-md">
+            !
+          </span>
+        )}
         <AnimatePresence mode="wait">
           {open ? (
             <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
