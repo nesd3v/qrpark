@@ -219,6 +219,8 @@ const SupportChatWidget = () => {
   // Chat panel position: above the FAB
   const panelBottom = isMobileApp ? "bottom-40" : "bottom-24";
 
+  if (isAdminPage) return null;
+
   return (
     <>
       {/* Floating button */}
