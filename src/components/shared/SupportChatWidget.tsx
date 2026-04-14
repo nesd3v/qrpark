@@ -298,8 +298,12 @@ const SupportChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`fixed ${panelBottom} right-4 z-[61] w-[340px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden`}
-            style={{ height: isMobileApp ? "min(400px, calc(100vh - 220px))" : "min(480px, calc(100vh - 140px))" }}
+            className={`fixed z-[61] w-[340px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden`}
+            style={{ 
+              left: 'calc(100vw - 356px)', 
+              bottom: isMobileApp ? '10rem' : '6rem',
+              height: isMobileApp ? "min(400px, calc(100vh - 220px))" : "min(480px, calc(100vh - 140px))" 
+            }}
           >
             {/* Header */}
             <div className="px-4 py-3 border-b border-border bg-secondary/50 flex items-center gap-3 flex-shrink-0">
