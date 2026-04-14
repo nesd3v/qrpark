@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, Image as ImageIcon, FileText } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobileApp } from "@/hooks/useIsMobileApp";
 
 type Message = {
   id: string;
@@ -19,12 +20,10 @@ type Message = {
 const isImageType = (type: string | null | undefined) =>
   type === "image" || type?.startsWith("image/");
 
-const TABBAR_PAGES = ["/dashboard", "/messages", "/scan", "/generate", "/profile"];
-
 const SupportChatWidget = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const hasTabBar = TABBAR_PAGES.some(p => location.pathname.startsWith(p));
+  const isMobileApp = useIsMobileApp();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -34,6 +33,9 @@ const SupportChatWidget = () => {
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hide on admin page
+  if (location.pathname.startsWith("/admin")) return null;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -167,11 +169,6 @@ const SupportChatWidget = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("support-attachments")
-        .getPublicUrl(filePath);
-
-      // Since bucket is private, we store the path and use signed URLs
       const attachmentType = file.type.startsWith("image/") ? "image" : "file";
       await sendMessage(filePath, attachmentType);
     } catch {
@@ -205,35 +202,30 @@ const SupportChatWidget = () => {
     if (isImageType(msg.attachment_type)) {
       return (
         <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
-          <img
-            src={signedUrl}
-            alt="Ek"
-            className="max-w-full max-h-40 rounded-lg object-cover"
-            loading="lazy"
-          />
+          <img src={signedUrl} alt="Ek" className="max-w-full max-h-40 rounded-lg object-cover" loading="lazy" />
         </a>
       );
     }
 
     return (
-      <a
-        href={signedUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1.5 mt-1 text-xs underline opacity-80 hover:opacity-100"
-      >
+      <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 mt-1 text-xs underline opacity-80 hover:opacity-100">
         <FileText className="w-3.5 h-3.5" />
         Dosyayı Aç
       </a>
     );
   };
 
+  // Position: on mobile app, above bottom tab bar (bottom-24). On web, bottom-6.
+  const fabBottom = isMobileApp ? "bottom-24" : "bottom-6";
+  // Chat panel position: above the FAB
+  const panelBottom = isMobileApp ? "bottom-40" : "bottom-24";
+
   return (
     <>
       {/* Floating button */}
       <motion.button
         onClick={() => setOpen(!open)}
-        className={`fixed ${hasTabBar ? "bottom-20" : "bottom-6"} right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors`}
+        className={`fixed ${fabBottom} right-4 z-[60] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -258,10 +250,11 @@ const SupportChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-48px)] h-[480px] max-h-[calc(100vh-140px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
+            className={`fixed ${panelBottom} right-4 z-[61] w-[340px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden`}
+            style={{ height: isMobileApp ? "min(400px, calc(100vh - 220px))" : "min(480px, calc(100vh - 140px))" }}
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-border bg-secondary/50 flex items-center gap-3">
+            <div className="px-4 py-3 border-b border-border bg-secondary/50 flex items-center gap-3 flex-shrink-0">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                 <MessageCircle className="w-4 h-4 text-primary-foreground" />
               </div>
@@ -341,7 +334,7 @@ const SupportChatWidget = () => {
                 </div>
 
                 {/* Input */}
-                <div className="p-3 border-t border-border bg-secondary/30">
+                <div className="p-3 border-t border-border bg-secondary/30 flex-shrink-0">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -353,7 +346,7 @@ const SupportChatWidget = () => {
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={sending || uploading}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50 flex-shrink-0"
                       title="Dosya ekle"
                     >
                       {uploading ? (
@@ -374,7 +367,7 @@ const SupportChatWidget = () => {
                     <button
                       onClick={() => sendMessage()}
                       disabled={(!input.trim() && !uploading) || sending}
-                      className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0"
                     >
                       {sending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
