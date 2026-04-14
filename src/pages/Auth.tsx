@@ -19,10 +19,22 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+
+  // If already logged in, redirect away
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        navigate(redirect, { replace: true });
+      } else {
+        setAuthChecked(true);
+      }
+    });
+  }, [navigate, redirect]);
 
   const formatPhone = (val: string) => {
     if (!val.startsWith("+90")) val = "+90 " + val.replace(/^\+?9?0?\s*/, "");
