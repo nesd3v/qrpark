@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+// FAQ component
 import { motion } from "framer-motion";
 import {
   Accordion,
@@ -38,9 +38,9 @@ const faqs = [
   },
 ];
 
-const FAQ = forwardRef<HTMLElement>((_, ref) => {
+const FAQ = () => {
   return (
-    <section ref={ref} className="py-24 border-t border-border">
+    <section className="py-24 border-t border-border">
       <div className="container mx-auto px-6">
         <motion.div
           className="text-center mb-16"
@@ -82,8 +82,6 @@ const FAQ = forwardRef<HTMLElement>((_, ref) => {
       </div>
     </section>
   );
-});
-
-FAQ.displayName = "FAQ";
+};
 
 export default FAQ;
