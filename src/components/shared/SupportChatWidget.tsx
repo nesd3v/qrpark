@@ -441,7 +441,8 @@ const SupportChatWidget = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </>,
+    document.body
   );
 };
 
