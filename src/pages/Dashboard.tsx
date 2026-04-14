@@ -145,7 +145,7 @@ const Dashboard = () => {
   const quickActions = [
     { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary", badge: vehicles.length > 0 ? vehicles.length : null, pulse: false },
     { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
-    { icon: MessageSquare, label: "Mesajlar", action: () => navigate("/messages"), color: "text-primary", badge: null, pulse: false },
+    { icon: Bell, label: "Bildirimler", action: () => navigate("/messages"), color: "text-primary", badge: null, pulse: false },
     { icon: ScanLine, label: "QR Aktivasyon", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: true },
     { icon: Truck, label: "Sipariş Takibi", action: () => navigate("/generate"), color: "text-primary", badge: pendingOrderCount > 0 ? pendingOrderCount : null, pulse: pendingOrderCount > 0 },
     { icon: Package, label: "Sticker Sipariş", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
