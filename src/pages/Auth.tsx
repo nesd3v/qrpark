@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Car, Phone, User, Mail, CheckCircle2, ArrowRight, Loader2,
@@ -19,10 +19,22 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+
+  // If already logged in, redirect away
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        navigate(redirect, { replace: true });
+      } else {
+        setAuthChecked(true);
+      }
+    });
+  }, [navigate, redirect]);
 
   const formatPhone = (val: string) => {
     if (!val.startsWith("+90")) val = "+90 " + val.replace(/^\+?9?0?\s*/, "");
@@ -146,6 +158,14 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
