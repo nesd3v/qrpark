@@ -278,7 +278,8 @@ const SupportChatWidget = () => {
       {/* Floating button */}
       <motion.button
         onClick={() => setOpen(!open)}
-        className={`fixed ${isMobileApp ? "bottom-24" : "bottom-6"} right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative`}
+        className="fixed z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative"
+        style={{ right: '1.5rem', bottom: isMobileApp ? '6rem' : '1.5rem' }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
