@@ -38,6 +38,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
   const [stickerOrders, setStickerOrders] = useState<StickerOrder[]>([]);
 
   useEffect(() => {
