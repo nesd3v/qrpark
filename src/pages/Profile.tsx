@@ -38,6 +38,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
   const [stickerOrders, setStickerOrders] = useState<StickerOrder[]>([]);
 
   useEffect(() => {
@@ -229,36 +230,52 @@ const Profile = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center gap-3 p-4 border-b border-border">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Package className="w-4 h-4 text-primary" />
+          <button
+            onClick={() => setStickerOpen(!stickerOpen)}
+            className="w-full flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Package className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Sticker Sipariş Takibi</span>
             </div>
-            <span className="text-sm font-medium text-foreground">Sticker Sipariş Takibi</span>
-          </div>
+            <motion.div animate={{ rotate: stickerOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </motion.div>
+          </button>
 
-          {stickerOrders.length === 0 ? (
-            <div className="p-4 text-center">
-              <p className="text-sm text-muted-foreground">Henüz sipariş yok</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {stickerOrders.map((order) => {
-                const status = statusMap[order.status] || statusMap.pending;
-                const StatusIcon = status.icon;
-                return (
-                  <div key={order.id} className="flex items-center gap-3 p-4">
-                    <StatusIcon className={`w-5 h-5 ${status.color} flex-shrink-0`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{order.plate}</p>
-                      <p className={`text-xs ${status.color}`}>{status.label}</p>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(order.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+          {stickerOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              {stickerOrders.length === 0 ? (
+                <div className="p-4 text-center border-t border-border">
+                  <p className="text-sm text-muted-foreground">Henüz sipariş yok</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border border-t border-border">
+                  {stickerOrders.map((order) => {
+                    const status = statusMap[order.status] || statusMap.pending;
+                    const StatusIcon = status.icon;
+                    return (
+                      <div key={order.id} className="flex items-center gap-3 p-4">
+                        <StatusIcon className={`w-5 h-5 ${status.color} flex-shrink-0`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground">{order.plate}</p>
+                          <p className={`text-xs ${status.color}`}>{status.label}</p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
           )}
         </motion.div>
 
