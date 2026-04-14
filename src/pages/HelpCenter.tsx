@@ -107,7 +107,11 @@ const HelpCenter = () => {
           {/* Quick links */}
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => window.dispatchEvent(new Event("open-support-chat"))}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.dispatchEvent(new Event("open-support-chat"));
+              }}
               className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors text-left"
             >
               <MessageCircle className="w-5 h-5 text-primary flex-shrink-0" />
