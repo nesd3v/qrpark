@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -272,14 +273,13 @@ const SupportChatWidget = () => {
 
   if (isAdminPage) return null;
 
-  return (
+  return createPortal(
     <>
       {/* Floating button */}
-      <motion.button
+      <button
         onClick={() => setOpen(!open)}
-        className={`fixed ${isMobileApp ? "bottom-24" : "bottom-6"} right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative`}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        className="fixed z-[9999] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+        style={{ left: 'calc(100vw - 80px)', bottom: isMobileApp ? '6rem' : '1.5rem' }}
       >
         {/* Unread badge */}
         {hasUnread && !open && (
@@ -287,18 +287,8 @@ const SupportChatWidget = () => {
             !
           </span>
         )}
-        <AnimatePresence mode="wait">
-          {open ? (
-            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
-              <X className="w-6 h-6" />
-            </motion.div>
-          ) : (
-            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
-              <MessageCircle className="w-6 h-6" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.button>
+        {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+      </button>
 
       {/* Chat panel */}
       <AnimatePresence>
@@ -308,8 +298,12 @@ const SupportChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`fixed ${panelBottom} right-4 z-[61] w-[340px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden`}
-            style={{ height: isMobileApp ? "min(400px, calc(100vh - 220px))" : "min(480px, calc(100vh - 140px))" }}
+            className={`fixed z-[61] w-[340px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden`}
+            style={{ 
+              left: 'calc(100vw - 356px)', 
+              bottom: isMobileApp ? '10rem' : '6rem',
+              height: isMobileApp ? "min(400px, calc(100vh - 220px))" : "min(480px, calc(100vh - 140px))" 
+            }}
           >
             {/* Header */}
             <div className="px-4 py-3 border-b border-border bg-secondary/50 flex items-center gap-3 flex-shrink-0">
@@ -440,7 +434,8 @@ const SupportChatWidget = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </>,
+    document.body
   );
 };
 
