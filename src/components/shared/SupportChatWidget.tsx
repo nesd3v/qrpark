@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
