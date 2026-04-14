@@ -38,7 +38,7 @@ serve(async (req) => {
     const userId = user.id;
     const email = user.email || "";
 
-    const { vehicleId, plate, address, note } = await req.json();
+    const { vehicleId, plate, address, note, stickerPackage } = await req.json();
     if (!vehicleId || !plate || !address?.trim()) {
       return new Response(JSON.stringify({ error: "vehicleId, plate ve address gerekli" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -46,13 +46,15 @@ serve(async (req) => {
       });
     }
 
+    const packageCount = stickerPackage === 2 ? 2 : 1;
+
     const merchantId = Deno.env.get("PAYTR_MERCHANT_ID") ?? "";
     const merchantKey = Deno.env.get("PAYTR_MERCHANT_KEY") ?? "";
     const merchantSalt = Deno.env.get("PAYTR_MERCHANT_SALT") ?? "";
 
     const sanitizedUserId = userId.replace(/-/g, "");
     const merchantOid = `STK${sanitizedUserId}${Date.now()}`;
-    const paymentAmount = 4900; // 49.00 TL kuruş cinsinden
+    const paymentAmount = packageCount === 2 ? 7500 : 5000; // kuruş cinsinden
     const currency = "TL";
     const userIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "85.34.78.112";
     const origin = req.headers.get("origin") || "https://qrpark.xyz";
@@ -86,7 +88,7 @@ serve(async (req) => {
     const userAddress = address.trim();
     const userPhone = user.user_metadata?.phone || user.phone || "05000000000";
     const userBasket = base64Encode(
-      JSON.stringify([["QRPark Sticker", paymentAmount / 100, 1]])
+      JSON.stringify([[`QRPark Sticker x${packageCount}`, paymentAmount / 100, 1]])
     );
     const noInstallment = 1;
     const maxInstallment = 0;
