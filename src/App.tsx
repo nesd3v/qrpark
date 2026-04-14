@@ -10,6 +10,7 @@ import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
 import Messages from "./pages/Messages";
 import Scan from "./pages/Scan";
+import ActivateQR from "./pages/ActivateQR";
 
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/scan" element={<Scan />} />
+          <Route path="/activate" element={<ActivateQR />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/pricing" element={<Pricing />} />
