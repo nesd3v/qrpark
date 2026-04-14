@@ -54,13 +54,8 @@ const Dashboard = () => {
       navigate("/auth?redirect=/dashboard");
       return;
     }
-    // Web users don't have the mobile dashboard — redirect to home
-    if (!authLoading && user && !isMobile) {
-      navigate("/", { replace: true });
-      return;
-    }
     if (user) fetchData();
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (!selectedVehicle) return;
