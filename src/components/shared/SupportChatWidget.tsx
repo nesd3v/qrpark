@@ -174,10 +174,11 @@ const SupportChatWidget = () => {
     return data.conversation_id;
   };
 
-  const sendMessage = async (attachmentUrl?: string, attachmentType?: string) => {
-    if ((!input.trim() && !attachmentUrl) || !user || sending) return;
+  const sendMessage = async (attachmentUrl?: string, attachmentType?: string, overrideText?: string) => {
+    const textToSend = overrideText ?? input.trim();
+    if ((!textToSend && !attachmentUrl) || !user || sending) return;
 
-    const messageText = input.trim();
+    const messageText = textToSend;
     setInput("");
     setSending(true);
 
@@ -374,7 +375,7 @@ const SupportChatWidget = () => {
                         {["Sticker siparişim nerede?", "Hesabımla ilgili sorun var", "QR kodum çalışmıyor"].map((q) => (
                           <button
                             key={q}
-                            onClick={() => setInput(q)}
+                            onClick={() => sendMessage(undefined, undefined, q)}
                             className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
                           >
                             {q}
