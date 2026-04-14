@@ -174,10 +174,11 @@ const SupportChatWidget = () => {
     return data.conversation_id;
   };
 
-  const sendMessage = async (attachmentUrl?: string, attachmentType?: string) => {
-    if ((!input.trim() && !attachmentUrl) || !user || sending) return;
+  const sendMessage = async (attachmentUrl?: string, attachmentType?: string, overrideText?: string) => {
+    const textToSend = overrideText ?? input.trim();
+    if ((!textToSend && !attachmentUrl) || !user || sending) return;
 
-    const messageText = input.trim();
+    const messageText = textToSend;
     setInput("");
     setSending(true);
 
