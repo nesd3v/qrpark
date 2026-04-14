@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   Car, Plus, Pencil, Trash2, ChevronLeft, Loader2, QrCode,
   CheckCircle2, Package, Truck, MapPin, Clock, CreditCard,
+  Monitor, Sticker, Shield, Zap, Sun, CloudRain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +108,11 @@ const GenerateQR = () => {
   const [stickerNote, setStickerNote] = useState("");
   const [orderingStickerFor, setOrderingStickerFor] = useState<Vehicle | null>(null);
   const [orderingSticker, setOrderingSticker] = useState(false);
-  const [stickerStep, setStickerStep] = useState<"address" | "summary">("address");
+  const [stickerStep, setStickerStep] = useState<"package" | "address" | "summary">("package");
+  const [stickerPackage, setStickerPackage] = useState<1 | 2>(1);
+
+  // Sticker codes for this user
+  const [activatedStickers, setActivatedStickers] = useState<Record<string, boolean>>({});
 
   // Address form fields
   const [addrCity, setAddrCity] = useState("");
@@ -134,6 +139,7 @@ const GenerateQR = () => {
     if (user) {
       fetchVehicles();
       fetchStickerOrders();
+      fetchActivatedStickers();
     }
     // Check for payment result in URL
     const params = new URLSearchParams(window.location.search);
@@ -145,6 +151,19 @@ const GenerateQR = () => {
       window.history.replaceState({}, "", "/generate");
     }
   }, [user, authLoading]);
+
+  const fetchActivatedStickers = async () => {
+    const { data } = await supabase
+      .from("sticker_codes")
+      .select("vehicle_id")
+      .eq("activated_by", user!.id)
+      .eq("status", "activated");
+    if (data) {
+      const map: Record<string, boolean> = {};
+      data.forEach((s: any) => { if (s.vehicle_id) map[s.vehicle_id] = true; });
+      setActivatedStickers(map);
+    }
+  };
 
   const fetchVehicles = async () => {
     setLoadingVehicle(true);
@@ -311,8 +330,11 @@ const GenerateQR = () => {
     setAddrCity(""); setAddrDistrict(""); setAddrNeighborhood("");
     setAddrStreet(""); setAddrBuildingNo(""); setAddrFloor("");
     setAddrApartment(""); setAddrPostalCode(""); setStickerNote("");
-    setStickerStep("address");
+    setStickerStep("package"); setStickerPackage(1);
   };
+
+  const stickerPrice = stickerPackage === 1 ? 5000 : 7500;
+  const stickerPriceLabel = stickerPackage === 1 ? "₺50.00" : "₺75.00";
 
   const notifyUrl = (plate: string) => `${window.location.origin}/notify/${encodeURIComponent(plate)}`;
 
