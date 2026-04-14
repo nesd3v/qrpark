@@ -1,3 +1,4 @@
+// FAQ component
 import { motion } from "framer-motion";
 import {
   Accordion,
