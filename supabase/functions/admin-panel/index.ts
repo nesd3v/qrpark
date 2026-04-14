@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, vehicle_id, status: newStatus, note, user_email, max_vehicles, search, issue_type, date_from, date_to, page, order_id } = await req.json();
+    const { action, vehicle_id, status: newStatus, note, user_email, max_vehicles, search, issue_type, date_from, date_to, page, order_id, codes, count, code_id } = await req.json();
 
     // LIST pending verifications
     if (action === "list") {
@@ -384,6 +384,70 @@ Deno.serve(async (req) => {
         .eq("id", oid);
       if (updateError) {
         return new Response(JSON.stringify({ error: "Failed to update" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // STICKER CODES - LIST
+    if (action === "sticker-codes-list") {
+      let query = supabase
+        .from("sticker_codes")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      
+      if (newStatus && newStatus !== "all") {
+        query = query.eq("status", newStatus);
+      }
+
+      const { data: codesData, error: codesError } = await query;
+      if (codesError) {
+        return new Response(JSON.stringify({ error: "Failed to fetch codes" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ codes: codesData || [] }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // STICKER CODES - ADD (single or multiple)
+    if (action === "sticker-codes-add") {
+      if (!codes || !Array.isArray(codes) || codes.length === 0) {
+        return new Response(JSON.stringify({ error: "codes array required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const rows = codes.map((c: string) => ({ code: c.trim().toUpperCase(), status: "available" }));
+      const { error: insertError } = await supabase.from("sticker_codes").insert(rows);
+      if (insertError) {
+        return new Response(JSON.stringify({ error: insertError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ success: true, count: rows.length }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // STICKER CODES - BULK GENERATE
+    if (action === "sticker-codes-generate") {
+      const genCount = Math.min(Math.max(count || 10, 1), 500);
+      const generatedCodes: string[] = [];
+      for (let i = 0; i < genCount; i++) {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let code = "QRP-";
+        for (let j = 0; j < 8; j++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        generatedCodes.push(code);
+      }
+      const rows = generatedCodes.map(c => ({ code: c, status: "available" }));
+      const { error: insertError } = await supabase.from("sticker_codes").insert(rows);
+      if (insertError) {
+        return new Response(JSON.stringify({ error: insertError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({ success: true, count: genCount }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // STICKER CODES - DELETE
+    if (action === "sticker-codes-delete") {
+      if (!code_id) {
+        return new Response(JSON.stringify({ error: "code_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error: delError } = await supabase.from("sticker_codes").delete().eq("id", code_id).eq("status", "available");
+      if (delError) {
+        return new Response(JSON.stringify({ error: delError.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

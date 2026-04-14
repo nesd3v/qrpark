@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   Car, Plus, Pencil, Trash2, ChevronLeft, Loader2, QrCode,
   CheckCircle2, Package, Truck, MapPin, Clock, CreditCard,
+  Monitor, Sticker, Shield, Zap, Sun, CloudRain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +108,11 @@ const GenerateQR = () => {
   const [stickerNote, setStickerNote] = useState("");
   const [orderingStickerFor, setOrderingStickerFor] = useState<Vehicle | null>(null);
   const [orderingSticker, setOrderingSticker] = useState(false);
-  const [stickerStep, setStickerStep] = useState<"address" | "summary">("address");
+  const [stickerStep, setStickerStep] = useState<"package" | "address" | "summary">("package");
+  const [stickerPackage, setStickerPackage] = useState<1 | 2>(1);
+
+  // Sticker codes for this user
+  const [activatedStickers, setActivatedStickers] = useState<Record<string, boolean>>({});
 
   // Address form fields
   const [addrCity, setAddrCity] = useState("");
@@ -134,6 +139,7 @@ const GenerateQR = () => {
     if (user) {
       fetchVehicles();
       fetchStickerOrders();
+      fetchActivatedStickers();
     }
     // Check for payment result in URL
     const params = new URLSearchParams(window.location.search);
@@ -145,6 +151,19 @@ const GenerateQR = () => {
       window.history.replaceState({}, "", "/generate");
     }
   }, [user, authLoading]);
+
+  const fetchActivatedStickers = async () => {
+    const { data } = await supabase
+      .from("sticker_codes")
+      .select("vehicle_id")
+      .eq("activated_by", user!.id)
+      .eq("status", "activated");
+    if (data) {
+      const map: Record<string, boolean> = {};
+      data.forEach((s: any) => { if (s.vehicle_id) map[s.vehicle_id] = true; });
+      setActivatedStickers(map);
+    }
+  };
 
   const fetchVehicles = async () => {
     setLoadingVehicle(true);
@@ -285,6 +304,7 @@ const GenerateQR = () => {
           plate: orderingStickerFor.plate,
           address: fullAddress,
           note: stickerNote.trim() || null,
+          stickerPackage,
         },
       });
       if (error) throw error;
@@ -311,8 +331,11 @@ const GenerateQR = () => {
     setAddrCity(""); setAddrDistrict(""); setAddrNeighborhood("");
     setAddrStreet(""); setAddrBuildingNo(""); setAddrFloor("");
     setAddrApartment(""); setAddrPostalCode(""); setStickerNote("");
-    setStickerStep("address");
+    setStickerStep("package"); setStickerPackage(1);
   };
+
+  const stickerPrice = stickerPackage === 1 ? 5000 : 7500;
+  const stickerPriceLabel = stickerPackage === 1 ? "₺50.00" : "₺75.00";
 
   const notifyUrl = (plate: string) => `${window.location.origin}/notify/${encodeURIComponent(plate)}`;
 
@@ -457,6 +480,28 @@ const GenerateQR = () => {
                   </div>
                 </div>
 
+                {/* QR Type Badge */}
+                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                  <div className={`rounded-lg px-3 py-2.5 border ${activatedStickers[v.id] ? "border-primary/30 bg-primary/5" : "border-border bg-secondary"}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Sticker className={`w-3.5 h-3.5 ${activatedStickers[v.id] ? "text-primary" : "text-muted-foreground"}`} />
+                      <p className="text-xs font-medium text-muted-foreground">Fiziksel QR</p>
+                    </div>
+                    <p className={`font-semibold text-sm ${activatedStickers[v.id] ? "text-primary" : "text-muted-foreground"}`}>
+                      {activatedStickers[v.id] ? "Aktif ✓" : "Yok"}
+                    </p>
+                  </div>
+                  <div className={`rounded-lg px-3 py-2.5 border ${hasQR ? "border-primary/30 bg-primary/5" : "border-border bg-secondary"}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Monitor className={`w-3.5 h-3.5 ${hasQR ? "text-primary" : "text-muted-foreground"}`} />
+                      <p className="text-xs font-medium text-muted-foreground">Dijital QR</p>
+                    </div>
+                    <p className={`font-semibold text-sm ${hasQR ? "text-primary" : "text-muted-foreground"}`}>
+                      {hasQR ? "Aktif ✓" : "Yok"}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
                   <div className="bg-secondary rounded-lg px-3 py-2">
                     <p className="text-muted-foreground text-xs">Telefon</p>
@@ -529,14 +574,88 @@ const GenerateQR = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-primary" />
-                {stickerStep === "address" ? "Teslimat Adresi" : "Sipariş Özeti"}
+                {stickerStep === "package" ? "Paket Seçin" : stickerStep === "address" ? "Teslimat Adresi" : "Sipariş Özeti"}
               </DialogTitle>
               <DialogDescription>
                 {orderingStickerFor?.plate} plakalı aracınız için QR sticker gönderelim.
               </DialogDescription>
             </DialogHeader>
 
-            {stickerStep === "address" ? (
+            {stickerStep === "package" ? (
+              <div className="space-y-4">
+                {/* Advantages */}
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" /> Fiziksel QR Sticker Avantajları
+                  </h4>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-start gap-2">
+                      <Sun className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>UV korumalı, <span className="text-foreground font-medium">güneş ve yağmura dayanıklı</span></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CloudRain className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Su geçirmez, <span className="text-foreground font-medium">dış mekan kalitesinde</span> baskı</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Zap className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Dijital QR'dan <span className="text-foreground font-medium">daha hızlı taranır</span>, her zaman hazır</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <QrCode className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Profesyonel görünüm, <span className="text-foreground font-medium">7/24 aktif</span> bildirim</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Package options */}
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setStickerPackage(1)}
+                    className={`w-full rounded-xl p-4 border-2 text-left transition-all ${
+                      stickerPackage === 1 ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-foreground">1 Adet Sticker</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Tek araç için ideal</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-display font-bold text-foreground">₺50</p>
+                        <p className="text-[10px] text-muted-foreground">Kargo dahil</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setStickerPackage(2)}
+                    className={`w-full rounded-xl p-4 border-2 text-left transition-all relative ${
+                      stickerPackage === 2 ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                      AVANTAJLI
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-foreground">2 Adet Sticker</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">İki araç veya yedek için</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-display font-bold text-foreground">₺75</p>
+                        <p className="text-[10px] text-muted-foreground line-through">₺100</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <Button onClick={() => setStickerStep("address")}
+                  className="w-full gradient-primary text-primary-foreground font-semibold py-5">
+                  Devam Et
+                </Button>
+              </div>
+            ) : stickerStep === "address" ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -578,10 +697,15 @@ const GenerateQR = () => {
                   <Label className="text-xs">Not (opsiyonel)</Label>
                   <Input placeholder="Kapıda zil yok, lütfen arayın..." value={stickerNote} onChange={(e) => setStickerNote(e.target.value)} />
                 </div>
-                <Button onClick={() => setStickerStep("summary")} disabled={!isAddressValid()}
-                  className="w-full gradient-primary text-primary-foreground font-semibold py-5">
-                  Devam Et
-                </Button>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStickerStep("package")} className="flex-1">
+                    Geri
+                  </Button>
+                  <Button onClick={() => setStickerStep("summary")} disabled={!isAddressValid()}
+                    className="flex-1 gradient-primary text-primary-foreground font-semibold py-5">
+                    Devam Et
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -591,6 +715,15 @@ const GenerateQR = () => {
                   <div>
                     <p className="font-display font-bold text-foreground tracking-wider text-sm">{orderingStickerFor?.plate}</p>
                     <p className="text-xs text-muted-foreground">{orderingStickerFor?.brand} {orderingStickerFor?.model}</p>
+                  </div>
+                </div>
+
+                {/* Package info */}
+                <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
+                  <Package className="w-4 h-4 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Paket</p>
+                    <p className="text-sm text-foreground font-medium">{stickerPackage} Adet Sticker</p>
                   </div>
                 </div>
 
@@ -614,8 +747,8 @@ const GenerateQR = () => {
 
                 {/* Price */}
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-display font-bold text-foreground">₺49.00</p>
-                  <p className="text-xs text-muted-foreground">Sticker + Kargo ücreti dahil</p>
+                  <p className="text-2xl font-display font-bold text-foreground">{stickerPriceLabel}</p>
+                  <p className="text-xs text-muted-foreground">{stickerPackage} Adet Sticker + Kargo ücreti dahil</p>
                 </div>
 
                 <div className="flex gap-3">
