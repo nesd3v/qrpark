@@ -68,11 +68,13 @@ const Terms = () => {
             </section>
 
             <section>
-              <h2 className="text-base font-display font-semibold text-foreground mb-2">5. Sticker Siparişleri</h2>
+              <h2 className="text-base font-display font-semibold text-foreground mb-2">5. Premium ve Kurumsal Abonelik</h2>
               <ul className="list-disc list-inside space-y-1">
-                <li>Fiziksel QR sticker siparişleri belirtilen adrese kargo ile gönderilir</li>
-                <li>Teslimat süresi konuma bağlı olarak 3-7 iş günüdür</li>
-                <li>Hatalı adres nedeniyle oluşan gecikmelerden QRPark sorumlu değildir</li>
+                <li>Premium abonelikler aylık (₺49) veya yıllık (₺499) olarak satın alınabilir</li>
+                <li>Ödeme işlemleri PayTR güvenli ödeme altyapısı üzerinden gerçekleştirilir</li>
+                <li>Aboneliğinizi istediğiniz zaman Profil &gt; Abonelik sayfasından iptal edebilirsiniz</li>
+                <li>İptal sonrası dönem sonuna kadar premium özellikleri kullanmaya devam edersiniz</li>
+                <li>Kurumsal plan için iletişim formundan başvuru yapılır, admin onayı sonrası aktifleşir</li>
               </ul>
             </section>
 

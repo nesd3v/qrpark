@@ -1,4 +1,3 @@
-// FAQ component
 import { motion } from "framer-motion";
 import {
   Accordion,
@@ -10,27 +9,27 @@ import {
 const faqs = [
   {
     q: "QRPark ücretsiz mi?",
-    a: "Evet! Araç kaydı oluşturmak ve bildirim almak tamamen ücretsizdir. Sadece fiziksel sticker siparişi için ücret alınır.",
+    a: "Evet! Temel özellikler tamamen ücretsizdir — araç kaydı, QR oluşturma ve bildirim alma. Süresiz QR ve sınırsız özellikler için Premium aboneliğe geçebilirsiniz.",
   },
   {
-    q: "QR kodlu sticker'ı nasıl edinebilirim?",
-    a: "Aracınızı kaydettikten sonra 'Sticker Sipariş Et' butonuna tıklayarak teslimat adresinizi girin. Sticker'ınız kapınıza kadar gönderilir.",
+    q: "Premium plan ne sunuyor?",
+    a: "Premium ile QR kodunuz hiç sona ermez, sınırsız bildirim alırsınız, öncelikli destek hattı ve gelişmiş istatistiklere erişiminiz olur. Aylık ₺49 veya yıllık ₺499 (~%15 indirim).",
+  },
+  {
+    q: "Kurumsal plan nasıl çalışıyor?",
+    a: "Filo sahipleri için özel kurumsal panel sunuyoruz. İletişim formundan başvurun, ekibimiz onayladıktan sonra çoklu araç yönetimi yapabileceğiniz kurumsal panele erişim kazanırsınız.",
   },
   {
     q: "QR kodu okutan kişi bilgilerimi görebilir mi?",
-    a: "Hayır. QR kodu okutan kişi sadece sorun türünü seçip bildirim gönderebilir. Telefon numaranız veya kişisel bilgileriniz paylaşılmaz.",
+    a: "Hayır. QR kodu okutan kişi sadece sorun türünü seçip bildirim gönderebilir. Telefon numaranız veya kişisel bilgileriniz asla paylaşılmaz.",
   },
   {
     q: "Bildirimler nasıl geliyor?",
-    a: "Kayıt sırasında verdiğiniz telefon numarasına SMS olarak bildirim gönderilir.",
+    a: "Kayıt sırasında verdiğiniz telefon numarasına SMS olarak anında bildirim gönderilir.",
   },
   {
-    q: "Sticker'ım kaybolursa ne yapmalıyım?",
-    a: "Yeni bir sticker sipariş edebilirsiniz. Aynı QR kodunuz yeni sticker'ınızda da geçerli olacaktır.",
-  },
-  {
-    q: "Birden fazla araç için sticker alabilir miyim?",
-    a: "Evet, her araç için ayrı kayıt oluşturup her birine sticker sipariş edebilirsiniz.",
+    q: "Premium aboneliğimi nasıl iptal edebilirim?",
+    a: "Profil > Abonelik sayfasından tek tıkla iptal edebilirsiniz. Ödediğiniz dönem sonuna kadar premium özellikleri kullanmaya devam edersiniz.",
   },
   {
     q: "Sahte bildirim gönderilmesini nasıl engelliyorsunuz?",
