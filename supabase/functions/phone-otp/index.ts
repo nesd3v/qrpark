@@ -28,6 +28,47 @@ function getSupabase() {
   );
 }
 
+async function sendTwilioSms(to: string, body: string) {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+  if (!accountSid) throw new Error("TWILIO_ACCOUNT_SID missing");
+  if (!authToken) throw new Error("TWILIO_AUTH_TOKEN missing");
+  if (!fromNumber) throw new Error("TWILIO_PHONE_NUMBER missing");
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
+    },
+    body: new URLSearchParams({ To: to, From: fromNumber, Body: body }),
+  });
+
+  const payload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    console.error("Twilio OTP error:", payload);
+    throw new Error(payload?.message || payload?.error_message || "SMS gönderilemedi");
+  }
+
+  if (payload?.error_code || payload?.error_message) {
+    console.error("Twilio OTP delivery warning:", payload);
+    throw new Error(payload.error_message || "SMS teslim edilemedi");
+  }
+
+  console.log("Twilio OTP accepted", {
+    sid: payload?.sid,
+    status: payload?.status,
+    to,
+  });
+
+  return payload;
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -75,27 +116,9 @@ Deno.serve(async (req) => {
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       });
 
-      const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID")!;
-      const authToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-      const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER")!;
-
-      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
       const message = `QRPark dogrulama kodunuz: ${otpCode}. Bu kodu kimseyle paylasmayin.`;
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
-        },
-        body: new URLSearchParams({ To: normalizedPhone, From: fromNumber, Body: message }),
-      });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => null);
-        console.error("Twilio OTP error:", errJson);
-        return jsonResponse({ error: "SMS gönderilemedi" }, 500);
-      }
+      await sendTwilioSms(normalizedPhone, message);
 
       console.log("OTP sent to", normalizedPhone);
       return jsonResponse({ success: true, message: "Doğrulama kodu gönderildi" });
