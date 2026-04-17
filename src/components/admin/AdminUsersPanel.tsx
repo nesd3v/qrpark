@@ -114,11 +114,11 @@ const AdminUsersPanel = () => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground text-sm truncate">{u.full_name || "İsimsiz"}</span>
                         {u.corporate_member ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-500/20 to-primary/20 text-primary border border-primary/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary border border-primary/30">
                             <Crown className="w-3 h-3 fill-current" /> Kurumsal
                           </span>
                         ) : u.subscription?.status === "active" && (!u.subscription.subscription_end || new Date(u.subscription.subscription_end) > new Date()) ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning/15 text-warning border border-warning/30">
                             <Crown className="w-3 h-3 fill-current" /> Premium
                           </span>
                         ) : (

@@ -363,6 +363,19 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Get corporate memberships
+      let corporateMembers: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: members } = await supabase
+          .from("corporate_members")
+          .select("user_id, company_name, plan_type, max_vehicles, is_active")
+          .in("user_id", userIds)
+          .eq("is_active", true);
+        if (members) {
+          for (const m of members) corporateMembers[m.user_id] = m;
+        }
+      }
+
       // Get user emails from auth
       const { data: { users: authUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
       const emailMap: Record<string, string> = {};
@@ -375,6 +388,7 @@ Deno.serve(async (req) => {
         email: emailMap[p.user_id] || "",
         subscription: subscriptions[p.user_id] || null,
         vehicle_count: vehicleCounts[p.user_id] || 0,
+        corporate_member: corporateMembers[p.user_id] || null,
       }));
 
       return new Response(JSON.stringify({ users: enriched, total: count || 0 }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });

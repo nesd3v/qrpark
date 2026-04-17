@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Building2, Car, Bell, Loader2, Users, ShieldCheck, Clock, BarChart3 } from "lucide-react";
+import { Building2, Car, Bell, Loader2, ShieldCheck, Clock, BarChart3, Crown } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,9 +90,14 @@ const CorporateDashboard = () => {
               <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-primary-foreground" />
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-primary font-bold">Kurumsal Filo</p>
-                <h1 className="text-2xl font-display font-bold text-foreground">{membership.company_name}</h1>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-xs uppercase tracking-wider text-primary font-bold">Kurumsal Filo</p>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary border border-primary/30">
+                    <Crown className="w-3 h-3 fill-current" /> Kurumsal Üye
+                  </span>
+                </div>
+                <h1 className="text-2xl font-display font-bold text-foreground truncate">{membership.company_name}</h1>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-8">
