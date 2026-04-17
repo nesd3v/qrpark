@@ -23,6 +23,11 @@ type UserProfile = {
     subscription_end: string | null;
     amount: number;
   } | null;
+  corporate_member?: {
+    company_name: string;
+    plan_type: string;
+    max_vehicles: number;
+  } | null;
 };
 
 const AdminUsersPanel = () => {
@@ -106,9 +111,19 @@ const AdminUsersPanel = () => {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground text-sm truncate">{u.full_name || "İsimsiz"}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${badge.color}`}>{badge.label}</span>
+                        {u.corporate_member ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary border border-primary/30">
+                            <Crown className="w-3 h-3 fill-current" /> Kurumsal
+                          </span>
+                        ) : u.subscription?.status === "active" && (!u.subscription.subscription_end || new Date(u.subscription.subscription_end) > new Date()) ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning/15 text-warning border border-warning/30">
+                            <Crown className="w-3 h-3 fill-current" /> Premium
+                          </span>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${badge.color}`}>{badge.label}</span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                     </div>
