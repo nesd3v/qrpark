@@ -1,11 +1,11 @@
 ---
 name: Revenue Model
-description: Hem dijital QR hem fiziksel sticker desteklenir. Sticker aktivasyon sistemi mevcut.
+description: Free tier + Premium subscription (₺49 monthly / ₺499 yearly) + Corporate plan with admin approval. Sticker system removed.
 type: feature
 ---
-İş modeli hem dijital QR hem fiziksel sticker satışını destekler.
-- Dijital QR: Kullanıcılar araç kaydı sonrası otomatik 7 günlük QR kodu alır
-- Fiziksel Sticker: Sipariş edilen sticker'lar `sticker_codes` tablosunda pre-register edilir
-- Sticker Aktivasyon: 3 adımlı akış (yapıştır → QR tara → araç bilgisi gir) `/activate` rotasında
-- Dashboard'da "QR Aktivasyon" butonu `/activate` sayfasına yönlendirir
-- Premium abonelik sistemi arka planda, sticker satışı ana gelir kaynağı
+İş modeli abonelik tabanlıdır:
+- Ücretsiz kullanıcılar: Araç kaydı, QR oluşturma, SMS bildirim alma (7 günlük QR yenileme)
+- Premium (Bireysel): Aylık ₺49 / Yıllık ₺499. PayTR ile otomatik aktivasyon. Süresiz QR, sınırsız bildirim, öncelikli destek
+- Kurumsal: İletişim formundan başvuru → admin onayı → corporate_members tablosuna eklenir → /corporate-dashboard erişimi
+- Fiziksel sticker satışı tamamen kaldırıldı. sticker_codes ve sticker_orders tabloları drop edildi.
+- /activate, AdminStickerPanel, create-sticker-payment edge function kaldırıldı.

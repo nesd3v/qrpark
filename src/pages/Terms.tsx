@@ -72,7 +72,7 @@ const Terms = () => {
               <ul className="list-disc list-inside space-y-1">
                 <li>Premium abonelikler aylık (₺49) veya yıllık (₺499) olarak satın alınabilir</li>
                 <li>Ödeme işlemleri PayTR güvenli ödeme altyapısı üzerinden gerçekleştirilir</li>
-                <li>Aboneliğinizi istediğiniz zaman Profil > Abonelik sayfasından iptal edebilirsiniz</li>
+                <li>Aboneliğinizi istediğiniz zaman Profil &gt; Abonelik sayfasından iptal edebilirsiniz</li>
                 <li>İptal sonrası dönem sonuna kadar premium özellikleri kullanmaya devam edersiniz</li>
                 <li>Kurumsal plan için iletişim formundan başvuru yapılır, admin onayı sonrası aktifleşir</li>
               </ul>
