@@ -2,9 +2,9 @@ import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, Car, ParkingCircle, Lightbulb, AlertTriangle, Wind,
-  MoreHorizontal, Clock, CheckCircle2, XCircle, QrCode,
+  MoreHorizontal, CheckCircle2, XCircle, QrCode,
   CircleSlash, CarFront, DoorOpen, Siren, ShieldAlert, Fuel,
-  MessageSquare, ScanLine, Plus, Package, Truck, ChevronDown,
+  Plus, ScanLine, ChevronDown, MessageSquare, User as UserIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { useIsMobileApp } from "@/hooks/useIsMobileApp";
+import PremiumStatusCard from "@/components/dashboard/PremiumStatusCard";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
@@ -34,7 +35,6 @@ type Vehicle = { id: string; plate: string; phone: string; brand?: string; model
 type Notification = {
   id: string; plate: string; issue_type: string; note: string | null; status: string; created_at: string;
 };
-type StickerOrder = { id: string; status: string; plate: string };
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -46,10 +46,6 @@ const Dashboard = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
   const [profileName, setProfileName] = useState<string>("");
-  const [stickerOrders, setStickerOrders] = useState<StickerOrder[]>([]);
-  const [showStickerOrders, setShowStickerOrders] = useState(false);
-  const [seenOrderCount, setSeenOrderCount] = useState<number>(0);
-  
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -93,18 +89,6 @@ const Dashboard = () => {
       await fetchNotifications(active.plate);
     }
 
-    // Fetch sticker orders
-    const { data: orders } = await supabase
-      .from("sticker_orders")
-      .select("id, status, plate")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: false });
-    setStickerOrders((orders as StickerOrder[]) || []);
-
-    // Load seen order count from localStorage
-    const savedSeen = localStorage.getItem(`seen_order_count_${user!.id}`);
-    setSeenOrderCount(savedSeen ? parseInt(savedSeen, 10) : 0);
-
     setLoading(false);
   };
 
@@ -134,16 +118,6 @@ const Dashboard = () => {
     return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
   };
 
-  const hasPendingOrder = stickerOrders.some(o => o.status !== "delivered");
-
-  const handleToggleStickerOrders = () => {
-    setShowStickerOrders(!showStickerOrders);
-    // Mark as seen
-    const pending = stickerOrders.filter(o => o.status !== "delivered").length;
-    localStorage.setItem(`seen_order_count_${user!.id}`, String(pending));
-    setSeenOrderCount(pending);
-  };
-
   if (authLoading || loading) {
     return (
       <AppLayout hideHeader>
@@ -154,28 +128,18 @@ const Dashboard = () => {
     );
   }
 
-  const pendingOrderCount = stickerOrders.filter(o => o.status !== "delivered").length;
-  const unseenOrderCount = Math.max(0, pendingOrderCount - seenOrderCount);
-
-  const stickerStatusMap: Record<string, { label: string; color: string; icon: typeof Package }> = {
-    pending: { label: "Sipariş Alındı", color: "text-yellow-400", icon: Clock },
-    preparing: { label: "Hazırlanıyor", color: "text-blue-400", icon: Package },
-    shipped: { label: "Kargoda", color: "text-primary", icon: Truck },
-    delivered: { label: "Teslim Edildi", color: "text-primary", icon: CheckCircle2 },
-  };
-
   const quickActions = [
-    { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary", badge: vehicles.length > 0 ? vehicles.length : null, pulse: false },
-    { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
-    { icon: Bell, label: "Bildirimler", action: () => navigate("/messages"), color: "text-primary", badge: null, pulse: false },
-    { icon: ScanLine, label: "QR Aktivasyon", action: () => navigate("/activate"), color: "text-primary", badge: null, pulse: true },
-    { icon: Truck, label: "Sipariş Takibi", action: handleToggleStickerOrders, color: "text-primary", badge: unseenOrderCount > 0 ? unseenOrderCount : null, pulse: unseenOrderCount > 0 },
-    { icon: Package, label: "Sticker Sipariş", action: () => navigate("/generate"), color: "text-primary", badge: null, pulse: false },
+    { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary", badge: vehicles.length > 0 ? vehicles.length : null },
+    { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary", badge: null },
+    { icon: Bell, label: "Bildirimler", action: () => navigate("/notifications"), color: "text-primary", badge: null },
+    { icon: ScanLine, label: "QR Tara", action: () => navigate("/scan"), color: "text-primary", badge: null },
+    { icon: MessageSquare, label: "Destek", action: () => navigate("/messages"), color: "text-primary", badge: null },
+    { icon: UserIcon, label: "Profil", action: () => navigate("/profile"), color: "text-primary", badge: null },
   ];
 
   return (
     <AppLayout hideHeader={isMobile}>
-      {/* ===== TOP BAR (mobile only) ===== */}
+      {/* TOP BAR (mobile only) */}
       {isMobile && (
         <header className="sticky top-0 z-50 glass px-4 py-3">
           <div className="flex items-center justify-between max-w-lg mx-auto">
@@ -202,237 +166,193 @@ const Dashboard = () => {
         </header>
       )}
 
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-6">
+      <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
 
-          {/* ===== GREETING ===== */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <p className="text-muted-foreground text-sm">Merhaba,</p>
-            <h1 className="text-2xl font-display font-bold text-foreground">
-              {profileName || "Kullanıcı"} 👋
-            </h1>
-          </motion.div>
+        {/* GREETING */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="text-muted-foreground text-sm">Merhaba,</p>
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            {profileName || "Kullanıcı"} 👋
+          </h1>
+        </motion.div>
 
-          {/* ===== VEHICLE HERO CARD ===== */}
-          <motion.div
-            className="rounded-2xl border border-border bg-card p-6"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            {vehicles.length === 0 ? (
-              <div className="text-center">
-                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center mx-auto mb-4">
-                  <Car className="w-7 h-7 text-muted-foreground" />
-                </div>
-                <h2 className="text-lg font-display font-bold text-foreground mb-1">Araç Ekleyin</h2>
-                <p className="text-sm text-muted-foreground mb-5">
-                  İlk aracınızı ekleyerek QR kodunuzu oluşturun.
-                </p>
-                <button
-                  onClick={() => navigate("/generate")}
-                  className="w-full py-3 rounded-xl bg-foreground text-background font-semibold text-sm hover:opacity-90 transition-opacity"
-                >
-                  Araç Ekle
-                </button>
+        {/* PREMIUM STATUS CARD */}
+        <PremiumStatusCard />
+
+        {/* VEHICLE HERO CARD */}
+        <motion.div
+          className="rounded-2xl border border-border bg-card p-6"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {vehicles.length === 0 ? (
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                <Car className="w-7 h-7 text-muted-foreground" />
               </div>
-            ) : (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                      <Car className="w-6 h-6 text-primary-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedVehicle?.brand} {selectedVehicle?.model}
-                      </p>
-                      <p className="font-display font-bold text-lg text-foreground tracking-wider">
-                        {selectedVehicle?.plate}
-                      </p>
-                    </div>
-                  </div>
-                  {vehicles.length > 1 && (
-                    <button
-                      onClick={() => setShowVehicleSelector(!showVehicleSelector)}
-                      className="px-3 py-1.5 rounded-lg bg-secondary text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                    >
-                      Değiştir <ChevronDown className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-
-                <AnimatePresence>
-                  {showVehicleSelector && (
-                    <motion.div
-                      className="mt-2 space-y-1"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                    >
-                      {vehicles.filter(v => v.id !== selectedVehicle?.id).map((v) => (
-                        <button
-                          key={v.id}
-                          onClick={() => handleSelectVehicle(v)}
-                          className="w-full text-left px-3 py-2.5 rounded-lg bg-secondary/50 hover:bg-secondary text-sm text-foreground font-display tracking-wider transition-colors"
-                        >
-                          {v.plate}
-                          <span className="text-xs text-muted-foreground ml-2">{v.brand} {v.model}</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
-                  <div className="text-center">
-                    <p className="text-xl font-bold text-foreground">{notifications.length}</p>
-                    <p className="text-[10px] text-muted-foreground">Bildirim</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xl font-bold text-foreground">{vehicles.length}</p>
-                    <p className="text-[10px] text-muted-foreground">Araç</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xl font-bold text-foreground">{stickerOrders.length}</p>
-                    <p className="text-[10px] text-muted-foreground">Sipariş</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
-
-          {/* ===== QUICK ACTIONS ===== */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-sm font-display font-semibold text-foreground mb-3">Hızlı İşlemler</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {quickActions.map((item, i) => (
-                <motion.button
-                  key={item.label}
-                  onClick={item.action}
-                  className="relative flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all"
-                  whileTap={{ scale: 0.93 }}
-                  whileHover={{ y: -2 }}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 + i * 0.05 }}
-                >
-                  {/* Badge */}
-                  {item.badge !== null && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center px-1">
-                      {item.badge}
-                    </span>
-                  )}
-                  {/* Animated icon container */}
-                  <motion.div
-                    className={`w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center ${item.pulse ? "animate-pulse" : ""}`}
-                    whileHover={{ rotate: [0, -10, 10, 0], transition: { duration: 0.4 } }}
-                  >
-                    <item.icon className={`w-5 h-5 ${item.color}`} />
-                  </motion.div>
-                  <span className="text-xs font-medium text-foreground text-center leading-tight">{item.label}</span>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ===== INLINE STICKER ORDERS ===== */}
-          <AnimatePresence>
-            {showStickerOrders && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="rounded-2xl border border-border bg-card overflow-hidden"
+              <h2 className="text-lg font-display font-bold text-foreground mb-1">Araç Ekleyin</h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                İlk aracınızı ekleyerek QR kodunuzu oluşturun.
+              </p>
+              <button
+                onClick={() => navigate("/generate")}
+                className="w-full py-3 rounded-xl bg-foreground text-background font-semibold text-sm hover:opacity-90 transition-opacity"
               >
-                <div className="flex items-center gap-3 p-4 border-b border-border">
-                  <Package className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Sipariş Takibi</span>
-                </div>
-                {stickerOrders.length === 0 ? (
-                  <div className="p-4 text-center">
-                    <p className="text-sm text-muted-foreground">Henüz sipariş yok</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {stickerOrders.map((order) => {
-                      const status = stickerStatusMap[order.status] || stickerStatusMap.pending;
-                      const StatusIcon = status.icon;
-                      return (
-                        <div key={order.id} className="flex items-center gap-3 p-4">
-                          <StatusIcon className={`w-5 h-5 ${status.color} flex-shrink-0`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">{order.plate}</p>
-                            <p className={`text-xs ${status.color}`}>{status.label}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* ===== RECENT NOTIFICATIONS ===== */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-display font-semibold text-foreground">Son Bildirimler</h2>
-              {notifications.length > 3 && (
-                <button className="text-xs text-primary font-medium">Tümünü Gör</button>
-              )}
+                Araç Ekle
+              </button>
             </div>
-
-            {notifications.length === 0 ? (
-              <div className="rounded-xl bg-card border border-border p-8 text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <Bell className="w-6 h-6 text-primary" />
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                    <Car className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedVehicle?.brand} {selectedVehicle?.model}
+                    </p>
+                    <p className="font-display font-bold text-lg text-foreground tracking-wider">
+                      {selectedVehicle?.plate}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">Henüz bildirim yok</p>
+                {vehicles.length > 1 && (
+                  <button
+                    onClick={() => setShowVehicleSelector(!showVehicleSelector)}
+                    className="px-3 py-1.5 rounded-lg bg-secondary text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    Değiştir <ChevronDown className="w-3 h-3" />
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="space-y-2">
-                {notifications.slice(0, 5).map((notif, index) => {
-                  const info = issueIcons[notif.issue_type] || issueIcons["other"];
-                  const Icon = info.icon;
-                  return (
-                    <motion.div
-                      key={notif.id}
-                      className="flex items-center gap-3 p-3.5 rounded-xl bg-card border border-border"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + index * 0.05 }}
-                    >
-                      <div className={`w-10 h-10 rounded-lg ${info.bg} flex items-center justify-center flex-shrink-0`}>
-                        <Icon className={`w-5 h-5 ${info.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-foreground">{info.label}</p>
-                          <div className="flex items-center gap-1">
-                            {notif.status === "sent" ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                            ) : (
-                              <XCircle className="w-3.5 h-3.5 text-destructive" />
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(notif.created_at)}</p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+
+              <AnimatePresence>
+                {showVehicleSelector && (
+                  <motion.div
+                    className="mt-2 space-y-1"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    {vehicles.filter(v => v.id !== selectedVehicle?.id).map((v) => (
+                      <button
+                        key={v.id}
+                        onClick={() => handleSelectVehicle(v)}
+                        className="w-full text-left px-3 py-2.5 rounded-lg bg-secondary/50 hover:bg-secondary text-sm text-foreground font-display tracking-wider transition-colors"
+                      >
+                        {v.plate}
+                        <span className="text-xs text-muted-foreground ml-2">{v.brand} {v.model}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border">
+                <div className="text-center">
+                  <p className="text-xl font-bold text-foreground">{notifications.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Bildirim</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-foreground">{vehicles.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Araç</p>
+                </div>
               </div>
+            </div>
+          )}
+        </motion.div>
+
+        {/* QUICK ACTIONS */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <h2 className="text-sm font-display font-semibold text-foreground mb-3">Hızlı İşlemler</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {quickActions.map((item, i) => (
+              <motion.button
+                key={item.label}
+                onClick={item.action}
+                className="relative flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all"
+                whileTap={{ scale: 0.93 }}
+                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 + i * 0.05 }}
+              >
+                {item.badge !== null && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center px-1">
+                    {item.badge}
+                  </span>
+                )}
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                </div>
+                <span className="text-xs font-medium text-foreground text-center leading-tight">{item.label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* RECENT NOTIFICATIONS */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-display font-semibold text-foreground">Son Bildirimler</h2>
+            {notifications.length > 3 && (
+              <button onClick={() => navigate("/notifications")} className="text-xs text-primary font-medium">Tümünü Gör</button>
             )}
-          </motion.div>
-        </div>
+          </div>
+
+          {notifications.length === 0 ? (
+            <div className="rounded-xl bg-card border border-border p-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <Bell className="w-6 h-6 text-primary" />
+              </div>
+              <p className="text-sm text-muted-foreground">Henüz bildirim yok</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {notifications.slice(0, 5).map((notif, index) => {
+                const info = issueIcons[notif.issue_type] || issueIcons["other"];
+                const Icon = info.icon;
+                return (
+                  <motion.div
+                    key={notif.id}
+                    className="flex items-center gap-3 p-3.5 rounded-xl bg-card border border-border"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + index * 0.05 }}
+                  >
+                    <div className={`w-10 h-10 rounded-lg ${info.bg} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-5 h-5 ${info.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground">{info.label}</p>
+                        <div className="flex items-center gap-1">
+                          {notif.status === "sent" ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                          ) : (
+                            <XCircle className="w-3.5 h-3.5 text-destructive" />
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(notif.created_at)}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+      </div>
     </AppLayout>
   );
 };
