@@ -423,6 +423,31 @@ const Profile = () => {
               </Button>
             </motion.div>
 
+            {/* Yasal & Destek */}
+            <motion.div
+              className="glass rounded-2xl p-2 mt-4 divide-y divide-border/50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              {[
+                { to: "/contact", label: "Bize Ulaşın", icon: MessageSquare },
+                { to: "/privacy", label: "Gizlilik Politikası", icon: Shield },
+                { to: "/terms", label: "Kullanım Şartları", icon: Lock },
+                { to: "/kvkk", label: "KVKK Aydınlatma Metni", icon: Lock },
+              ].map((it) => (
+                <Link
+                  key={it.to}
+                  to={it.to}
+                  className="flex items-center gap-3 px-3 py-3 hover:bg-muted/30 rounded-lg transition-colors"
+                >
+                  <it.icon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground flex-1">{it.label}</span>
+                  <span className="text-muted-foreground text-xs">›</span>
+                </Link>
+              ))}
+            </motion.div>
+
             {/* Delete Account */}
             <motion.div
               className="flex justify-center pt-6 pb-2"
