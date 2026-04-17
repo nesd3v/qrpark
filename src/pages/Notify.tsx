@@ -193,12 +193,12 @@ const Notify = () => {
                 </div>
                 <h2 className="text-lg font-display font-bold text-foreground mb-2">QR Kodu Süresi Dolmuş</h2>
                 <p className="text-muted-foreground text-sm mb-4">
-                  Bu QR kodun süresi dolmuştur. Araç sahibinin QR kodunu yenilemesi gerekmektedir.
+                  Bu QR kod ilk oluşturulduğu tarihten itibaren 1 hafta geçerliydi. Araç sahibinin Premium plan ile devam etmesi gerekir.
                 </p>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
+                <Link to="/pricing" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-medium hover:bg-primary/15 transition-colors">
                   <Crown className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-xs font-medium text-primary">Premium ile QR kodlar süresiz olur</span>
-                </div>
+                  Premium planları görüntüle
+                </Link>
               </motion.div>
             ) : noMethodAvailable ? (
               <motion.div className="text-center py-12 glass rounded-2xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

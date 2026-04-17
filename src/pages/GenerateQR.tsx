@@ -15,6 +15,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -76,11 +77,13 @@ type Vehicle = {
   model: string | null;
   color: string | null;
   last_qr_generated_at: string | null;
+  qr_expires_at: string | null;
   verification_status: string;
 };
 
 const GenerateQR = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isPremium } = useSubscription();
   const navigate = useNavigate();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -123,7 +126,7 @@ const GenerateQR = () => {
     setLoadingVehicle(true);
     const { data } = await supabase
       .from("vehicles")
-      .select("id, plate, phone, brand, model, color, last_qr_generated_at, verification_status")
+      .select("id, plate, phone, brand, model, color, last_qr_generated_at, qr_expires_at, verification_status")
       .eq("user_id", user!.id)
       .order("created_at", { ascending: true });
     setVehicles((data as Vehicle[]) || []);
@@ -178,7 +181,7 @@ const GenerateQR = () => {
           brand: formBrand, model: formModel, color: formColor,
           user_id: user!.id,
           verification_status: "verified",
-        }).select("id, plate, phone, brand, model, color, last_qr_generated_at, verification_status").single();
+        }).select("id, plate, phone, brand, model, color, last_qr_generated_at, qr_expires_at, verification_status").single();
         if (error) {
           if (error.code === "23505") { toast.error("Bu plaka zaten kayıtlı"); setSaving(false); return; }
           throw error;
@@ -232,6 +235,10 @@ const GenerateQR = () => {
   if (selectedVehicle) {
     const v = selectedVehicle;
     const hasQR = !!v.last_qr_generated_at;
+    const isExpired = !!v.qr_expires_at && new Date(v.qr_expires_at) < new Date();
+    const expiresText = v.qr_expires_at
+      ? new Date(v.qr_expires_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })
+      : null;
 
     return (
       <AppLayout>
@@ -272,11 +279,17 @@ const GenerateQR = () => {
                   </div>
                 </div>
 
-                {hasQR && (
+                {hasQR && !isExpired && (
                   <div className="flex flex-col items-center gap-4 mb-6">
                     <div className="flex items-center gap-2 text-sm text-primary font-medium">
                       <CheckCircle2 className="w-4 h-4" /> QR Kodunuz Aktif
                     </div>
+
+                    {expiresText && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        QR geçerlilik süresi: <span className="text-foreground font-medium">{expiresText}</span>
+                      </p>
+                    )}
 
                     <div ref={qrRef} className="p-6 rounded-xl bg-[#e8ecf0]">
                       <QRCodeSVG
@@ -291,6 +304,28 @@ const GenerateQR = () => {
                     <p className="text-xs text-muted-foreground text-center">
                       QR kodunu telefonunuzdan göstererek veya cam kenarına asarak kullanabilirsiniz
                     </p>
+                  </div>
+                )}
+
+                {hasQR && isExpired && (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-6 text-center space-y-3">
+                    <div className="inline-flex items-center gap-2 text-sm text-primary font-medium justify-center">
+                      <Crown className="w-4 h-4" /> QR süreniz doldu
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      İlk QR oluşturma tarihinden itibaren 1 haftalık ücretsiz süreniz tamamlandı.
+                      {isPremium
+                        ? " Premium planınız aktif görünüyor; ödeme sonrası QR süreniz otomatik uzatılır."
+                        : " QR kullanmaya devam etmek için Premium plan seçmeniz gerekiyor."}
+                    </p>
+                    {expiresText && (
+                      <p className="text-xs text-muted-foreground">
+                        Bitiş tarihi: <span className="text-foreground font-medium">{expiresText}</span>
+                      </p>
+                    )}
+                    <Button onClick={() => navigate("/pricing")} className="gradient-primary text-primary-foreground w-full sm:w-auto">
+                      Premium'a Geç
+                    </Button>
                   </div>
                 )}
 
@@ -362,7 +397,7 @@ const GenerateQR = () => {
                       </p>
                     </div>
                     {v.last_qr_generated_at && (
-                      <QrCode className="w-5 h-5 text-primary flex-shrink-0" />
+                      <QrCode className={`w-5 h-5 flex-shrink-0 ${v.qr_expires_at && new Date(v.qr_expires_at) < new Date() ? "text-muted-foreground" : "text-primary"}`} />
                     )}
                   </button>
                 ))}

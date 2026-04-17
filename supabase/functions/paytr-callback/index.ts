@@ -67,12 +67,15 @@ serve(async (req) => {
         const now = new Date();
         let subscriptionEnd: Date;
         const planType = existing?.plan_type ?? "monthly";
+        const baseDate = existing?.subscription_end && new Date(existing.subscription_end) > now
+          ? new Date(existing.subscription_end)
+          : now;
 
         if (planType === "yearly") {
-          subscriptionEnd = new Date(now);
+          subscriptionEnd = new Date(baseDate);
           subscriptionEnd.setFullYear(subscriptionEnd.getFullYear() + 1);
         } else {
-          subscriptionEnd = new Date(now);
+          subscriptionEnd = new Date(baseDate);
           subscriptionEnd.setMonth(subscriptionEnd.getMonth() + 1);
         }
 
@@ -100,6 +103,18 @@ serve(async (req) => {
               subscription_start: now.toISOString(),
               subscription_end: subscriptionEnd.toISOString(),
             });
+        }
+
+        const { error: vehicleUpdateError } = await supabaseAdmin
+          .from("vehicles")
+          .update({ qr_expires_at: subscriptionEnd.toISOString() })
+          .eq("user_id", userId)
+          .not("last_qr_generated_at", "is", null);
+
+        if (vehicleUpdateError) {
+          logStep("Vehicle QR duration update failed", { userId, message: vehicleUpdateError.message });
+        } else {
+          logStep("Vehicle QR duration updated", { userId, subscriptionEnd: subscriptionEnd.toISOString() });
         }
 
         logStep("Subscription activated", { userId, planType, subscriptionEnd: subscriptionEnd.toISOString() });
