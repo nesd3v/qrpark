@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, QrCode, Bell, Package, Truck, Zap } from "lucide-react";
+import { ArrowRight, QrCode, Bell, Shield, Crown, Building2, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,13 +9,11 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden gradient-hero pt-20">
-      {/* Grid background */}
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `linear-gradient(hsl(160 84% 39% / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(160 84% 39% / 0.3) 1px, transparent 1px)`,
         backgroundSize: '60px 60px'
       }} />
 
-      {/* Glow orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-[120px]" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-primary/8 blur-[100px]" />
 
@@ -43,8 +41,8 @@ const HeroSection = () => {
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-            QR kodunu arabanıza yerleştirin. Herhangi bir sorun olduğunda
-            anında bilgilendirilirsiniz — hatalı park, açık far, hasar ve daha fazlası.
+            QR kodunuzu oluşturun, aracınıza yapıştırın. Herhangi bir sorun olduğunda
+            anında SMS ile bilgilendirilirsiniz — hatalı park, açık far, hasar ve daha fazlası.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -54,15 +52,15 @@ const HeroSection = () => {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <a href="#features">
+            <Link to="/pricing">
               <Button variant="outline" size="lg" className="border-border text-foreground px-8 py-6 text-base hover:bg-secondary">
-                Nasıl Çalışır?
+                Premium Planlar
               </Button>
-            </a>
+            </Link>
           </div>
         </motion.div>
 
-        {/* Action cards */}
+        {/* Plan cards */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-20 max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 40 }}
@@ -77,34 +75,34 @@ const HeroSection = () => {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">QR Aktivasyon</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">Aracınızı kaydedin ve QR kodunuzu hemen aktifleştirin</p>
+              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">Ücretsiz Başla</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">Aracınızı kaydedin, QR kodunuzu hemen oluşturun</p>
             </motion.div>
           </Link>
 
-          <Link to={user ? "/generate" : "/auth?redirect=/generate"}>
+          <Link to="/pricing">
             <motion.div
               className="glass rounded-xl p-6 hover:border-primary/30 transition-colors group cursor-pointer h-full"
               whileHover={{ y: -4 }}
             >
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                <Package className="w-6 h-6 text-primary" />
+                <Crown className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">Sticker Sipariş Et</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">QR kodlu sticker'ınızı kapınıza kadar gönderelim</p>
+              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">Premium</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">Süresiz QR, sınırsız bildirim ve öncelikli destek</p>
             </motion.div>
           </Link>
 
-          <Link to={user ? "/generate" : "/auth?redirect=/generate"}>
+          <Link to="/pricing">
             <motion.div
               className="glass rounded-xl p-6 hover:border-primary/30 transition-colors group cursor-pointer h-full"
               whileHover={{ y: -4 }}
             >
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                <Truck className="w-6 h-6 text-primary" />
+                <Building2 className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">Sipariş Takibi</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">Sticker siparişinizin durumunu anlık olarak takip edin</p>
+              <h3 className="font-display font-semibold text-lg mb-2 text-foreground">Kurumsal</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">Filo yönetimi ve özel kurumsal panel</p>
             </motion.div>
           </Link>
         </motion.div>
@@ -120,7 +118,7 @@ const HeroSection = () => {
           {[
             { icon: QrCode, title: "QR Oluştur", desc: "Plakanıza özel benzersiz QR kodu oluşturun" },
             { icon: Bell, title: "Anlık Bildirim", desc: "SMS ile anında haberdar olun" },
-            { icon: Package, title: "Sticker Gönderimi", desc: "QR sticker'ınızı adresinize gönderelim" },
+            { icon: Shield, title: "Gizlilik Önceliği", desc: "Telefon numaranız hiçbir zaman paylaşılmaz" },
           ].map((item, i) => (
             <motion.div
               key={item.title}

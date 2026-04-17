@@ -1,24 +1,24 @@
 import { motion } from "framer-motion";
-import { QrCode, Scan, Send, Bell } from "lucide-react";
+import { UserPlus, QrCode, Car, Bell } from "lucide-react";
 
 const steps = [
   {
-    icon: QrCode,
+    icon: UserPlus,
     step: "01",
-    title: "Aracınızı Kaydedin",
-    desc: "Marka, model ve plaka bilgilerinizi girerek aracınızı sisteme ekleyin.",
+    title: "Hesap Oluşturun",
+    desc: "Telefon numaranızla saniyeler içinde ücretsiz hesabınızı açın.",
   },
   {
-    icon: Scan,
+    icon: Car,
     step: "02",
-    title: "Sticker Sipariş Edin",
-    desc: "QR kodlu sticker'ınızı sipariş edin, adresinize gönderelim.",
+    title: "Aracınızı Kaydedin",
+    desc: "Plaka, marka ve model bilgilerinizi sisteme ekleyin.",
   },
   {
-    icon: Send,
+    icon: QrCode,
     step: "03",
-    title: "Aracınıza Yapıştırın",
-    desc: "Sticker'ı arabanızın camına yapıştırın, herkes okutabilsin.",
+    title: "QR Kodunu Aracınıza Yerleştirin",
+    desc: "Oluşturulan QR kodunu yazdırın ve aracınızın camına yapıştırın.",
   },
   {
     icon: Bell,

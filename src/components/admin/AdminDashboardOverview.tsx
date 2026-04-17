@@ -1,5 +1,5 @@
 import {
-  ShieldCheck, ShieldX, Clock, BarChart3, MessageCircle, Car, ArrowRight, Package,
+  ShieldCheck, ShieldX, Clock, BarChart3, MessageCircle, Car, ArrowRight, Building2, Users,
 } from "lucide-react";
 
 type Stats = {
@@ -38,19 +38,21 @@ const AdminDashboardOverview = ({
       action: () => onNavigate("vehicles"),
     },
     {
-      label: "Reddedilen Araçlar",
-      value: stats.rejected,
-      icon: ShieldX,
-      color: "text-destructive",
-      bgColor: "bg-destructive/10",
-      action: () => onNavigate("vehicles"),
+      label: "Yeni Kurumsal Talep",
+      value: stats.corporate_new,
+      icon: Building2,
+      color: "text-accent-foreground",
+      bgColor: "bg-accent/10",
+      action: () => onNavigate("corporate"),
+      urgent: stats.corporate_new > 0,
     },
     {
       label: "Toplam Bildirimler",
       value: stats.total_notifications,
       icon: BarChart3,
-      color: "text-accent-foreground",
-      bgColor: "bg-accent/10",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+      action: () => onNavigate("notifications"),
     },
   ];
 
@@ -82,12 +84,11 @@ const AdminDashboardOverview = ({
         ))}
       </div>
 
-      {/* Quick actions */}
       <h2 className="text-lg font-bold text-foreground mb-4">Hızlı Erişim</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "Araç Doğrulama", desc: "Bekleyen araçları incele ve onayla", icon: Car, tab: "vehicles" },
-          { label: "Sticker Siparişleri", desc: "Gelen siparişleri yönet ve gönder", icon: Package, tab: "stickers" },
+          { label: "Kurumsal Talepler", desc: "Filo başvurularını yönet ve onayla", icon: Building2, tab: "corporate" },
           { label: "Canlı Destek", desc: "Kullanıcı mesajlarını yanıtla", icon: MessageCircle, tab: "support" },
         ].map((item) => (
           <button
