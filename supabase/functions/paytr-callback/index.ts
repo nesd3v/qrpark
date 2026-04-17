@@ -7,6 +7,7 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
+  // PayTR sends POST with form data
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
@@ -47,90 +48,83 @@ serve(async (req) => {
 
     logStep("Hash verified successfully");
 
+    // Use service role to update subscription
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // ===== SUBSCRIPTION PAYMENT =====
-    {
-      if (status === "success") {
-        const sanitizedUuid = merchantOid.substring(0, 32);
-        const userId = `${sanitizedUuid.slice(0,8)}-${sanitizedUuid.slice(8,12)}-${sanitizedUuid.slice(12,16)}-${sanitizedUuid.slice(16,20)}-${sanitizedUuid.slice(20)}`;
+    if (status === "success") {
+      // Extract user_id from merchant_oid (format: sanitizedUUID + timestamp)
+      // UUID without hyphens is 32 chars
+      const sanitizedUuid = merchantOid.substring(0, 32);
+      const userId = `${sanitizedUuid.slice(0,8)}-${sanitizedUuid.slice(8,12)}-${sanitizedUuid.slice(12,16)}-${sanitizedUuid.slice(16,20)}-${sanitizedUuid.slice(20)}`;
 
-        const { data: existing } = await supabaseAdmin
-          .from("subscriptions")
-          .select("*")
-          .eq("merchant_oid", merchantOid)
-          .single();
+      // Get existing pending subscription
+      const { data: existing } = await supabaseAdmin
+        .from("subscriptions")
+        .select("*")
+        .eq("merchant_oid", merchantOid)
+        .single();
 
-        const now = new Date();
-        let subscriptionEnd: Date;
-        const planType = existing?.plan_type ?? "monthly";
-        const baseDate = existing?.subscription_end && new Date(existing.subscription_end) > now
-          ? new Date(existing.subscription_end)
-          : now;
+      const now = new Date();
+      let subscriptionEnd: Date;
+      const planType = existing?.plan_type ?? "monthly";
 
-        if (planType === "yearly") {
-          subscriptionEnd = new Date(baseDate);
-          subscriptionEnd.setFullYear(subscriptionEnd.getFullYear() + 1);
-        } else {
-          subscriptionEnd = new Date(baseDate);
-          subscriptionEnd.setMonth(subscriptionEnd.getMonth() + 1);
-        }
-
-        if (existing) {
-          await supabaseAdmin
-            .from("subscriptions")
-            .update({
-              status: "active",
-              payment_date: now.toISOString(),
-              subscription_start: now.toISOString(),
-              subscription_end: subscriptionEnd.toISOString(),
-              updated_at: now.toISOString(),
-            })
-            .eq("merchant_oid", merchantOid);
-        } else {
-          await supabaseAdmin
-            .from("subscriptions")
-            .insert({
-              user_id: userId,
-              merchant_oid: merchantOid,
-              plan_type: planType,
-              amount: parseInt(totalAmount) || 0,
-              status: "active",
-              payment_date: now.toISOString(),
-              subscription_start: now.toISOString(),
-              subscription_end: subscriptionEnd.toISOString(),
-            });
-        }
-
-        const { error: vehicleUpdateError } = await supabaseAdmin
-          .from("vehicles")
-          .update({ qr_expires_at: subscriptionEnd.toISOString() })
-          .eq("user_id", userId)
-          .not("last_qr_generated_at", "is", null);
-
-        if (vehicleUpdateError) {
-          logStep("Vehicle QR duration update failed", { userId, message: vehicleUpdateError.message });
-        } else {
-          logStep("Vehicle QR duration updated", { userId, subscriptionEnd: subscriptionEnd.toISOString() });
-        }
-
-        logStep("Subscription activated", { userId, planType, subscriptionEnd: subscriptionEnd.toISOString() });
+      if (planType === "yearly") {
+        subscriptionEnd = new Date(now);
+        subscriptionEnd.setFullYear(subscriptionEnd.getFullYear() + 1);
       } else {
+        subscriptionEnd = new Date(now);
+        subscriptionEnd.setMonth(subscriptionEnd.getMonth() + 1);
+      }
+
+      if (existing) {
+        // Update existing record
         await supabaseAdmin
           .from("subscriptions")
-          .update({ status: "failed", updated_at: new Date().toISOString() })
+          .update({
+            status: "active",
+            payment_date: now.toISOString(),
+            subscription_start: now.toISOString(),
+            subscription_end: subscriptionEnd.toISOString(),
+            updated_at: now.toISOString(),
+          })
           .eq("merchant_oid", merchantOid);
-
-        logStep("Payment failed", { merchantOid });
+      } else {
+        // Insert new record
+        await supabaseAdmin
+          .from("subscriptions")
+          .insert({
+            user_id: userId,
+            merchant_oid: merchantOid,
+            plan_type: planType,
+            amount: parseInt(totalAmount) || 0,
+            status: "active",
+            payment_date: now.toISOString(),
+            subscription_start: now.toISOString(),
+            subscription_end: subscriptionEnd.toISOString(),
+          });
       }
+
+      logStep("Subscription activated", { userId, planType, subscriptionEnd: subscriptionEnd.toISOString() });
+    } else {
+      // Payment failed
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          status: "failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("merchant_oid", merchantOid);
+
+      logStep("Payment failed", { merchantOid });
     }
 
+    // PayTR expects "OK" response
     return new Response("OK", { status: 200 });
   } catch (error) {
     logStep("ERROR", { message: error.message });
-    return new Response("OK", { status: 200 });
+    return new Response("OK", { status: 200 }); // Always return OK to prevent retries
   }
 });

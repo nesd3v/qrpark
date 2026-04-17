@@ -1,13 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, FileText } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, LogIn, ShieldCheck, Paperclip, Image as ImageIcon, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useIsMobileApp } from "@/hooks/useIsMobileApp";
 
 type Message = {
   id: string;
@@ -23,28 +20,15 @@ const isImageType = (type: string | null | undefined) =>
 
 const SupportChatWidget = () => {
   const { user } = useAuth();
-  const location = useLocation();
-  const isMobileApp = useIsMobileApp();
   const [open, setOpen] = useState(false);
-
-  // Listen for external open requests
-  useEffect(() => {
-    const handler = () => setOpen(true);
-    window.addEventListener("open-support-chat", handler);
-    return () => window.removeEventListener("open-support-chat", handler);
-  }, []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const lastSeenRef = useRef<string | null>(null);
-
-  const isAdminPage = location.pathname.startsWith("/admin");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,46 +46,6 @@ const SupportChatWidget = () => {
       setMessages(data.messages);
     }
   }, []);
-
-  // Check for unread admin messages on mount
-  const checkUnread = useCallback(async () => {
-    if (!user) return;
-    try {
-      const { data: convs } = await supabase
-        .from("support_conversations")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("status", "open")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (convs && convs.length > 0) {
-        const convId = convs[0].id;
-        if (!conversationId) setConversationId(convId);
-        // Get latest admin message
-        const { data: adminMsgs } = await supabase
-          .from("support_messages")
-          .select("created_at")
-          .eq("conversation_id", convId)
-          .eq("sender_type", "admin")
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        if (adminMsgs && adminMsgs.length > 0) {
-          const lastSeen = localStorage.getItem(`support_last_seen_${user.id}`);
-          if (!lastSeen || new Date(adminMsgs[0].created_at) > new Date(lastSeen)) {
-            setHasUnread(true);
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, [user, conversationId]);
-
-  useEffect(() => {
-    if (user) checkUnread();
-  }, [user, checkUnread]);
 
   const loadConversation = useCallback(async () => {
     if (!user) return;
@@ -125,13 +69,8 @@ const SupportChatWidget = () => {
     setLoading(false);
   }, [user, fetchMessages]);
 
-  // Mark as read when opening chat
   useEffect(() => {
-    if (open && user) {
-      loadConversation();
-      setHasUnread(false);
-      localStorage.setItem(`support_last_seen_${user.id}`, new Date().toISOString());
-    }
+    if (open && user) loadConversation();
   }, [open, user, loadConversation]);
 
   useEffect(() => {
@@ -146,12 +85,8 @@ const SupportChatWidget = () => {
           table: "support_messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload: any) => {
+        () => {
           fetchMessages(conversationId);
-          // If admin sent a message and chat is closed, show unread badge
-          if (payload?.new?.sender_type === "admin" && !open) {
-            setHasUnread(true);
-          }
         }
       )
       .subscribe();
@@ -159,7 +94,7 @@ const SupportChatWidget = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, fetchMessages, open]);
+  }, [conversationId, fetchMessages]);
 
   const ensureConversation = async (): Promise<string | null> => {
     if (conversationId) return conversationId;
@@ -174,11 +109,10 @@ const SupportChatWidget = () => {
     return data.conversation_id;
   };
 
-  const sendMessage = async (attachmentUrl?: string, attachmentType?: string, overrideText?: string) => {
-    const textToSend = overrideText ?? input.trim();
-    if ((!textToSend && !attachmentUrl) || !user || sending) return;
+  const sendMessage = async (attachmentUrl?: string, attachmentType?: string) => {
+    if ((!input.trim() && !attachmentUrl) || !user || sending) return;
 
-    const messageText = textToSend;
+    const messageText = input.trim();
     setInput("");
     setSending(true);
 
@@ -228,6 +162,11 @@ const SupportChatWidget = () => {
 
       if (uploadError) throw uploadError;
 
+      const { data: urlData } = supabase.storage
+        .from("support-attachments")
+        .getPublicUrl(filePath);
+
+      // Since bucket is private, we store the path and use signed URLs
       const attachmentType = file.type.startsWith("image/") ? "image" : "file";
       await sendMessage(filePath, attachmentType);
     } catch {
@@ -261,42 +200,50 @@ const SupportChatWidget = () => {
     if (isImageType(msg.attachment_type)) {
       return (
         <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
-          <img src={signedUrl} alt="Ek" className="max-w-full max-h-40 rounded-lg object-cover" loading="lazy" />
+          <img
+            src={signedUrl}
+            alt="Ek"
+            className="max-w-full max-h-40 rounded-lg object-cover"
+            loading="lazy"
+          />
         </a>
       );
     }
 
     return (
-      <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 mt-1 text-xs underline opacity-80 hover:opacity-100">
+      <a
+        href={signedUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 mt-1 text-xs underline opacity-80 hover:opacity-100"
+      >
         <FileText className="w-3.5 h-3.5" />
         Dosyayı Aç
       </a>
     );
   };
 
-  // Position: on mobile app, above bottom tab bar (bottom-24). On web, bottom-6.
-  const fabBottom = isMobileApp ? "bottom-24" : "bottom-6";
-  // Chat panel position: above the FAB
-  const panelBottom = isMobileApp ? "bottom-40" : "bottom-24";
-
-  if (isAdminPage) return null;
-
-  return createPortal(
+  return (
     <>
       {/* Floating button */}
-      <button
+      <motion.button
         onClick={() => setOpen(!open)}
-        className="fixed z-[9999] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
-        style={{ left: 'calc(100vw - 80px)', bottom: isMobileApp ? '6rem' : '1.5rem' }}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        {/* Unread badge */}
-        {hasUnread && !open && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-[10px] text-white font-bold flex items-center justify-center animate-pulse shadow-md">
-            !
-          </span>
-        )}
-        {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
-      </button>
+        <AnimatePresence mode="wait">
+          {open ? (
+            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
+              <X className="w-6 h-6" />
+            </motion.div>
+          ) : (
+            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
+              <MessageCircle className="w-6 h-6" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
 
       {/* Chat panel */}
       <AnimatePresence>
@@ -306,15 +253,10 @@ const SupportChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`fixed z-[61] w-[340px] max-w-[calc(100vw-32px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden`}
-            style={{ 
-              left: 'calc(100vw - 356px)', 
-              bottom: isMobileApp ? '10rem' : '6rem',
-              height: isMobileApp ? "min(400px, calc(100vh - 220px))" : "min(480px, calc(100vh - 140px))" 
-            }}
+            className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-48px)] h-[480px] max-h-[calc(100vh-140px)] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-border bg-secondary/50 flex items-center gap-3 flex-shrink-0">
+            <div className="px-4 py-3 border-b border-border bg-secondary/50 flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                 <MessageCircle className="w-4 h-4 text-primary-foreground" />
               </div>
@@ -360,28 +302,10 @@ const SupportChatWidget = () => {
                       <Loader2 className="w-5 h-5 text-primary animate-spin" />
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="py-6 space-y-3">
-                      <div className="flex justify-start">
-                        <div className="max-w-[85%] px-3 py-2 rounded-xl rounded-bl-sm bg-secondary text-foreground text-sm">
-                          Merhaba! 👋 QRPark Destek ekibine hoş geldiniz.
-                        </div>
-                      </div>
-                      <div className="flex justify-start">
-                        <div className="max-w-[85%] px-3 py-2 rounded-xl rounded-bl-sm bg-secondary text-foreground text-sm">
-                          Size nasıl yardımcı olabiliriz? Sorunuzu yazın, en kısa sürede yanıt vereceğiz. 🚗
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {["Sticker siparişim nerede?", "Hesabımla ilgili sorun var", "QR kodum çalışmıyor"].map((q) => (
-                          <button
-                            key={q}
-                            onClick={() => sendMessage(undefined, undefined, q)}
-                            className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="text-center py-8">
+                      <p className="text-sm text-muted-foreground">
+                        Merhaba! 👋 Size nasıl yardımcı olabiliriz?
+                      </p>
                     </div>
                   ) : (
                     messages.map((msg) => (
@@ -412,7 +336,7 @@ const SupportChatWidget = () => {
                 </div>
 
                 {/* Input */}
-                <div className="p-3 border-t border-border bg-secondary/30 flex-shrink-0">
+                <div className="p-3 border-t border-border bg-secondary/30">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -424,7 +348,7 @@ const SupportChatWidget = () => {
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={sending || uploading}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50 flex-shrink-0"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
                       title="Dosya ekle"
                     >
                       {uploading ? (
@@ -445,7 +369,7 @@ const SupportChatWidget = () => {
                     <button
                       onClick={() => sendMessage()}
                       disabled={(!input.trim() && !uploading) || sending}
-                      className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0"
+                      className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       {sending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -460,8 +384,7 @@ const SupportChatWidget = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </>,
-    document.body
+    </>
   );
 };
 

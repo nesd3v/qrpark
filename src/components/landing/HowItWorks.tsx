@@ -1,30 +1,30 @@
 import { motion } from "framer-motion";
-import { UserPlus, QrCode, Car, Bell } from "lucide-react";
+import { QrCode, Scan, Send, Bell } from "lucide-react";
 
 const steps = [
   {
-    icon: UserPlus,
-    step: "01",
-    title: "Hesap Oluşturun",
-    desc: "Telefon numaranızla saniyeler içinde ücretsiz hesabınızı açın.",
-  },
-  {
-    icon: Car,
-    step: "02",
-    title: "Aracınızı Kaydedin",
-    desc: "Plaka, marka ve model bilgilerinizi sisteme ekleyin.",
-  },
-  {
     icon: QrCode,
+    step: "01",
+    title: "QR Kodu Oluşturun",
+    desc: "Plaka numaranızı girin ve size özel QR kodunuzu indirin.",
+  },
+  {
+    icon: Scan,
+    step: "02",
+    title: "Aracınıza Yerleştirin",
+    desc: "QR kodunu arabanızın camına yapıştırın.",
+  },
+  {
+    icon: Send,
     step: "03",
-    title: "QR Kodunu Aracınıza Yerleştirin",
-    desc: "Oluşturulan QR kodunu yazdırın ve aracınızın camına yapıştırın.",
+    title: "Birisi Okuttuğunda",
+    desc: "Sorun türünü seçip bildirim gönderir.",
   },
   {
     icon: Bell,
     step: "04",
-    title: "SMS ile Haberdar Olun",
-    desc: "Birisi QR kodu okuttuğunda anında SMS bildirimi alın.",
+    title: "Anında Haberdar Olun",
+    desc: "WhatsApp veya SMS ile bilgilendirme alın.",
   },
 ];
 

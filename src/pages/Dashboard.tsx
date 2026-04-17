@@ -1,18 +1,36 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bell, Car, ParkingCircle, Lightbulb, AlertTriangle, Wind,
-  MoreHorizontal, CheckCircle2, XCircle, QrCode,
-  CircleSlash, CarFront, DoorOpen, Siren, ShieldAlert, Fuel,
-  Plus, ScanLine, ChevronDown, MessageSquare, User as UserIcon,
+  Bell,
+  Car,
+  ParkingCircle,
+  Lightbulb,
+  AlertTriangle,
+  Wind,
+  MoreHorizontal,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Crown,
+  BarChart3,
+  Lock,
+  ChevronDown,
+  CircleSlash,
+  CarFront,
+  DoorOpen,
+  Siren,
+  ShieldAlert,
+  Fuel,
 } from "lucide-react";
 import { toast } from "sonner";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate, Link } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
-import { useIsMobileApp } from "@/hooks/useIsMobileApp";
-import PremiumStatusCard from "@/components/dashboard/PremiumStatusCard";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import DashboardCharts from "@/components/dashboard/DashboardCharts";
 
 const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg: string; label: string }> = {
   "wrong-park": { icon: ParkingCircle, label: "Hatalı Park", color: "text-destructive", bg: "bg-destructive/10" },
@@ -31,56 +49,78 @@ const issueIcons: Record<string, { icon: typeof ParkingCircle; color: string; bg
   "other": { icon: MoreHorizontal, label: "Diğer", color: "text-primary", bg: "bg-primary/10" },
 };
 
-type Vehicle = { id: string; plate: string; phone: string; brand?: string; model?: string };
+type Vehicle = { id: string; plate: string; phone: string };
+
 type Notification = {
-  id: string; plate: string; issue_type: string; note: string | null; status: string; created_at: string;
+  id: string;
+  plate: string;
+  issue_type: string;
+  note: string | null;
+  status: string;
+  created_at: string;
 };
+
+const FREE_NOTIFICATION_LIMIT = 5;
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
-  const isMobile = useIsMobileApp();
+  const { isPremium } = useSubscription();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [allNotifications, setAllNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
-  const [profileName, setProfileName] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/dashboard");
       return;
     }
-    if (user) fetchData();
-  }, [user, authLoading, navigate]);
+    if (user) {
+      fetchData();
+    }
+  }, [user, authLoading]);
 
+  // Realtime subscription
   useEffect(() => {
     if (!selectedVehicle) return;
+
     const channel = supabase
       .channel("dashboard-notifications")
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "notifications",
-        filter: `plate=eq.${selectedVehicle.plate}`,
-      }, (payload) => {
-        setNotifications((prev) => [payload.new as Notification, ...prev]);
-        toast.info("Yeni bir bildirim alındı!");
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `plate=eq.${selectedVehicle.plate}`,
+        },
+        (payload) => {
+          const newNotif = payload.new as Notification;
+          setNotifications((prev) => [newNotif, ...prev]);
+          toast.info("Yeni bir bildirim alındı!");
+        }
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [selectedVehicle]);
 
   const fetchData = async () => {
     setLoading(true);
 
-    const [vehicleRes, profileRes] = await Promise.all([
-      supabase.from("vehicles").select("id, plate, phone, brand, model").eq("user_id", user!.id).order("created_at", { ascending: true }),
-      supabase.from("profiles").select("full_name").eq("user_id", user!.id).single(),
-    ]);
+    const { data: vehicleData } = await supabase
+      .from("vehicles")
+      .select("id, plate, phone")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: true });
 
-    const allVehicles = (vehicleRes.data as Vehicle[]) || [];
+    const allVehicles = (vehicleData as Vehicle[]) || [];
     setVehicles(allVehicles);
-    setProfileName(profileRes.data?.full_name || user?.email?.split("@")[0] || "");
 
     const active = allVehicles[0] || null;
     setSelectedVehicle(active);
@@ -89,13 +129,29 @@ const Dashboard = () => {
       await fetchNotifications(active.plate);
     }
 
+    // Fetch all notifications across all vehicles for charts
+    if (allVehicles.length > 0) {
+      const plates = allVehicles.map((v) => v.plate);
+      const { data: allNotifData } = await supabase
+        .from("notifications")
+        .select("*")
+        .in("plate", plates)
+        .order("created_at", { ascending: false });
+      setAllNotifications((allNotifData as Notification[]) || []);
+    }
+
     setLoading(false);
   };
 
   const fetchNotifications = async (plate: string) => {
-    const { data } = await supabase.from("notifications").select("*").eq("plate", plate)
-      .order("created_at", { ascending: false }).limit(50);
-    setNotifications((data as Notification[]) || []);
+    const { data: notifData } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("plate", plate)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    setNotifications((notifData as Notification[]) || []);
   };
 
   const handleSelectVehicle = async (v: Vehicle) => {
@@ -105,255 +161,313 @@ const Dashboard = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Az önce";
-    if (mins < 60) return `${mins} dk önce`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours} saat önce`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} gün önce`;
-    return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("tr-TR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
+
+  const getStats = () => {
+    const total = notifications.length;
+    const thisMonth = notifications.filter((n) => {
+      const d = new Date(n.created_at);
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+
+    const typeCounts: Record<string, number> = {};
+    notifications.forEach((n) => {
+      typeCounts[n.issue_type] = (typeCounts[n.issue_type] || 0) + 1;
+    });
+    const topType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+    const topLabel = topType ? (issueIcons[topType[0]]?.label || "Diğer") : "-";
+
+    return { total, thisMonth, topLabel };
+  };
+
+  const visibleNotifications = isPremium
+    ? notifications
+    : notifications.slice(0, FREE_NOTIFICATION_LIMIT);
+  const hiddenCount = isPremium ? 0 : Math.max(0, notifications.length - FREE_NOTIFICATION_LIMIT);
 
   if (authLoading || loading) {
     return (
-      <AppLayout hideHeader>
-        <div className="flex items-center justify-center pt-20">
-          <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center pt-40">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
-  const quickActions = [
-    { icon: QrCode, label: "QR Göster", action: () => navigate("/generate"), color: "text-primary", badge: vehicles.length > 0 ? vehicles.length : null },
-    { icon: Plus, label: "Araç Ekle", action: () => navigate("/generate"), color: "text-primary", badge: null },
-    { icon: Bell, label: "Bildirimler", action: () => navigate("/notifications"), color: "text-primary", badge: null },
-    { icon: ScanLine, label: "QR Tara", action: () => navigate("/scan"), color: "text-primary", badge: null },
-    { icon: MessageSquare, label: "Destek", action: () => navigate("/messages"), color: "text-primary", badge: null },
-    { icon: UserIcon, label: "Profil", action: () => navigate("/profile"), color: "text-primary", badge: null },
-  ];
+  const stats = getStats();
 
   return (
-    <AppLayout hideHeader={isMobile}>
-      {/* TOP BAR (mobile only) */}
-      {isMobile && (
-        <header className="sticky top-0 z-50 glass px-4 py-3">
-          <div className="flex items-center justify-between max-w-lg mx-auto">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <Car className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-display font-bold text-foreground">
-                QR<span className="text-primary">Park</span>
-              </span>
-            </div>
-            <button
-              onClick={() => navigate("/notifications")}
-              className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors relative"
-            >
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center">
-                  {notifications.length > 9 ? "9+" : notifications.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </header>
-      )}
+    <div className="min-h-screen bg-background">
+      <Navbar />
 
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
-
-        {/* GREETING */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="text-muted-foreground text-sm">Merhaba,</p>
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            {profileName || "Kullanıcı"} 👋
-          </h1>
-        </motion.div>
-
-        {/* PREMIUM STATUS CARD */}
-        <PremiumStatusCard />
-
-        {/* VEHICLE HERO CARD */}
-        <motion.div
-          className="rounded-2xl border border-border bg-card p-6"
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          {vehicles.length === 0 ? (
-            <div className="text-center">
-              <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center mx-auto mb-4">
-                <Car className="w-7 h-7 text-muted-foreground" />
-              </div>
-              <h2 className="text-lg font-display font-bold text-foreground mb-1">Araç Ekleyin</h2>
-              <p className="text-sm text-muted-foreground mb-5">
-                İlk aracınızı ekleyerek QR kodunuzu oluşturun.
-              </p>
-              <button
-                onClick={() => navigate("/generate")}
-                className="w-full py-3 rounded-xl bg-foreground text-background font-semibold text-sm hover:opacity-90 transition-opacity"
-              >
-                Araç Ekle
-              </button>
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                    <Car className="w-6 h-6 text-primary-foreground" />
+      <div className="pt-28 pb-16">
+        <div className="container mx-auto px-6">
+          <motion.div className="max-w-2xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="text-center mb-10">
+              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
+                Bildirim <span className="text-primary">Paneli</span>
+              </h1>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                {/* Vehicle selector */}
+                {vehicles.length > 1 ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowVehicleSelector(!showVehicleSelector)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary hover:bg-secondary/80 transition-colors"
+                    >
+                      <Car className="w-4 h-4 text-primary" />
+                      <span className="font-display font-bold text-foreground tracking-wider">
+                        {selectedVehicle?.plate}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                    <AnimatePresence>
+                      {showVehicleSelector && (
+                        <motion.div
+                          className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-10 glass rounded-xl border border-border p-2 min-w-[180px]"
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                        >
+                          {vehicles.map((v) => (
+                            <button
+                              key={v.id}
+                              onClick={() => handleSelectVehicle(v)}
+                              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-display tracking-wider transition-colors ${
+                                selectedVehicle?.id === v.id
+                                  ? "bg-primary/10 text-primary font-bold"
+                                  : "text-foreground hover:bg-secondary"
+                              }`}
+                            >
+                              {v.plate}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedVehicle?.brand} {selectedVehicle?.model}
-                    </p>
-                    <p className="font-display font-bold text-lg text-foreground tracking-wider">
-                      {selectedVehicle?.plate}
-                    </p>
+                ) : selectedVehicle ? (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary">
+                    <Car className="w-4 h-4 text-primary" />
+                    <span className="font-display font-bold text-foreground tracking-wider">{selectedVehicle.plate}</span>
                   </div>
-                </div>
-                {vehicles.length > 1 && (
-                  <button
-                    onClick={() => setShowVehicleSelector(!showVehicleSelector)}
-                    className="px-3 py-1.5 rounded-lg bg-secondary text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                  >
-                    Değiştir <ChevronDown className="w-3 h-3" />
-                  </button>
+                ) : null}
+
+                {isPremium ? (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
+                    <Crown className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs font-bold text-primary">PREMIUM</span>
+                  </div>
+                ) : (
+                  <Link to="/pricing" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted border border-border hover:border-primary/30 transition-colors">
+                    <Crown className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Premium'a Geç</span>
+                  </Link>
+                )}
+
+                {isPremium && vehicles.length > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    {vehicles.length} araç kayıtlı
+                  </div>
                 )}
               </div>
-
-              <AnimatePresence>
-                {showVehicleSelector && (
-                  <motion.div
-                    className="mt-2 space-y-1"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    {vehicles.filter(v => v.id !== selectedVehicle?.id).map((v) => (
-                      <button
-                        key={v.id}
-                        onClick={() => handleSelectVehicle(v)}
-                        className="w-full text-left px-3 py-2.5 rounded-lg bg-secondary/50 hover:bg-secondary text-sm text-foreground font-display tracking-wider transition-colors"
-                      >
-                        {v.plate}
-                        <span className="text-xs text-muted-foreground ml-2">{v.brand} {v.model}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border">
-                <div className="text-center">
-                  <p className="text-xl font-bold text-foreground">{notifications.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Bildirim</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-bold text-foreground">{vehicles.length}</p>
-                  <p className="text-[10px] text-muted-foreground">Araç</p>
-                </div>
-              </div>
             </div>
-          )}
-        </motion.div>
 
-        {/* QUICK ACTIONS */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <h2 className="text-sm font-display font-semibold text-foreground mb-3">Hızlı İşlemler</h2>
-          <div className="grid grid-cols-3 gap-3">
-            {quickActions.map((item, i) => (
-              <motion.button
-                key={item.label}
-                onClick={item.action}
-                className="relative flex flex-col items-center gap-2 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all"
-                whileTap={{ scale: 0.93 }}
-                whileHover={{ y: -2 }}
+            {/* Stats Section */}
+            {isPremium ? (
+              <motion.div
+                className="grid grid-cols-3 gap-3 mb-6"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 + i * 0.05 }}
+                transition={{ delay: 0.1 }}
               >
-                {item.badge !== null && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-primary text-[10px] text-primary-foreground font-bold flex items-center justify-center px-1">
-                    {item.badge}
-                  </span>
-                )}
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                <div className="glass rounded-xl p-4 text-center">
+                  <BarChart3 className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                  <p className="text-[11px] text-muted-foreground">Toplam Bildirim</p>
                 </div>
-                <span className="text-xs font-medium text-foreground text-center leading-tight">{item.label}</span>
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* RECENT NOTIFICATIONS */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-display font-semibold text-foreground">Son Bildirimler</h2>
-            {notifications.length > 3 && (
-              <button onClick={() => navigate("/notifications")} className="text-xs text-primary font-medium">Tümünü Gör</button>
+                <div className="glass rounded-xl p-4 text-center">
+                  <Bell className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-foreground">{stats.thisMonth}</p>
+                  <p className="text-[11px] text-muted-foreground">Bu Ay</p>
+                </div>
+                <div className="glass rounded-xl p-4 text-center">
+                  <AlertTriangle className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <p className="text-sm font-bold text-foreground mt-1">{stats.topLabel}</p>
+                  <p className="text-[11px] text-muted-foreground">En Sık Sorun</p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="glass rounded-xl p-4 mb-6 flex items-center gap-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">İstatistikler Premium'a özel</p>
+                  <p className="text-xs text-muted-foreground">Bildirim istatistiklerini görmek için Premium'a geçin</p>
+                </div>
+                <Link to="/pricing">
+                  <span className="text-xs font-bold text-primary hover:underline">Geç →</span>
+                </Link>
+              </motion.div>
             )}
-          </div>
 
-          {notifications.length === 0 ? (
-            <div className="rounded-xl bg-card border border-border p-8 text-center">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                <Bell className="w-6 h-6 text-primary" />
+            {/* Charts - Premium only */}
+            {isPremium && notifications.length > 0 && (
+              <motion.div
+                className="mb-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <DashboardCharts
+                  notifications={notifications}
+                  vehiclePlates={vehicles.map((v) => v.plate)}
+                  allNotifications={allNotifications}
+                />
+              </motion.div>
+            )}
+
+            {/* Subscription link */}
+            <motion.div
+              className="mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22 }}
+            >
+              <Link
+                to="/subscription"
+                className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/30 border border-border transition-colors group block"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Crown className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-foreground">Abonelik Yönetimi</p>
+                  <p className="text-xs text-muted-foreground">Abonelik detaylarınızı görüntüleyin ve yönetin</p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 group-hover:text-primary transition-colors" />
+              </Link>
+            </motion.div>
+
+            {vehicles.length === 0 ? (
+              <div className="glass rounded-2xl p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="w-8 h-8 text-destructive" />
+                </div>
+                <h2 className="text-xl font-display font-bold text-foreground mb-2">Araç Bulunamadı</h2>
+                <p className="text-muted-foreground text-sm">Hesabınıza bağlı bir araç kaydı bulunamadı.</p>
               </div>
-              <p className="text-sm text-muted-foreground">Henüz bildirim yok</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {notifications.slice(0, 5).map((notif, index) => {
-                const info = issueIcons[notif.issue_type] || issueIcons["other"];
-                const Icon = info.icon;
-                return (
-                  <motion.div
-                    key={notif.id}
-                    className="flex items-center gap-3 p-3.5 rounded-xl bg-card border border-border"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + index * 0.05 }}
-                  >
-                    <div className={`w-10 h-10 rounded-lg ${info.bg} flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`w-5 h-5 ${info.color}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-foreground">{info.label}</p>
-                        <div className="flex items-center gap-1">
-                          {notif.status === "sent" ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                          ) : (
-                            <XCircle className="w-3.5 h-3.5 text-destructive" />
+            ) : notifications.length === 0 ? (
+              <div className="glass rounded-2xl p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Bell className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-xl font-display font-bold text-foreground mb-2">Henüz Bildirim Yok</h2>
+                <p className="text-muted-foreground text-sm">Aracınıza henüz bir bildirim gönderilmemiş.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-4">
+                  {isPremium ? (
+                    <>Toplam <span className="text-foreground font-medium">{notifications.length}</span> bildirim</>
+                  ) : (
+                    <>Son <span className="text-foreground font-medium">{visibleNotifications.length}</span> / {notifications.length} bildirim</>
+                  )}
+                </p>
+
+                {visibleNotifications.map((notif, index) => {
+                  const issueInfo = issueIcons[notif.issue_type] || issueIcons["other"];
+                  const Icon = issueInfo.icon;
+
+                  return (
+                    <motion.div
+                      key={notif.id}
+                      className="glass rounded-xl p-5"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={`w-11 h-11 rounded-lg ${issueInfo.bg} flex items-center justify-center flex-shrink-0`}>
+                          <Icon className={`w-5 h-5 ${issueInfo.color}`} />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <h3 className="font-medium text-foreground">{issueInfo.label}</h3>
+                            <div className="flex items-center gap-1.5">
+                              {notif.status === "sent" ? (
+                                <CheckCircle2 className="w-4 h-4 text-primary" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-destructive" />
+                              )}
+                              <span className={`text-xs ${notif.status === "sent" ? "text-primary" : "text-destructive"}`}>
+                                {notif.status === "sent" ? "Gönderildi" : "Başarısız"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {notif.note && (
+                            <p className="text-sm text-muted-foreground mb-2">{notif.note}</p>
                           )}
+
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            {formatDate(notif.created_at)}
+                          </div>
                         </div>
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(notif.created_at)}</p>
-                    </div>
+                    </motion.div>
+                  );
+                })}
+
+                {hiddenCount > 0 && (
+                  <motion.div
+                    className="glass rounded-xl p-5 text-center border border-dashed border-primary/30"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Lock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm font-medium text-foreground mb-1">
+                      +{hiddenCount} bildirim daha var
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Tüm bildirim geçmişinizi görmek için Premium'a geçin
+                    </p>
+                    <Link
+                      to="/pricing"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
+                    >
+                      <Crown className="w-3.5 h-3.5" />
+                      Premium'a Geç
+                    </Link>
                   </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </motion.div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        </div>
       </div>
-    </AppLayout>
+
+      <Footer />
+    </div>
   );
 };
 

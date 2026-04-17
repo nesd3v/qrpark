@@ -6,22 +6,17 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import GenerateQR from "./pages/GenerateQR";
 import Notify from "./pages/Notify";
-import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
-import Messages from "./pages/Messages";
-import Scan from "./pages/Scan";
-
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
-import CorporateDashboard from "./pages/CorporateDashboard";
 import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
 import Pricing from "./pages/Pricing";
 import Install from "./pages/Install";
 import Unsubscribe from "./pages/Unsubscribe";
+import CorporateContact from "./pages/CorporateContact";
+import CorporateDashboard from "./pages/CorporateDashboard";
 import Subscription from "./pages/Subscription";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/shared/SupportChatWidget";
 
@@ -38,21 +33,16 @@ const App = () => (
           <Route path="/generate" element={<GenerateQR />} />
           <Route path="/notify/:plateId" element={<Notify />} />
           <Route path="/auth" element={<Auth />} />
-          
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/corporate-dashboard" element={<CorporateDashboard />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/scan" element={<Scan />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/install" element={<Install />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/corporate-contact" element={<CorporateContact />} />
+          <Route path="/corporate" element={<CorporateDashboard />} />
           <Route path="/subscription" element={<Subscription />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/help" element={<HelpCenter />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />

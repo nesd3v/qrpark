@@ -256,7 +256,6 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
-          email: string | null
           full_name: string | null
           id: string
           phone: string | null
@@ -266,7 +265,6 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -276,7 +274,6 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
-          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -445,13 +442,10 @@ export type Database = {
       }
       vehicles: {
         Row: {
-          brand: string | null
           call_enabled: boolean
-          color: string | null
           created_at: string
           id: string
           last_qr_generated_at: string | null
-          model: string | null
           phone: string
           plate: string
           qr_expires_at: string | null
@@ -462,13 +456,10 @@ export type Database = {
           verification_status: string
         }
         Insert: {
-          brand?: string | null
           call_enabled?: boolean
-          color?: string | null
           created_at?: string
           id?: string
           last_qr_generated_at?: string | null
-          model?: string | null
           phone: string
           plate: string
           qr_expires_at?: string | null
@@ -479,13 +470,10 @@ export type Database = {
           verification_status?: string
         }
         Update: {
-          brand?: string | null
           call_enabled?: boolean
-          color?: string | null
           created_at?: string
           id?: string
           last_qr_generated_at?: string | null
-          model?: string | null
           phone?: string
           plate?: string
           qr_expires_at?: string | null

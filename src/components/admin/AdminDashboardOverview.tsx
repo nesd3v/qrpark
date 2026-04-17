@@ -1,5 +1,5 @@
 import {
-  ShieldCheck, ShieldX, Clock, BarChart3, MessageCircle, Car, ArrowRight, Building2, Users,
+  ShieldCheck, ShieldX, Clock, BarChart3, Building2, MessageCircle, Car, ArrowRight,
 } from "lucide-react";
 
 type Stats = {
@@ -38,28 +38,35 @@ const AdminDashboardOverview = ({
       action: () => onNavigate("vehicles"),
     },
     {
-      label: "Yeni Kurumsal Talep",
-      value: stats.corporate_new,
-      icon: Building2,
-      color: "text-accent-foreground",
-      bgColor: "bg-accent/10",
-      action: () => onNavigate("corporate"),
-      urgent: stats.corporate_new > 0,
+      label: "Reddedilen Araçlar",
+      value: stats.rejected,
+      icon: ShieldX,
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
+      action: () => onNavigate("vehicles"),
     },
     {
       label: "Toplam Bildirimler",
       value: stats.total_notifications,
       icon: BarChart3,
+      color: "text-accent-foreground",
+      bgColor: "bg-accent/10",
+    },
+    {
+      label: "Yeni Kurumsal Başvuru",
+      value: stats.corporate_new,
+      icon: Building2,
       color: "text-primary",
       bgColor: "bg-primary/10",
-      action: () => onNavigate("notifications"),
+      action: () => onNavigate("corporate"),
+      urgent: stats.corporate_new > 0,
     },
   ];
 
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Genel Bakış</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {cards.map((c) => (
           <button
             key={c.label}
@@ -84,11 +91,12 @@ const AdminDashboardOverview = ({
         ))}
       </div>
 
+      {/* Quick actions */}
       <h2 className="text-lg font-bold text-foreground mb-4">Hızlı Erişim</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "Araç Doğrulama", desc: "Bekleyen araçları incele ve onayla", icon: Car, tab: "vehicles" },
-          { label: "Kurumsal Talepler", desc: "Filo başvurularını yönet ve onayla", icon: Building2, tab: "corporate" },
+          { label: "Kurumsal Başvurular", desc: "Filo ve AVM başvurularını yönet", icon: Building2, tab: "corporate" },
           { label: "Canlı Destek", desc: "Kullanıcı mesajlarını yanıtla", icon: MessageCircle, tab: "support" },
         ].map((item) => (
           <button

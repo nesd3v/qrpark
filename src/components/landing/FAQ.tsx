@@ -9,27 +9,27 @@ import {
 const faqs = [
   {
     q: "QRPark ücretsiz mi?",
-    a: "Evet! Temel özellikler tamamen ücretsizdir — araç kaydı, QR oluşturma ve bildirim alma. Süresiz QR ve sınırsız özellikler için Premium aboneliğe geçebilirsiniz.",
+    a: "Evet! QR kodu oluşturmak ve bildirim almak tamamen ücretsizdir. Premium özellikler için ileride ücretli planlar sunulabilir.",
   },
   {
-    q: "Premium plan ne sunuyor?",
-    a: "Premium ile QR kodunuz hiç sona ermez, sınırsız bildirim alırsınız, öncelikli destek hattı ve gelişmiş istatistiklere erişiminiz olur. Aylık ₺49 veya yıllık ₺499 (~%15 indirim).",
-  },
-  {
-    q: "Kurumsal plan nasıl çalışıyor?",
-    a: "Filo sahipleri için özel kurumsal panel sunuyoruz. İletişim formundan başvurun, ekibimiz onayladıktan sonra çoklu araç yönetimi yapabileceğiniz kurumsal panele erişim kazanırsınız.",
+    q: "QR kodu nereden edinebilirim?",
+    a: "Sitemizden 'QR Oluştur' butonuna tıklayarak plaka numaranızı girip QR kodunuzu anında oluşturabilir ve indirebilirsiniz.",
   },
   {
     q: "QR kodu okutan kişi bilgilerimi görebilir mi?",
-    a: "Hayır. QR kodu okutan kişi sadece sorun türünü seçip bildirim gönderebilir. Telefon numaranız veya kişisel bilgileriniz asla paylaşılmaz.",
+    a: "Hayır. QR kodu okutan kişi sadece sorun türünü seçip bildirim gönderebilir. Telefon numaranız veya kişisel bilgileriniz paylaşılmaz.",
   },
   {
     q: "Bildirimler nasıl geliyor?",
-    a: "Kayıt sırasında verdiğiniz telefon numarasına SMS olarak anında bildirim gönderilir.",
+    a: "Kayıt sırasında verdiğiniz telefon numarasına WhatsApp mesajı veya SMS olarak bildirim gönderilir.",
   },
   {
-    q: "Premium aboneliğimi nasıl iptal edebilirim?",
-    a: "Profil > Abonelik sayfasından tek tıkla iptal edebilirsiniz. Ödediğiniz dönem sonuna kadar premium özellikleri kullanmaya devam edersiniz.",
+    q: "QR kodum kaybolursa ne yapmalıyım?",
+    a: "Aynı plaka numarasıyla yeni bir QR kodu oluşturabilirsiniz. Eski QR kodunuz da çalışmaya devam edecektir.",
+  },
+  {
+    q: "Birden fazla araç için QR kodu oluşturabilir miyim?",
+    a: "Evet, her araç için farklı plaka numarasıyla ayrı QR kodları oluşturabilirsiniz.",
   },
   {
     q: "Sahte bildirim gönderilmesini nasıl engelliyorsunuz?",

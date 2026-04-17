@@ -1,137 +1,108 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Car, Phone, User, Mail, CheckCircle2, ArrowRight, Loader2,
+  Car, Mail, Lock, Eye, EyeOff, CheckCircle2, XCircle, User, Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 
+const passwordRules = [
+  { id: "length", label: "En az 8 karakter", test: (p: string) => p.length >= 8 },
+  { id: "upper", label: "En az 1 büyük harf", test: (p: string) => /[A-ZÇĞİÖŞÜ]/.test(p) },
+  { id: "digit", label: "En az 1 rakam", test: (p: string) => /\d/.test(p) },
+  { id: "punct", label: "En az 1 noktalama işareti", test: (p: string) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(p) },
+];
+
 const Auth = () => {
-  const [step, setStep] = useState<"phone" | "otp" | "profile">("phone");
-  const [phone, setPhone] = useState("+90 ");
-  const [otp, setOtp] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("+90 ");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [registered, setRegistered] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
 
-  // If already logged in, redirect away
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        navigate(redirect, { replace: true });
-      } else {
-        setAuthChecked(true);
-      }
-    });
-  }, [navigate, redirect]);
+  const isPasswordValid = passwordRules.every((r) => r.test(password));
 
-  const formatPhone = (val: string) => {
-    if (!val.startsWith("+90")) val = "+90 " + val.replace(/^\+?9?0?\s*/, "");
-    const digits = val.slice(3).replace(/[^\d]/g, "");
-    let f = "+90 ";
-    if (digits.length > 0) f += digits.slice(0, 3);
-    if (digits.length > 3) f += " " + digits.slice(3, 6);
-    if (digits.length > 6) f += " " + digits.slice(6, 8);
-    if (digits.length > 8) f += " " + digits.slice(8, 10);
-    return f;
-  };
-
-  const phoneDigits = phone.replace(/\D/g, "");
-  const isPhoneValid = phoneDigits.length >= 12;
-
-  const startCountdown = () => {
-    setCountdown(30);
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) { clearInterval(interval); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  // Step 1: Send OTP
-  const handleSendOTP = async () => {
-    if (!isPhoneValid) { toast.error("Geçerli bir telefon numarası girin"); return; }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("phone-otp", {
-        body: { action: "send", phone: phone.trim() },
-      });
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); setLoading(false); return; }
-      toast.success("Doğrulama kodu gönderildi!");
-      setStep("otp");
-      startCountdown();
-    } catch (err: any) {
-      toast.error(err.message || "SMS gönderilemedi");
-    } finally {
-      setLoading(false);
+  // --- Register ---
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (!fullName.trim() || !email || !password || phoneDigits.length < 12) {
+      toast.error("Lütfen tüm alanları doldurun");
+      return;
     }
-  };
-
-  // Step 2: Verify OTP
-  const handleVerifyOTP = async () => {
-    if (otp.length !== 6) { toast.error("6 haneli kodu girin"); return; }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("phone-otp", {
-        body: { action: "verify", phone: phone.trim(), code: otp },
-      });
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); setLoading(false); return; }
-
-      if (data.isNewUser) {
-        setStep("profile");
-      } else {
-        // Existing user - sign in
-        const { error: signInError } = await supabase.auth.verifyOtp({
-          token_hash: data.token_hash,
-          type: "magiclink",
-        });
-        if (signInError) throw signInError;
-        toast.success("Giriş başarılı!");
-        navigate(redirect);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Doğrulama başarısız");
-    } finally {
-      setLoading(false);
+    if (!isPasswordValid) {
+      toast.error("Şifre güvenlik kurallarını karşılamıyor");
+      return;
     }
-  };
 
-  // Step 3: Complete profile
-  const handleCompleteProfile = async () => {
-    if (!fullName.trim()) { toast.error("İsim soyisim gerekli"); return; }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("phone-otp", {
-        body: {
-          action: "complete-profile",
-          phone: phone.trim(),
-          full_name: fullName.trim(),
-          email: email.trim() || undefined,
+      // Check if phone already exists
+      const { data: phoneExists } = await supabase.rpc("check_phone_exists", {
+        p_phone: phone.trim(),
+      });
+      if (phoneExists) {
+        toast.error("Bu telefon numarası zaten başka bir hesapta kayıtlı");
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+          },
         },
       });
       if (error) throw error;
-      if (data?.error) { toast.error(data.error); setLoading(false); return; }
 
-      const { error: signInError } = await supabase.auth.verifyOtp({
-        token_hash: data.token_hash,
-        type: "magiclink",
-      });
-      if (signInError) throw signInError;
-      toast.success("Hesabınız oluşturuldu!");
+      // Send welcome email
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "welcome-email",
+          recipientEmail: email,
+          idempotencyKey: `welcome-${email}-${Date.now()}`,
+          templateData: { name: fullName.trim() },
+        },
+      }).catch(() => {});
+
+      setRegistered(true);
+    } catch (err: any) {
+      toast.error(err.message || "Bir hata oluştu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Login ---
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error("Lütfen tüm alanları doldurun");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Giriş başarılı!");
       navigate(redirect);
     } catch (err: any) {
       toast.error(err.message || "Bir hata oluştu");
@@ -140,38 +111,157 @@ const Auth = () => {
     }
   };
 
-  const resendOTP = async () => {
-    if (countdown > 0) return;
+  // --- Forgot password ---
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error("Lütfen e-posta adresinizi girin");
+      return;
+    }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("phone-otp", {
-        body: { action: "send", phone: phone.trim() },
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      if (data?.error) { toast.error(data.error); setLoading(false); return; }
-      toast.success("Yeni kod gönderildi!");
-      startCountdown();
-      setOtp("");
+      toast.success("Şifre sıfırlama bağlantısı e-postanıza gönderildi!");
+      setShowForgot(false);
     } catch (err: any) {
-      toast.error(err.message || "Kod gönderilemedi");
+      toast.error(err.message || "Bir hata oluştu");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!authChecked) {
+  // ========== REGISTRATION SUCCESS ==========
+  if (registered) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <motion.div className="w-full max-w-md text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="w-10 h-10 text-primary" />
+          </div>
+          <h1 className="text-2xl font-display font-bold text-foreground mb-3">Kayıt Başarılı!</h1>
+          <p className="text-muted-foreground mb-6">
+            Lütfen e-posta adresinizi doğrulayın, ardından giriş yaparak QR kodunuzu oluşturabilirsiniz.
+          </p>
+          <Button
+            onClick={() => { setRegistered(false); setIsLogin(true); }}
+            className="gradient-primary text-primary-foreground font-semibold py-6 px-8 glow-primary hover:opacity-90 transition-opacity"
+          >
+            Giriş Sayfasına Git
+          </Button>
+        </motion.div>
       </div>
     );
   }
 
+  // ========== FORGOT PASSWORD ==========
+  if (showForgot) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <motion.div className="w-full max-w-md" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center gap-2 mb-6">
+              <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                <Car className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-2xl font-display font-bold text-foreground">
+                QR<span className="text-primary">Park</span>
+              </span>
+            </Link>
+            <h1 className="text-2xl font-display font-bold text-foreground">Şifremi Unuttum</h1>
+            <p className="text-muted-foreground text-sm mt-1">E-posta adresinize sıfırlama bağlantısı göndereceğiz</p>
+          </div>
+          <form onSubmit={handleForgotPassword} className="glass rounded-2xl p-8 space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email" className="text-foreground font-medium flex items-center gap-2">
+                <Mail className="w-4 h-4 text-primary" /> E-posta
+              </Label>
+              <Input id="forgot-email" type="email" placeholder="ornek@email.com" value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground" />
+            </div>
+            <Button type="submit" disabled={loading}
+              className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-base glow-primary hover:opacity-90 transition-opacity disabled:opacity-40">
+              {loading ? "Gönderiliyor..." : "Sıfırlama Bağlantısı Gönder"}
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              <button type="button" onClick={() => setShowForgot(false)} className="text-primary hover:underline font-medium">
+                Giriş sayfasına dön
+              </button>
+            </p>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ========== LOGIN ==========
+  if (isLogin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
+        <motion.div className="w-full max-w-md" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center gap-2 mb-6">
+              <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                <Car className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-2xl font-display font-bold text-foreground">
+                QR<span className="text-primary">Park</span>
+              </span>
+            </Link>
+            <h1 className="text-2xl font-display font-bold text-foreground">Giriş Yap</h1>
+            <p className="text-muted-foreground text-sm mt-1">Hesabınıza giriş yapın</p>
+          </div>
+          <form onSubmit={handleLogin} className="glass rounded-2xl p-8 space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground font-medium flex items-center gap-2">
+                <Mail className="w-4 h-4 text-primary" /> E-posta
+              </Label>
+              <Input id="email" type="email" placeholder="ornek@email.com" value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-foreground font-medium flex items-center gap-2">
+                <Lock className="w-4 h-4 text-primary" /> Şifre
+              </Label>
+              <div className="relative">
+                <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground pr-10" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="text-right">
+              <button type="button" onClick={() => setShowForgot(true)} className="text-sm text-primary hover:underline">
+                Şifremi unuttum
+              </button>
+            </div>
+            <Button type="submit" disabled={loading}
+              className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-base glow-primary hover:opacity-90 transition-opacity disabled:opacity-40">
+              {loading ? "Yükleniyor..." : "Giriş Yap"}
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Hesabınız yok mu?{" "}
+              <button type="button" onClick={() => setIsLogin(false)}
+                className="text-primary hover:underline font-medium">Kayıt Ol</button>
+            </p>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ========== REGISTRATION ==========
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <motion.div className="w-full max-w-md" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
             <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
               <Car className="w-5 h-5 text-primary-foreground" />
@@ -180,162 +270,99 @@ const Auth = () => {
               QR<span className="text-primary">Park</span>
             </span>
           </Link>
-
-          {/* Step indicator */}
-          <div className="flex items-center justify-center gap-2 mb-4">
-            {[1, 2, 3].map((s) => {
-              const stepIndex = step === "phone" ? 1 : step === "otp" ? 2 : 3;
-              const isActive = s <= stepIndex;
-              return (
-                <div key={s} className={`h-1.5 rounded-full transition-all ${s === stepIndex ? "w-8 bg-primary" : isActive ? "w-6 bg-primary/50" : "w-6 bg-muted"}`} />
-              );
-            })}
-          </div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Kayıt Ol</h1>
+          <p className="text-muted-foreground text-sm mt-1">Yeni hesap oluşturun</p>
         </div>
 
-        {/* ========== STEP 1: PHONE ========== */}
-        {step === "phone" && (
-          <motion.div key="phone" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-display font-bold text-foreground">Telefon Numaranız</h1>
-              <p className="text-muted-foreground text-sm mt-1">Doğrulama kodu göndereceğiz</p>
+        <form onSubmit={handleRegister} className="glass rounded-2xl p-8 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="text-foreground font-medium flex items-center gap-2">
+              <User className="w-4 h-4 text-primary" /> Ad Soyad
+            </Label>
+            <Input id="fullName" placeholder="Ahmet Yılmaz" value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="bg-secondary border-border text-foreground placeholder:text-muted-foreground" maxLength={100} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-foreground font-medium flex items-center gap-2">
+              <Phone className="w-4 h-4 text-primary" /> Telefon Numarası
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">🇹🇷</span>
+              <Input
+                id="phone"
+                placeholder="5XX XXX XX XX"
+                value={phone}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (!val.startsWith("+90")) {
+                    val = "+90 " + val.replace(/^\+?9?0?\s*/, "");
+                  }
+                  const afterPrefix = val.slice(3).replace(/[^\d\s]/g, "");
+                  const digits = afterPrefix.replace(/\s/g, "");
+                  let formatted = "+90 ";
+                  if (digits.length > 0) formatted += digits.slice(0, 3);
+                  if (digits.length > 3) formatted += " " + digits.slice(3, 6);
+                  if (digits.length > 6) formatted += " " + digits.slice(6, 8);
+                  if (digits.length > 8) formatted += " " + digits.slice(8, 10);
+                  setPhone(formatted);
+                }}
+                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground pl-10 tracking-wide"
+                maxLength={17}
+              />
             </div>
-            <div className="glass rounded-2xl p-8 space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-foreground font-medium flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-primary" /> Telefon
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">🇹🇷</span>
-                  <Input
-                    id="phone"
-                    placeholder="5XX XXX XX XX"
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    className="bg-secondary border-border text-foreground placeholder:text-muted-foreground pl-10 tracking-wide text-lg"
-                    maxLength={17}
-                    autoFocus
-                  />
-                </div>
-              </div>
-              <Button
-                onClick={handleSendOTP}
-                disabled={loading || !isPhoneValid}
-                className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-base glow-primary hover:opacity-90 transition-opacity disabled:opacity-40"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                  <>Doğrulama Kodu Gönder <ArrowRight className="w-4 h-4 ml-2" /></>
-                )}
-              </Button>
-            </div>
-          </motion.div>
-        )}
+            <p className="text-[11px] text-muted-foreground">Bildirimler bu numaraya gönderilecek</p>
+          </div>
 
-        {/* ========== STEP 2: OTP ========== */}
-        {step === "otp" && (
-          <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-display font-bold text-foreground">Doğrulama Kodu</h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                <span className="text-primary font-medium">{phone}</span> numarasına gönderilen 6 haneli kodu girin
-              </p>
-            </div>
-            <div className="glass rounded-2xl p-8 space-y-5">
-              <div className="flex justify-center">
-                <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-foreground font-medium flex items-center gap-2">
+              <Mail className="w-4 h-4 text-primary" /> E-posta
+            </Label>
+            <Input id="email" type="email" placeholder="ornek@email.com" value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-secondary border-border text-foreground placeholder:text-muted-foreground" />
+          </div>
 
-              <Button
-                onClick={handleVerifyOTP}
-                disabled={loading || otp.length !== 6}
-                className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-base glow-primary hover:opacity-90 transition-opacity disabled:opacity-40"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                  <>Doğrula <CheckCircle2 className="w-4 h-4 ml-2" /></>
-                )}
-              </Button>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={resendOTP}
-                  disabled={countdown > 0 || loading}
-                  className="text-sm text-primary hover:underline font-medium disabled:text-muted-foreground disabled:no-underline"
-                >
-                  {countdown > 0 ? `Tekrar gönder (${countdown}s)` : "Kodu tekrar gönder"}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => { setStep("phone"); setOtp(""); }}
-                className="w-full text-sm text-muted-foreground hover:text-foreground text-center"
-              >
-                ← Numarayı değiştir
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-foreground font-medium flex items-center gap-2">
+              <Lock className="w-4 h-4 text-primary" /> Şifre
+            </Label>
+            <div className="relative">
+              <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                className="bg-secondary border-border text-foreground placeholder:text-muted-foreground pr-10" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-          </motion.div>
-        )}
-
-        {/* ========== STEP 3: PROFILE ========== */}
-        {step === "profile" && (
-          <motion.div key="profile" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-display font-bold text-foreground">Profilinizi Tamamlayın</h1>
-              <p className="text-muted-foreground text-sm mt-1">Son adım — bilgilerinizi girin</p>
-            </div>
-            <div className="glass rounded-2xl p-8 space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-foreground font-medium flex items-center gap-2">
-                  <User className="w-4 h-4 text-primary" /> Ad Soyad
-                </Label>
-                <Input
-                  id="fullName"
-                  placeholder="Ahmet Yılmaz"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
-                  maxLength={100}
-                  autoFocus
-                />
+            {password.length > 0 && (
+              <div className="space-y-1 mt-2">
+                {passwordRules.map((rule) => {
+                  const passed = rule.test(password);
+                  return (
+                    <div key={rule.id} className="flex items-center gap-2 text-xs">
+                      {passed ? <CheckCircle2 className="w-3.5 h-3.5 text-primary" /> : <XCircle className="w-3.5 h-3.5 text-destructive" />}
+                      <span className={passed ? "text-primary" : "text-muted-foreground"}>{rule.label}</span>
+                    </div>
+                  );
+                })}
               </div>
+            )}
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground font-medium flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-primary" /> E-posta <span className="text-xs text-muted-foreground">(opsiyonel)</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="ornek@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
-                />
-                <p className="text-[11px] text-muted-foreground">Kampanya ve bilgilendirmeler için kullanılır</p>
-              </div>
+          <Button type="submit" disabled={loading}
+            className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-base glow-primary hover:opacity-90 transition-opacity disabled:opacity-40">
+            {loading ? "Yükleniyor..." : "Kayıt Ol"}
+          </Button>
+        </form>
 
-              <Button
-                onClick={handleCompleteProfile}
-                disabled={loading || !fullName.trim()}
-                className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-base glow-primary hover:opacity-90 transition-opacity disabled:opacity-40"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                  <>Hesabı Oluştur <ArrowRight className="w-4 h-4 ml-2" /></>
-                )}
-              </Button>
-            </div>
-          </motion.div>
-        )}
+        <p className="text-center text-sm text-muted-foreground mt-5">
+          Zaten hesabınız var mı?{" "}
+          <button type="button" onClick={() => setIsLogin(true)}
+            className="text-primary hover:underline font-medium">Giriş Yap</button>
+        </p>
       </motion.div>
     </div>
   );

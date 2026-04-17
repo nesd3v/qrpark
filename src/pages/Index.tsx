@@ -1,8 +1,4 @@
 // Deploy trigger v2
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { useIsMobileApp } from "@/hooks/useIsMobileApp";
 import Navbar from "@/components/layout/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorks from "@/components/landing/HowItWorks";
@@ -10,36 +6,8 @@ import FAQ from "@/components/landing/FAQ";
 import CTA from "@/components/landing/CTA";
 import Footer from "@/components/layout/Footer";
 
+// Auto-deploy test
 const Index = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const isMobile = useIsMobileApp();
-
-  useEffect(() => {
-    // Only redirect to dashboard on native mobile app, not on web browser
-    if (!loading && user && isMobile) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, loading, navigate, isMobile]);
-
-  // Show loading spinner only for mobile app users while checking auth
-  if (loading && isMobile) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // On mobile app, if user is logged in, show spinner while redirecting
-  if (isMobile && user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
-import { ArrowRight, QrCode, Package, Bell } from "lucide-react";
+import { ArrowRight, Crown, Clock, Car, Palette, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+
+const premiumPerks = [
+  { icon: Clock, text: "Süresiz QR kod" },
+  { icon: Car, text: "Sınırsız araç" },
+  { icon: BarChart3, text: "Detaylı istatistikler" },
+  { icon: Palette, text: "Özel QR tema" },
+];
 
 const CTA = () => {
   return (
@@ -21,17 +28,14 @@ const CTA = () => {
             <br />
             <span className="text-primary">Koruma Altına Alın</span>
           </h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto relative">
-            QR kodunuzu oluşturun, sticker siparişi verin ve aracınızla ilgili her durumdan anında haberdar olun.
+          <p className="text-muted-foreground mb-4 max-w-md mx-auto relative">
+            Ücretsiz QR kodunuz <span className="text-primary font-semibold">7 gün</span> geçerlidir. 
+            Premium'a geçerek süresiz QR ve tüm özelliklerin kilidini açın.
           </p>
 
-          {/* Feature badges */}
+          {/* Premium perks */}
           <div className="flex flex-wrap justify-center gap-3 mb-8 relative">
-            {[
-              { icon: QrCode, text: "Ücretsiz QR Kod" },
-              { icon: Package, text: "Sticker Gönderimi" },
-              { icon: Bell, text: "Anlık Bildirim" },
-            ].map((perk) => (
+            {premiumPerks.map((perk) => (
               <div key={perk.text} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                 <perk.icon className="w-3.5 h-3.5" />
                 {perk.text}
@@ -45,8 +49,18 @@ const CTA = () => {
                 size="lg"
                 className="gradient-primary text-primary-foreground font-semibold px-10 py-6 text-base glow-primary hover:opacity-90 transition-opacity"
               >
-                Hemen Başla
+                Ücretsiz Başla (7 Gün)
                 <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Link to="/pricing">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-primary/30 text-primary px-8 py-6 text-base hover:bg-primary/5"
+              >
+                <Crown className="w-4 h-4 mr-2" />
+                Premium Planlar
               </Button>
             </Link>
           </div>
