@@ -1,19 +1,17 @@
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Car, Plus, Pencil, Trash2, ChevronLeft, Loader2, QrCode,
-  CheckCircle2, Package, Truck, MapPin, Clock, CreditCard,
-  Monitor, Sticker, Shield, Zap, Sun, CloudRain,
+  CheckCircle2, Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import AppLayout from "@/components/layout/AppLayout";
-import PayTRModal from "@/components/subscription/PayTRModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +19,6 @@ import { useNavigate } from "react-router-dom";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-// ======= CAR DATA =======
 const CAR_BRANDS: Record<string, string[]> = {
   "TOGG": ["T10X", "T10F"],
   "Toyota": ["Corolla", "Yaris", "C-HR", "RAV4", "Camry", "Land Cruiser", "Hilux", "Supra", "Aygo X", "Yaris Cross"],
@@ -103,34 +100,6 @@ const GenerateQR = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Sticker order
-  const [stickerModalOpen, setStickerModalOpen] = useState(false);
-  const [stickerNote, setStickerNote] = useState("");
-  const [orderingStickerFor, setOrderingStickerFor] = useState<Vehicle | null>(null);
-  const [orderingSticker, setOrderingSticker] = useState(false);
-  const [stickerStep, setStickerStep] = useState<"package" | "address" | "summary">("package");
-  const [stickerPackage, setStickerPackage] = useState<1 | 2>(1);
-
-  // Sticker codes for this user
-  const [activatedStickers, setActivatedStickers] = useState<Record<string, boolean>>({});
-
-  // Address form fields
-  const [addrCity, setAddrCity] = useState("");
-  const [addrDistrict, setAddrDistrict] = useState("");
-  const [addrNeighborhood, setAddrNeighborhood] = useState("");
-  const [addrStreet, setAddrStreet] = useState("");
-  const [addrBuildingNo, setAddrBuildingNo] = useState("");
-  const [addrFloor, setAddrFloor] = useState("");
-  const [addrApartment, setAddrApartment] = useState("");
-  const [addrPostalCode, setAddrPostalCode] = useState("");
-
-  // Order tracking
-  const [stickerOrders, setStickerOrders] = useState<Record<string, any>>({});
-  const [trackingVehicle, setTrackingVehicle] = useState<Vehicle | null>(null);
-
-  // PayTR payment
-  const [paytrToken, setPaytrToken] = useState<string | null>(null);
-
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/generate");
@@ -138,32 +107,17 @@ const GenerateQR = () => {
     }
     if (user) {
       fetchVehicles();
-      fetchStickerOrders();
-      fetchActivatedStickers();
     }
     // Check for payment result in URL
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
-      toast.success("Ödeme başarılı! Sticker siparişiniz onaylandı 🎉");
+      toast.success("Ödeme başarılı! Premium üyeliğiniz aktif edildi 🎉");
       window.history.replaceState({}, "", "/generate");
     } else if (params.get("checkout") === "failed") {
       toast.error("Ödeme başarısız oldu. Lütfen tekrar deneyin.");
       window.history.replaceState({}, "", "/generate");
     }
   }, [user, authLoading]);
-
-  const fetchActivatedStickers = async () => {
-    const { data } = await supabase
-      .from("sticker_codes")
-      .select("vehicle_id")
-      .eq("activated_by", user!.id)
-      .eq("status", "activated");
-    if (data) {
-      const map: Record<string, boolean> = {};
-      data.forEach((s: any) => { if (s.vehicle_id) map[s.vehicle_id] = true; });
-      setActivatedStickers(map);
-    }
-  };
 
   const fetchVehicles = async () => {
     setLoadingVehicle(true);
@@ -174,19 +128,6 @@ const GenerateQR = () => {
       .order("created_at", { ascending: true });
     setVehicles((data as Vehicle[]) || []);
     setLoadingVehicle(false);
-  };
-
-  const fetchStickerOrders = async () => {
-    const { data } = await supabase
-      .from("sticker_orders")
-      .select("*")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: false });
-    if (data) {
-      const map: Record<string, any> = {};
-      data.forEach((o: any) => { if (!map[o.vehicle_id]) map[o.vehicle_id] = o; });
-      setStickerOrders(map);
-    }
   };
 
   const resetForm = () => {
@@ -214,7 +155,6 @@ const GenerateQR = () => {
     if (!formModel) { toast.error("Model seçin"); return; }
     if (!formColor) { toast.error("Renk seçin"); return; }
 
-    // Get user's phone from profile
     const { data: profile } = await supabase
       .from("profiles")
       .select("phone")
@@ -244,7 +184,6 @@ const GenerateQR = () => {
           throw error;
         }
 
-        // Auto-generate QR with 7-day expiry
         const now = new Date().toISOString();
         const qrExpiresAt = new Date(Date.now() + WEEK_MS).toISOString();
         await supabase.from("vehicles").update({ last_qr_generated_at: now, qr_expires_at: qrExpiresAt }).eq("id", data.id);
@@ -274,69 +213,6 @@ const GenerateQR = () => {
     setDeleting(null);
   };
 
-  const buildFullAddress = () => {
-    const parts = [
-      addrNeighborhood && `${addrNeighborhood} Mah.`,
-      addrStreet && `${addrStreet}`,
-      addrBuildingNo && `No: ${addrBuildingNo}`,
-      addrFloor && `Kat: ${addrFloor}`,
-      addrApartment && `Daire: ${addrApartment}`,
-      addrDistrict,
-      addrCity,
-      addrPostalCode,
-    ].filter(Boolean);
-    return parts.join(", ");
-  };
-
-  const isAddressValid = () => {
-    return addrCity.trim() && addrDistrict.trim() && addrNeighborhood.trim() && addrStreet.trim() && addrBuildingNo.trim();
-  };
-
-  const handleOrderSticker = async () => {
-    if (!orderingStickerFor) return;
-    const fullAddress = buildFullAddress();
-    if (!fullAddress) { toast.error("Adres gerekli"); return; }
-    setOrderingSticker(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-sticker-payment", {
-        body: {
-          vehicleId: orderingStickerFor.id,
-          plate: orderingStickerFor.plate,
-          address: fullAddress,
-          note: stickerNote.trim() || null,
-          stickerPackage,
-        },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      setStickerModalOpen(false);
-      setPaytrToken(data.token);
-      toast.info("Ödeme sayfası açılıyor...");
-    } catch (err: any) {
-      toast.error(err.message || "Ödeme başlatılamadı");
-    } finally {
-      setOrderingSticker(false);
-    }
-  };
-
-  const handlePaymentClose = () => {
-    setPaytrToken(null);
-    resetAddressForm();
-    setOrderingStickerFor(null);
-    fetchStickerOrders();
-  };
-
-  const resetAddressForm = () => {
-    setAddrCity(""); setAddrDistrict(""); setAddrNeighborhood("");
-    setAddrStreet(""); setAddrBuildingNo(""); setAddrFloor("");
-    setAddrApartment(""); setAddrPostalCode(""); setStickerNote("");
-    setStickerStep("package"); setStickerPackage(1);
-  };
-
-  const stickerPrice = stickerPackage === 1 ? 5000 : 7500;
-  const stickerPriceLabel = stickerPackage === 1 ? "₺50.00" : "₺75.00";
-
   const notifyUrl = (plate: string) => `${window.location.origin}/notify/${encodeURIComponent(plate)}`;
 
   const colorLabel = (val: string | null) => CAR_COLORS.find(c => c.value === val)?.label || val || "";
@@ -347,100 +223,6 @@ const GenerateQR = () => {
       <AppLayout>
         <div className="flex items-center justify-center pt-20">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // ========== ORDER TRACKING VIEW ==========
-  if (trackingVehicle) {
-    const order = stickerOrders[trackingVehicle.id];
-    const statusSteps = [
-      { key: "pending", label: "Sipariş Alındı", icon: Package },
-      { key: "preparing", label: "Hazırlanıyor", icon: QrCode },
-      { key: "shipped", label: "Kargoya Verildi", icon: Truck },
-      { key: "delivered", label: "Teslim Edildi", icon: CheckCircle2 },
-    ];
-    const currentIdx = statusSteps.findIndex(s => s.key === order?.status);
-
-    return (
-      <AppLayout>
-        <div className="py-6">
-          <div className="max-w-lg mx-auto px-4">
-            <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <button onClick={() => setTrackingVehicle(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
-                <ChevronLeft className="w-4 h-4" /> Geri
-              </button>
-
-              <div className="glass rounded-2xl p-8 border border-border">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Truck className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-display font-bold text-foreground">Sipariş Takibi</h1>
-                    <p className="text-sm text-muted-foreground">{trackingVehicle.plate} — {trackingVehicle.brand} {trackingVehicle.model}</p>
-                  </div>
-                </div>
-
-                {/* Progress steps */}
-                <div className="space-y-0 mb-8">
-                  {statusSteps.map((step, i) => {
-                    const isActive = i <= currentIdx;
-                    const isCurrent = i === currentIdx;
-                    return (
-                      <div key={step.key} className="flex items-start gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                            isActive ? "border-primary bg-primary/10" : "border-border bg-secondary"
-                          } ${isCurrent ? "ring-4 ring-primary/20" : ""}`}>
-                            <step.icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                          </div>
-                          {i < statusSteps.length - 1 && (
-                            <div className={`w-0.5 h-8 ${i < currentIdx ? "bg-primary" : "bg-border"}`} />
-                          )}
-                        </div>
-                        <div className="pt-2">
-                          <p className={`text-sm font-semibold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
-                            {step.label}
-                          </p>
-                          {isCurrent && (
-                            <p className="text-xs text-primary mt-0.5">Mevcut durum</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Order details */}
-                {order && (
-                  <div className="space-y-3 text-sm">
-                    <div className="bg-secondary rounded-lg px-4 py-3 flex items-start gap-3">
-                      <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Teslimat Adresi</p>
-                        <p className="text-foreground">{order.address}</p>
-                      </div>
-                    </div>
-                    <div className="bg-secondary rounded-lg px-4 py-3 flex items-start gap-3">
-                      <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Sipariş Tarihi</p>
-                        <p className="text-foreground">{new Date(order.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</p>
-                      </div>
-                    </div>
-                    {order.note && (
-                      <div className="bg-secondary rounded-lg px-4 py-3">
-                        <p className="text-xs text-muted-foreground mb-1">Notunuz</p>
-                        <p className="text-foreground">{order.note}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
         </div>
       </AppLayout>
     );
@@ -461,7 +243,6 @@ const GenerateQR = () => {
               </button>
 
               <div className="glass rounded-2xl p-8 border border-border">
-                {/* Vehicle info */}
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
                     <Car className="w-7 h-7 text-primary" />
@@ -480,28 +261,6 @@ const GenerateQR = () => {
                   </div>
                 </div>
 
-                {/* QR Type Badge */}
-                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                  <div className={`rounded-lg px-3 py-2.5 border ${activatedStickers[v.id] ? "border-primary/30 bg-primary/5" : "border-border bg-secondary"}`}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Sticker className={`w-3.5 h-3.5 ${activatedStickers[v.id] ? "text-primary" : "text-muted-foreground"}`} />
-                      <p className="text-xs font-medium text-muted-foreground">Fiziksel QR</p>
-                    </div>
-                    <p className={`font-semibold text-sm ${activatedStickers[v.id] ? "text-primary" : "text-muted-foreground"}`}>
-                      {activatedStickers[v.id] ? "Aktif ✓" : "Yok"}
-                    </p>
-                  </div>
-                  <div className={`rounded-lg px-3 py-2.5 border ${hasQR ? "border-primary/30 bg-primary/5" : "border-border bg-secondary"}`}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Monitor className={`w-3.5 h-3.5 ${hasQR ? "text-primary" : "text-muted-foreground"}`} />
-                      <p className="text-xs font-medium text-muted-foreground">Dijital QR</p>
-                    </div>
-                    <p className={`font-semibold text-sm ${hasQR ? "text-primary" : "text-muted-foreground"}`}>
-                      {hasQR ? "Aktif ✓" : "Yok"}
-                    </p>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
                   <div className="bg-secondary rounded-lg px-3 py-2">
                     <p className="text-muted-foreground text-xs">Telefon</p>
@@ -513,7 +272,6 @@ const GenerateQR = () => {
                   </div>
                 </div>
 
-                {/* QR Preview */}
                 {hasQR && (
                   <div className="flex flex-col items-center gap-4 mb-6">
                     <div className="flex items-center gap-2 text-sm text-primary font-medium">
@@ -531,30 +289,11 @@ const GenerateQR = () => {
                     </div>
 
                     <p className="text-xs text-muted-foreground text-center">
-                      Bu QR kodu sticker olarak aracınızın camına yapıştırın
+                      QR kodunu telefonunuzdan göstererek veya cam kenarına asarak kullanabilirsiniz
                     </p>
-
-                    {/* Sticker order / tracking button */}
-                    {stickerOrders[v.id] ? (
-                      <Button
-                        onClick={() => setTrackingVehicle(v)}
-                        variant="outline"
-                        className="w-full border-primary/30 text-primary font-semibold py-5"
-                      >
-                        <Truck className="w-4 h-4 mr-2" /> Siparişi Takip Et
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => { setOrderingStickerFor(v); setStickerModalOpen(true); }}
-                        className="w-full gradient-primary text-primary-foreground font-semibold py-5 glow-primary"
-                      >
-                        <Package className="w-4 h-4 mr-2" /> Sticker Sipariş Et
-                      </Button>
-                    )}
                   </div>
                 )}
 
-                {/* Actions */}
                 <div className="flex gap-3">
                   <Button variant="outline" className="flex-1" onClick={() => openEditModal(v)}>
                     <Pencil className="w-4 h-4 mr-1.5" /> Düzenle
@@ -568,260 +307,46 @@ const GenerateQR = () => {
             </motion.div>
           </div>
         </div>
-        {/* Sticker Order Modal */}
-        <Dialog open={stickerModalOpen} onOpenChange={(open) => { setStickerModalOpen(open); if (!open) resetAddressForm(); }}>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" />
-                {stickerStep === "package" ? "Paket Seçin" : stickerStep === "address" ? "Teslimat Adresi" : "Sipariş Özeti"}
-              </DialogTitle>
-              <DialogDescription>
-                {orderingStickerFor?.plate} plakalı aracınız için QR sticker gönderelim.
-              </DialogDescription>
-            </DialogHeader>
-
-            {stickerStep === "package" ? (
-              <div className="space-y-4">
-                {/* Advantages */}
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-primary" /> Fiziksel QR Sticker Avantajları
-                  </h4>
-                  <div className="space-y-2 text-xs text-muted-foreground">
-                    <div className="flex items-start gap-2">
-                      <Sun className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-                      <span>UV korumalı, <span className="text-foreground font-medium">güneş ve yağmura dayanıklı</span></span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <CloudRain className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Su geçirmez, <span className="text-foreground font-medium">dış mekan kalitesinde</span> baskı</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Zap className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Dijital QR'dan <span className="text-foreground font-medium">daha hızlı taranır</span>, her zaman hazır</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <QrCode className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-                      <span>Profesyonel görünüm, <span className="text-foreground font-medium">7/24 aktif</span> bildirim</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Package options */}
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setStickerPackage(1)}
-                    className={`w-full rounded-xl p-4 border-2 text-left transition-all ${
-                      stickerPackage === 1 ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-foreground">1 Adet Sticker</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Tek araç için ideal</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-display font-bold text-foreground">₺50</p>
-                        <p className="text-[10px] text-muted-foreground">Kargo dahil</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setStickerPackage(2)}
-                    className={`w-full rounded-xl p-4 border-2 text-left transition-all relative ${
-                      stickerPackage === 2 ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
-                    }`}
-                  >
-                    <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                      AVANTAJLI
-                    </span>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-foreground">2 Adet Sticker</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">İki araç veya yedek için</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-display font-bold text-foreground">₺75</p>
-                        <p className="text-[10px] text-muted-foreground line-through">₺100</p>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-
-                <Button onClick={() => setStickerStep("address")}
-                  className="w-full gradient-primary text-primary-foreground font-semibold py-5">
-                  Devam Et
-                </Button>
-              </div>
-            ) : stickerStep === "address" ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">İl *</Label>
-                    <Input placeholder="Ankara" value={addrCity} onChange={(e) => setAddrCity(e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">İlçe *</Label>
-                    <Input placeholder="Çankaya" value={addrDistrict} onChange={(e) => setAddrDistrict(e.target.value)} />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Mahalle *</Label>
-                  <Input placeholder="Kızılay Mahallesi" value={addrNeighborhood} onChange={(e) => setAddrNeighborhood(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Sokak / Cadde *</Label>
-                  <Input placeholder="Atatürk Bulvarı" value={addrStreet} onChange={(e) => setAddrStreet(e.target.value)} />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Bina No *</Label>
-                    <Input placeholder="12" value={addrBuildingNo} onChange={(e) => setAddrBuildingNo(e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Kat</Label>
-                    <Input placeholder="3" value={addrFloor} onChange={(e) => setAddrFloor(e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Daire</Label>
-                    <Input placeholder="5" value={addrApartment} onChange={(e) => setAddrApartment(e.target.value)} />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Posta Kodu</Label>
-                  <Input placeholder="06420" value={addrPostalCode} onChange={(e) => setAddrPostalCode(e.target.value)} maxLength={5} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Not (opsiyonel)</Label>
-                  <Input placeholder="Kapıda zil yok, lütfen arayın..." value={stickerNote} onChange={(e) => setStickerNote(e.target.value)} />
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStickerStep("package")} className="flex-1">
-                    Geri
-                  </Button>
-                  <Button onClick={() => setStickerStep("summary")} disabled={!isAddressValid()}
-                    className="flex-1 gradient-primary text-primary-foreground font-semibold py-5">
-                    Devam Et
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Vehicle info */}
-                <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
-                  <Car className="w-5 h-5 text-primary flex-shrink-0" />
-                  <div>
-                    <p className="font-display font-bold text-foreground tracking-wider text-sm">{orderingStickerFor?.plate}</p>
-                    <p className="text-xs text-muted-foreground">{orderingStickerFor?.brand} {orderingStickerFor?.model}</p>
-                  </div>
-                </div>
-
-                {/* Package info */}
-                <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
-                  <Package className="w-4 h-4 text-primary flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Paket</p>
-                    <p className="text-sm text-foreground font-medium">{stickerPackage} Adet Sticker</p>
-                  </div>
-                </div>
-
-                {/* Address summary */}
-                <div className="bg-secondary rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Teslimat Adresi</p>
-                      <p className="text-sm text-foreground">{buildFullAddress()}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {stickerNote && (
-                  <div className="bg-secondary rounded-lg p-3 text-sm">
-                    <p className="text-xs text-muted-foreground mb-1">Not</p>
-                    <p className="text-foreground">{stickerNote}</p>
-                  </div>
-                )}
-
-                {/* Price */}
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-display font-bold text-foreground">{stickerPriceLabel}</p>
-                  <p className="text-xs text-muted-foreground">{stickerPackage} Adet Sticker + Kargo ücreti dahil</p>
-                </div>
-
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStickerStep("address")} className="flex-1">
-                    Geri
-                  </Button>
-                  <Button onClick={handleOrderSticker} disabled={orderingSticker}
-                    className="flex-1 gradient-primary text-primary-foreground font-semibold">
-                    {orderingSticker ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
-                    Ödemeye Geç
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* PayTR Payment Modal */}
-        <PayTRModal token={paytrToken} onClose={handlePaymentClose} />
-
-        {/* Edit Modal */}
-        <VehicleFormModal
-          open={modalOpen} onOpenChange={setModalOpen}
-          editing={editingVehicle} brand={formBrand} model={formModel} color={formColor}
-          plate={formPlate} saving={saving}
-          setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
-          setPlate={setFormPlate}
-          onSave={handleSave}
-        />
       </AppLayout>
     );
   }
 
-  // ========== VEHICLE LIST (Araçlarım) ==========
+  // ========== VEHICLE LIST VIEW ==========
   return (
     <AppLayout>
       <div className="py-6">
         <div className="max-w-lg mx-auto px-4">
-          <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
-                {vehicles.length > 0 ? (
-                  <>Araçlarım</>
-                ) : (
-                  <>Araç <span className="text-primary">Kaydet</span></>
-                )}
-              </h1>
-              <p className="text-muted-foreground">
-                {vehicles.length > 0
-                  ? "Kayıtlı araçlarınızı yönetin ve QR kodlarınızı görüntüleyin"
-                  : "QR kod oluşturmak için aracınızı kaydedin"}
-              </p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-display font-bold text-foreground">Araçlarım</h1>
+                <p className="text-sm text-muted-foreground">Kayıtlı araçlarınızı yönetin</p>
+              </div>
+              <Button onClick={openAddModal} size="sm" className="gradient-primary text-primary-foreground">
+                <Plus className="w-4 h-4 mr-1.5" /> Ekle
+              </Button>
             </div>
 
             {vehicles.length === 0 ? (
-              <div className="glass rounded-2xl p-10 text-center border border-border">
-                <Car className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground mb-6">Henüz kayıtlı aracınız yok</p>
-                <Button onClick={openAddModal} className="gradient-primary text-primary-foreground font-semibold py-5 px-8 glow-primary">
-                  <Plus className="w-4 h-4 mr-2" /> Araç Ekle
+              <div className="glass rounded-2xl p-10 border border-border text-center">
+                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                  <Car className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <h3 className="text-base font-display font-bold text-foreground mb-1">Henüz Araç Yok</h3>
+                <p className="text-sm text-muted-foreground mb-5">İlk aracınızı ekleyin ve QR kodunuzu oluşturun</p>
+                <Button onClick={openAddModal} className="gradient-primary text-primary-foreground">
+                  <Plus className="w-4 h-4 mr-1.5" /> Araç Ekle
                 </Button>
               </div>
             ) : (
               <div className="space-y-3">
                 {vehicles.map((v) => (
-                  <motion.button
+                  <button
                     key={v.id}
                     onClick={() => setSelectedVehicle(v)}
-                    className="w-full glass rounded-xl p-4 border border-border hover:border-primary/30 transition-all text-left flex items-center gap-4 group"
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
+                    className="w-full glass rounded-xl p-4 border border-border hover:border-primary/30 transition-colors text-left flex items-center gap-3"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Car className="w-6 h-6 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -837,122 +362,104 @@ const GenerateQR = () => {
                       </p>
                     </div>
                     {v.last_qr_generated_at && (
-                      <QrCode className="w-4 h-4 text-primary/60 flex-shrink-0" />
+                      <QrCode className="w-5 h-5 text-primary flex-shrink-0" />
                     )}
-                  </motion.button>
+                  </button>
                 ))}
-
-                {/* Add more button - no limit */}
-                <button
-                  onClick={openAddModal}
-                  className="w-full rounded-xl p-4 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:bg-primary/5 transition-colors border border-dashed border-primary/30"
-                >
-                  <Plus className="w-4 h-4" /> Yeni Araç Ekle
-                </button>
               </div>
             )}
+
+            {/* Premium upsell */}
+            <motion.div
+              className="mt-6 glass rounded-2xl p-5 border border-primary/20 bg-primary/5"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                  <Crown className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-display font-bold text-foreground text-sm">Premium'a Geç</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 mb-3">Sınırsız araç, gelişmiş bildirim ve öncelikli destek</p>
+                  <Button
+                    onClick={() => navigate("/pricing")}
+                    size="sm"
+                    className="gradient-primary text-primary-foreground"
+                  >
+                    Planları İncele
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
+
       {/* Add/Edit Vehicle Modal */}
-      <VehicleFormModal
-        open={modalOpen} onOpenChange={setModalOpen}
-        editing={editingVehicle} brand={formBrand} model={formModel} color={formColor}
-        plate={formPlate} saving={saving}
-        setBrand={setFormBrand} setModel={setFormModel} setColor={setFormColor}
-        setPlate={setFormPlate}
-        onSave={handleSave}
-      />
+      <Dialog open={modalOpen} onOpenChange={(open) => { setModalOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="w-5 h-5 text-primary" />
+              {editingVehicle ? "Aracı Düzenle" : "Araç Ekle"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Plaka *</Label>
+              <Input
+                placeholder="34 ABC 123"
+                value={formPlate}
+                onChange={(e) => setFormPlate(e.target.value.toUpperCase())}
+                className="font-display tracking-wider"
+                maxLength={10}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Marka *</Label>
+              <Select value={formBrand} onValueChange={(v) => { setFormBrand(v); setFormModel(""); }}>
+                <SelectTrigger><SelectValue placeholder="Marka seçin" /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {Object.keys(CAR_BRANDS).sort().map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Model *</Label>
+              <Select value={formModel} onValueChange={setFormModel} disabled={!formBrand}>
+                <SelectTrigger><SelectValue placeholder={formBrand ? "Model seçin" : "Önce marka seçin"} /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {(CAR_BRANDS[formBrand] || []).map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Renk *</Label>
+              <Select value={formColor} onValueChange={setFormColor}>
+                <SelectTrigger><SelectValue placeholder="Renk seçin" /></SelectTrigger>
+                <SelectContent>
+                  {CAR_COLORS.map(c => (
+                    <SelectItem key={c.value} value={c.value}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
+                        {c.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSave} disabled={saving} className="w-full gradient-primary text-primary-foreground font-semibold py-5">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {editingVehicle ? "Güncelle" : "Kaydet"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
-
-// ========== VEHICLE FORM MODAL (no phone field) ==========
-function VehicleFormModal({
-  open, onOpenChange, editing, brand, model, color, plate, saving,
-  setBrand, setModel, setColor, setPlate, onSave,
-}: {
-  open: boolean; onOpenChange: (v: boolean) => void;
-  editing: Vehicle | null;
-  brand: string; model: string; color: string; plate: string; saving: boolean;
-  setBrand: (v: string) => void; setModel: (v: string) => void; setColor: (v: string) => void;
-  setPlate: (v: string) => void; onSave: () => void;
-}) {
-  const models = brand ? (CAR_BRANDS[brand] || []) : [];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Car className="w-5 h-5 text-primary" />
-            {editing ? "Aracı Düzenle" : "Yeni Araç Ekle"}
-          </DialogTitle>
-          <DialogDescription>
-            {editing ? "Araç bilgilerini güncelleyin" : "Aracınızın bilgilerini girin ve QR kodunuzu oluşturun"}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Plate */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-primary" /> Plaka</Label>
-            <Input placeholder="34 ABC 123" value={plate}
-              onChange={(e) => setPlate(e.target.value.toUpperCase())}
-              className="tracking-widest font-display" maxLength={15} />
-          </div>
-
-          {/* Brand */}
-          <div className="space-y-2">
-            <Label>Marka</Label>
-            <Select value={brand} onValueChange={(v) => { setBrand(v); setModel(""); }}>
-              <SelectTrigger><SelectValue placeholder="Marka seçin" /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                {Object.keys(CAR_BRANDS).map((b) => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Model */}
-          <div className="space-y-2">
-            <Label>Model</Label>
-            <Select value={model} onValueChange={setModel} disabled={!brand}>
-              <SelectTrigger><SelectValue placeholder={brand ? "Model seçin" : "Önce marka seçin"} /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                {models.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Color */}
-          <div className="space-y-2">
-            <Label>Renk</Label>
-            <div className="grid grid-cols-5 gap-2">
-              {CAR_COLORS.map((c) => (
-                <button key={c.value} type="button" onClick={() => setColor(c.value)}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
-                    color === c.value ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border hover:border-primary/30"
-                  }`}>
-                  <span className="w-6 h-6 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
-                  <span className="text-[10px] text-muted-foreground leading-tight">{c.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Button onClick={onSave} disabled={saving}
-            className="w-full gradient-primary text-primary-foreground font-semibold py-5 glow-primary">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <QrCode className="w-4 h-4 mr-2" />}
-            {editing ? "Güncelle" : "Kaydet & QR Oluştur"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default GenerateQR;
