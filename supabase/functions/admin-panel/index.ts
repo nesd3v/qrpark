@@ -212,13 +212,14 @@ Deno.serve(async (req) => {
       if (!targetUser) {
         return new Response(JSON.stringify({ error: "User not found with this email" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+      const finalMaxVehicles = max_vehicles || inquiry.vehicle_count || 50;
       // Create corporate membership
       const { error: memberError } = await supabase.from("corporate_members").upsert({
         user_id: targetUser.id,
         inquiry_id: inquiry.id,
         company_name: inquiry.company_name,
         plan_type: inquiry.plan_type,
-        max_vehicles: max_vehicles || inquiry.vehicle_count || 50,
+        max_vehicles: finalMaxVehicles,
         is_active: true,
       }, { onConflict: "user_id" });
       if (memberError) {
@@ -226,6 +227,54 @@ Deno.serve(async (req) => {
       }
       // Update inquiry status
       await supabase.from("corporate_inquiries").update({ status: "completed", user_id: targetUser.id }).eq("id", vehicle_id);
+
+      // Send welcome email (non-blocking)
+      try {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "corporate-welcome",
+            recipientEmail: inquiry.contact_email || user_email,
+            idempotencyKey: `corp-welcome-${inquiry.id}`,
+            templateData: {
+              companyName: inquiry.company_name,
+              maxVehicles: finalMaxVehicles,
+              planType: inquiry.plan_type === "filo" ? "Filo" : inquiry.plan_type,
+              loginUrl: "https://qrpark.xyz/auth",
+              dashboardUrl: "https://qrpark.xyz/corporate-dashboard",
+            },
+          },
+        });
+      } catch (e) {
+        console.error("Corporate welcome email failed:", e);
+      }
+
+      // Send welcome SMS (non-blocking)
+      try {
+        const phone = inquiry.contact_phone;
+        if (phone) {
+          const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+          const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+          const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+          if (accountSid && authToken && fromNumber) {
+            const digits = phone.replace(/\D/g, "");
+            let normalized = phone.trim().startsWith("+") ? `+${digits}` :
+              digits.startsWith("90") ? `+${digits}` :
+              digits.startsWith("0") ? `+90${digits.slice(1)}` : `+${digits}`;
+            const body = `${inquiry.company_name} için QRPark Kurumsal üyeliğiniz aktif! ${finalMaxVehicles} araç limiti tanımlandı. Panele giris: https://qrpark.xyz/corporate-dashboard`;
+            await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+              method: "POST",
+              headers: {
+                Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: new URLSearchParams({ To: normalized, From: fromNumber, Body: body }).toString(),
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Corporate welcome SMS failed:", e);
+      }
+
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
