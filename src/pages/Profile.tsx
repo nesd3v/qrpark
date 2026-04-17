@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  User, Phone, Save, CheckCircle2, ChevronRight, Pencil, X,
-  Package, Truck, HelpCircle, Shield, FileText,
-  MessageCircle, Trash2, LogOut, MapPin, Clock,
+  User, Phone, Save, ChevronRight, Pencil, X,
+  HelpCircle, Shield, FileText,
+  MessageCircle, LogOut, Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,34 +12,19 @@ import AppLayout from "@/components/layout/AppLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 
-type StickerOrder = {
-  id: string;
-  status: string;
-  plate: string;
-  created_at: string;
-  address: string | null;
-};
-
-const statusMap: Record<string, { label: string; color: string; icon: typeof Package }> = {
-  pending: { label: "Sipariş Alındı", color: "text-yellow-400", icon: Clock },
-  preparing: { label: "Hazırlanıyor", color: "text-blue-400", icon: Package },
-  shipped: { label: "Kargoda", color: "text-primary", icon: Truck },
-  delivered: { label: "Teslim Edildi", color: "text-primary", icon: CheckCircle2 },
-};
-
 const Profile = () => {
   const { user, signOut, loading: authLoading } = useAuth();
+  const { isPremium, planType, subscriptionEnd } = useSubscription();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [stickerOpen, setStickerOpen] = useState(false);
-  const [stickerOrders, setStickerOrders] = useState<StickerOrder[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -51,17 +36,17 @@ const Profile = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [profileRes, ordersRes] = await Promise.all([
-      supabase.from("profiles").select("full_name, phone").eq("user_id", user!.id).maybeSingle(),
-      supabase.from("sticker_orders").select("id, status, plate, created_at, address").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(5),
-    ]);
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("user_id", user!.id)
+      .maybeSingle();
 
-    if (profileRes.data) {
-      setFullName(profileRes.data.full_name || "");
-      const rawPhone = profileRes.data.phone || "";
+    if (profileData) {
+      setFullName(profileData.full_name || "");
+      const rawPhone = profileData.phone || "";
       setPhone(formatPhone(rawPhone));
     }
-    setStickerOrders((ordersRes.data as StickerOrder[]) || []);
     setLoading(false);
   };
 
@@ -99,7 +84,6 @@ const Profile = () => {
     }
   };
 
-
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
@@ -116,12 +100,15 @@ const Profile = () => {
   }
 
   const userInitial = fullName?.charAt(0)?.toUpperCase() || "?";
+  const daysLeft = subscriptionEnd
+    ? Math.max(0, Math.ceil((new Date(subscriptionEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <AppLayout>
       <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
 
-        {/* ===== PROFILE HEADER ===== */}
+        {/* PROFILE HEADER */}
         <motion.div
           className="flex items-center gap-4"
           initial={{ opacity: 0, y: 10 }}
@@ -138,12 +125,44 @@ const Profile = () => {
           </div>
         </motion.div>
 
-        {/* ===== PROFILI DÜZENLE ===== */}
+        {/* PREMIUM STATUS */}
+        <motion.button
+          onClick={() => navigate(isPremium ? "/subscription" : "/pricing")}
+          className={`w-full rounded-2xl border overflow-hidden text-left p-4 flex items-center gap-3 transition-colors ${
+            isPremium
+              ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
+              : "border-border bg-card hover:bg-secondary/30"
+          }`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+            isPremium ? "bg-primary/15" : "bg-muted"
+          }`}>
+            <Crown className={`w-5 h-5 ${isPremium ? "text-primary" : "text-muted-foreground"}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground">
+              {isPremium
+                ? `Premium ${planType === "yearly" ? "Yıllık" : planType === "corporate" ? "Kurumsal" : "Aylık"}`
+                : "Ücretsiz Plan"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isPremium && daysLeft !== null
+                ? `${daysLeft} gün kaldı`
+                : "Premium'a yükseltin"}
+            </p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+        </motion.button>
+
+        {/* EDIT PROFILE */}
         <motion.div
           className="rounded-2xl bg-card border border-border overflow-hidden"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+          transition={{ delay: 0.1 }}
         >
           <button
             onClick={() => setEditMode(!editMode)}
@@ -223,64 +242,7 @@ const Profile = () => {
           )}
         </motion.div>
 
-        {/* ===== STICKER SİPARİŞ TAKİBİ ===== */}
-        <motion.div
-          className="rounded-2xl bg-card border border-border overflow-hidden"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <button
-            onClick={() => setStickerOpen(!stickerOpen)}
-            className="w-full flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Package className="w-4 h-4 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-foreground">Sticker Sipariş Takibi</span>
-            </div>
-            <motion.div animate={{ rotate: stickerOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </motion.div>
-          </button>
-
-          {stickerOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              {stickerOrders.length === 0 ? (
-                <div className="p-4 text-center border-t border-border">
-                  <p className="text-sm text-muted-foreground">Henüz sipariş yok</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border border-t border-border">
-                  {stickerOrders.map((order) => {
-                    const status = statusMap[order.status] || statusMap.pending;
-                    const StatusIcon = status.icon;
-                    return (
-                      <div key={order.id} className="flex items-center gap-3 p-4">
-                        <StatusIcon className={`w-5 h-5 ${status.color} flex-shrink-0`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground">{order.plate}</p>
-                          <p className={`text-xs ${status.color}`}>{status.label}</p>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(order.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </motion.div>
-
-
-        {/* ===== DESTEK ===== */}
+        {/* SUPPORT */}
         <motion.div
           className="rounded-2xl bg-card border border-border overflow-hidden"
           initial={{ opacity: 0, y: 10 }}
@@ -299,7 +261,7 @@ const Profile = () => {
             { icon: Shield, label: "Gizlilik Politikası", action: () => navigate("/privacy") },
             { icon: FileText, label: "Şartlar ve Koşullar", action: () => navigate("/terms") },
             { icon: HelpCircle, label: "Yardım Merkezi", action: () => navigate("/help") },
-          ].map((item, i) => (
+          ].map((item) => (
             <button
               key={item.label}
               onClick={item.action}
@@ -314,7 +276,7 @@ const Profile = () => {
           ))}
         </motion.div>
 
-        {/* ===== HESAP ===== */}
+        {/* ACCOUNT */}
         <motion.div
           className="rounded-2xl bg-card border border-border overflow-hidden"
           initial={{ opacity: 0, y: 10 }}
@@ -330,11 +292,10 @@ const Profile = () => {
           </button>
 
           <div className="px-4 py-3.5">
-            <DeleteAccountDialog isPremium={false} userEmail={user?.email || ""} />
+            <DeleteAccountDialog isPremium={isPremium} userEmail={user?.email || ""} />
           </div>
         </motion.div>
 
-        {/* Bottom spacing */}
         <div className="h-4" />
       </div>
     </AppLayout>

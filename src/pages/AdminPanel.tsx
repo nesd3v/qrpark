@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Shield, ShieldX, Loader2, LogIn, Car, RefreshCw, MessageCircle, Package,
+  Shield, ShieldX, Loader2, LogIn, Car, RefreshCw, MessageCircle, Building2,
   LayoutDashboard, ChevronLeft, ChevronRight, Bell, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import AdminVehiclePanel from "@/components/admin/AdminVehiclePanel";
 import AdminSupportPanel from "@/components/admin/AdminSupportPanel";
 import AdminNotificationsPanel from "@/components/admin/AdminNotificationsPanel";
 import AdminUsersPanel from "@/components/admin/AdminUsersPanel";
-import AdminStickerPanel from "@/components/admin/AdminStickerPanel";
+import AdminCorporatePanel from "@/components/admin/AdminCorporatePanel";
 
 type Stats = {
   pending: number;
@@ -104,7 +104,7 @@ const AdminPanel = () => {
   const navItems: NavItem[] = [
     { key: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
     { key: "vehicles", label: "Araç Doğrulama", icon: Car, badge: stats?.pending },
-    { key: "stickers", label: "Sticker Siparişleri", icon: Package },
+    { key: "corporate", label: "Kurumsal Talepler", icon: Building2, badge: stats?.corporate_new },
     { key: "users", label: "Kullanıcılar", icon: Users },
     { key: "notifications", label: "Bildirim Geçmişi", icon: Bell, badge: stats?.total_notifications },
     { key: "support", label: "Canlı Destek", icon: MessageCircle },
@@ -179,7 +179,7 @@ const AdminPanel = () => {
           <motion.div key={activeSection} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
             {activeSection === "dashboard" && <AdminDashboardOverview stats={stats} onNavigate={setActiveSection} />}
             {activeSection === "vehicles" && <AdminVehiclePanel stats={stats} onRefreshStats={fetchStats} />}
-            {activeSection === "stickers" && <AdminStickerPanel />}
+            {activeSection === "corporate" && <AdminCorporatePanel />}
             {activeSection === "users" && <AdminUsersPanel />}
             {activeSection === "notifications" && <AdminNotificationsPanel />}
             {activeSection === "support" && <AdminSupportPanel user={user} />}

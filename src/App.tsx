@@ -10,9 +10,9 @@ import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
 import Messages from "./pages/Messages";
 import Scan from "./pages/Scan";
-import ActivateQR from "./pages/ActivateQR";
 
 import Dashboard from "./pages/Dashboard";
+import CorporateDashboard from "./pages/CorporateDashboard";
 import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
 import Pricing from "./pages/Pricing";
@@ -40,10 +40,10 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/corporate-dashboard" element={<CorporateDashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/scan" element={<Scan />} />
-          <Route path="/activate" element={<ActivateQR />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/pricing" element={<Pricing />} />
