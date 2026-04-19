@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePaytrCheckoutHandler } from "@/hooks/usePaytrCheckoutHandler";
 import { supabase } from "@/integrations/supabase/client";
 import PayTRModal from "@/components/subscription/PayTRModal";
+import { haptic } from "@/hooks/useNative";
 
 const features = [
   "Sınırsız araç kaydı",
@@ -21,6 +23,7 @@ const features = [
 const MobilePricing = () => {
   const { user } = useAuth();
   const { isPremium } = useSubscription();
+  usePaytrCheckoutHandler();
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
@@ -29,12 +32,14 @@ const MobilePricing = () => {
   const handleCheckout = async () => {
     if (!user) { navigate("/auth?redirect=/pricing"); return; }
     setLoadingPlan(selectedPlan);
+    haptic.light();
     try {
       const { data, error } = await supabase.functions.invoke("create-paytr-token", { body: { planType: selectedPlan } });
       if (error) throw error;
       if (data?.token) setPaytrToken(data.token);
       else throw new Error(data?.error || "Token alınamadı");
     } catch (err: any) {
+      haptic.error();
       toast.error("Ödeme başlatılamadı: " + (err.message || "Bilinmeyen hata"));
     } finally {
       setLoadingPlan(null);
