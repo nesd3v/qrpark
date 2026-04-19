@@ -4,13 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import GenerateQR from "./pages/GenerateQR";
+import GenerateQRRouter from "./pages/GenerateQRRouter";
 import Notify from "./pages/Notify";
-import Auth from "./pages/Auth";
+import AuthRouter from "./pages/AuthRouter";
 import ResetPassword from "./pages/ResetPassword";
 import DashboardRouter from "./pages/DashboardRouter";
 import ProfileRouter from "./pages/ProfileRouter";
 import PricingRouter from "./pages/PricingRouter";
+import NotificationsRouter from "./pages/NotificationsRouter";
 import AdminPanel from "./pages/AdminPanel";
 import Install from "./pages/Install";
 import Unsubscribe from "./pages/Unsubscribe";
@@ -23,8 +24,14 @@ import Kvkk from "./pages/Kvkk";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/shared/SupportChatWidget";
+import { useNativeInit } from "./hooks/useNative";
 
 const queryClient = new QueryClient();
+
+const NativeBootstrap = () => {
+  useNativeInit();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,13 +39,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <NativeBootstrap />
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/generate" element={<GenerateQR />} />
+          <Route path="/generate" element={<GenerateQRRouter />} />
           <Route path="/notify/:plateId" element={<Notify />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth" element={<AuthRouter />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<DashboardRouter />} />
+          <Route path="/notifications" element={<NotificationsRouter />} />
           <Route path="/profile" element={<ProfileRouter />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/pricing" element={<PricingRouter />} />
