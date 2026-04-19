@@ -28,6 +28,7 @@ import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePaytrCheckoutHandler } from "@/hooks/usePaytrCheckoutHandler";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
@@ -65,6 +66,7 @@ const FREE_NOTIFICATION_LIMIT = 5;
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { isPremium } = useSubscription();
+  usePaytrCheckoutHandler();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [allNotifications, setAllNotifications] = useState<Notification[]>([]);

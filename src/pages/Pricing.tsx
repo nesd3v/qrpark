@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePaytrCheckoutHandler } from "@/hooks/usePaytrCheckoutHandler";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import PayTRModal from "@/components/subscription/PayTRModal";
@@ -26,6 +27,7 @@ const comparisonRows = [
 const Pricing = () => {
   const { user } = useAuth();
   const { isPremium, subscribed, loading: subLoading } = useSubscription();
+  usePaytrCheckoutHandler();
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [paytrToken, setPaytrToken] = useState<string | null>(null);

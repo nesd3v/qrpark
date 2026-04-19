@@ -5,6 +5,7 @@ import { Car, QrCode, Bell, Crown, Plus, ChevronRight, Sparkles } from "lucide-r
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePaytrCheckoutHandler } from "@/hooks/usePaytrCheckoutHandler";
 import MobileLayout from "@/components/layout/MobileLayout";
 
 type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
@@ -12,6 +13,7 @@ type Vehicle = { id: string; plate: string; brand: string | null; model: string 
 const MobileDashboard = () => {
   const { user } = useAuth();
   const { isPremium } = useSubscription();
+  usePaytrCheckoutHandler();
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [notifCount, setNotifCount] = useState(0);

@@ -2,11 +2,12 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Home, Bell, QrCode, User, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/useSubscription";
+import { haptic } from "@/hooks/useNative";
 
 const items = [
   { to: "/dashboard", label: "Ana Sayfa", icon: Home },
   { to: "/generate", label: "QR", icon: QrCode },
-  { to: "/dashboard?tab=notifications", label: "Bildirim", icon: Bell, match: "/dashboard" },
+  { to: "/notifications", label: "Bildirim", icon: Bell },
   { to: "/pricing", label: "Premium", icon: Crown },
   { to: "/profile", label: "Profil", icon: User },
 ];
@@ -22,13 +23,14 @@ const MobileBottomNav = () => {
     >
       <div className="grid grid-cols-5 px-1 pt-1.5 pb-1.5">
         {items.map((item) => {
-          const isActive = location.pathname === (item as any).match || location.pathname === item.to.split("?")[0];
+          const isActive = location.pathname === item.to;
           const Icon = item.icon;
           const isPremiumIcon = item.label === "Premium" && isPremium;
           return (
             <NavLink
               key={item.label}
               to={item.to}
+              onClick={() => haptic.light()}
               className="relative flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg active:bg-muted/40 transition-colors"
             >
               {isActive && (
