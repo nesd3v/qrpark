@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PayTRModal from "@/components/subscription/PayTRModal";
 import { haptic } from "@/hooks/useNative";
 
+import { translateError } from "@/lib/translateError";
 const features = [
   "Sınırsız araç kaydı",
   "Süresiz QR kod",
@@ -40,7 +41,7 @@ const MobilePricing = () => {
       else throw new Error(data?.error || "Token alınamadı");
     } catch (err: any) {
       haptic.error();
-      toast.error("Ödeme başlatılamadı: " + (err.message || "Bilinmeyen hata"));
+      toast.error("Ödeme başlatılamadı: " + translateError(err, "Bilinmeyen hata"));
     } finally {
       setLoadingPlan(null);
     }

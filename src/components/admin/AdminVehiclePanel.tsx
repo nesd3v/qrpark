@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { translateError } from "@/lib/translateError";
 import {
   ShieldCheck, ShieldX, Clock, Eye, CheckCircle2, XCircle,
   Loader2, Car, BarChart3, RefreshCw, ExternalLink, Search,
@@ -61,7 +62,7 @@ const AdminVehiclePanel = ({ stats, onRefreshStats }: { stats: Stats | null; onR
       setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
       onRefreshStats();
     } catch (err: any) {
-      toast.error(err.message || "İşlem başarısız");
+      toast.errortranslateError(err, "İşlem başarısız");
     }
     setActionLoading(null);
   };

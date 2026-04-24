@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+import { translateError } from "@/lib/translateError";
 type Subscription = {
   id: string;
   plan_type: string;
@@ -62,7 +63,7 @@ const PaymentHistory = () => {
         win.onload = () => URL.revokeObjectURL(url);
       }
     } catch (err: any) {
-      toast.error("Makbuz oluşturulamadı: " + (err.message || "Bilinmeyen hata"));
+      toast.error("Makbuz oluşturulamadı: " + translateError(err, "Bilinmeyen hata"));
     } finally {
       setDownloadingId(null);
     }

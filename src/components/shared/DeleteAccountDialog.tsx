@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, Crown, Trash2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { translateError } from "@/lib/translateError";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -86,7 +87,7 @@ const DeleteAccountDialog = ({ isPremium, userEmail, externalOpen, onExternalOpe
       toast.success("Hesabınız başarıyla silindi");
       navigate("/");
     } catch (err: any) {
-      toast.error(err.message || "Hesap silinemedi");
+      toast.errortranslateError(err, "Hesap silinemedi");
     } finally {
       setDeleting(false);
     }

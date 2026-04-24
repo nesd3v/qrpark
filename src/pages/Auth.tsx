@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { translateError } from "@/lib/translateError";
 import {
   Car, Mail, Lock, Eye, EyeOff, CheckCircle2, XCircle, User, Phone,
 } from "lucide-react";
@@ -85,7 +86,7 @@ const Auth = () => {
 
       setRegistered(true);
     } catch (err: any) {
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,7 @@ const Auth = () => {
       toast.success("Giriş başarılı!");
       navigate(redirect);
     } catch (err: any) {
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
     } finally {
       setLoading(false);
     }
@@ -127,7 +128,7 @@ const Auth = () => {
       toast.success("Şifre sıfırlama bağlantısı e-postanıza gönderildi!");
       setShowForgot(false);
     } catch (err: any) {
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
     } finally {
       setLoading(false);
     }
