@@ -64,7 +64,7 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: "https://www.qrpark.xyz/",
           data: {
             full_name: fullName.trim(),
             phone: phone.trim(),
