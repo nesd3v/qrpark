@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 
+import { translateError } from "@/lib/translateError";
 const passwordRules = [
   { id: "length", label: "En az 8 karakter", test: (p: string) => p.length >= 8 },
   { id: "upper", label: "En az 1 büyük harf", test: (p: string) => /[A-ZÇĞİÖŞÜ]/.test(p) },
@@ -54,7 +55,7 @@ const ResetPassword = () => {
       toast.success("Şifreniz başarıyla güncellendi!");
       navigate("/");
     } catch (err: any) {
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
     } finally {
       setLoading(false);
     }

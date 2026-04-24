@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
+import { translateError } from "@/lib/translateError";
 import {
   Download, Car, RefreshCw, CheckCircle2, AlertTriangle, Crown, Palette,
   Plus, ChevronDown, Lock, Upload, FileImage, XCircle, ShieldCheck, Loader2, Phone,
@@ -249,7 +250,7 @@ const GenerateQR = () => {
       setGenerated(false);
       setAddStep("result");
     } catch (err: any) {
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
       setAddStep("ruhsat");
     } finally {
       setAddingVehicle(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import VehicleVerifyDialog from "@/components/shared/VehicleVerifyDialog";
 import { motion, AnimatePresence } from "framer-motion";
+import { translateError } from "@/lib/translateError";
 import {
   Building2, Car, Shield, ShieldCheck, ShieldX, Clock, BarChart3,
   Upload, Download, QrCode, Bell, Loader2, RefreshCw, FileText,
@@ -138,7 +139,7 @@ const CorporateDashboard = () => {
       invoke("vehicles").then((d) => setVehicles(d.vehicles));
       invoke("report").then((d) => setReport(d.report));
     } catch (err: any) {
-      toast.error(err.message || "İçe aktarma başarısız");
+      toast.errortranslateError(err, "İçe aktarma başarısız");
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 
+import { translateError } from "@/lib/translateError";
 type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean };
 
 const Profile = () => {
@@ -111,7 +112,7 @@ const Profile = () => {
       setTimeout(() => setSaved(false), 2000);
       await fetchProfile();
     } catch (err: any) {
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
     } finally {
       setSaving(false);
     }
@@ -134,7 +135,7 @@ const Profile = () => {
       setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
       toast.success("Araç silindi");
     } catch (err: any) {
-      toast.error(err.message || "Araç silinemedi");
+      toast.errortranslateError(err, "Araç silinemedi");
     }
   };
 

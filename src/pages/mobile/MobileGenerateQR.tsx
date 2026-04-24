@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { haptic } from "@/hooks/useNative";
 
+import { translateError } from "@/lib/translateError";
 type Vehicle = {
   id: string;
   plate: string;
@@ -105,7 +106,7 @@ const MobileGenerateQR = () => {
       toast.success("Araç kaydedildi");
     } catch (err: any) {
       haptic.error();
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
     } finally {
       setAdding(false);
     }
@@ -136,7 +137,7 @@ const MobileGenerateQR = () => {
       toast.success("QR kodun hazır!");
     } catch (err: any) {
       haptic.error();
-      toast.error(err.message || "Bir hata oluştu");
+      toast.errortranslateError(err, "Bir hata oluştu");
     } finally {
       setRegenerating(false);
     }

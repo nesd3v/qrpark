@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import PayTRModal from "@/components/subscription/PayTRModal";
 
+import { translateError } from "@/lib/translateError";
 type PlanTab = "bireysel" | "kurumsal";
 
 const comparisonRows = [
@@ -51,7 +52,7 @@ const Pricing = () => {
         throw new Error(data?.error || "Token alınamadı");
       }
     } catch (err: any) {
-      toast.error("Ödeme sayfası oluşturulamadı: " + (err.message || "Bilinmeyen hata"));
+      toast.error("Ödeme sayfası oluşturulamadı: " + translateError(err, "Bilinmeyen hata"));
     } finally {
       setLoadingPlan(null);
     }

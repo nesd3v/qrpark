@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/hooks/useNative";
 
+import { translateError } from "@/lib/translateError";
 const passwordRules = [
   { id: "length", label: "8+ karakter", test: (p: string) => p.length >= 8 },
   { id: "upper", label: "Büyük harf", test: (p: string) => /[A-ZÇĞİÖŞÜ]/.test(p) },
@@ -53,7 +54,7 @@ const MobileAuth = () => {
       navigate(redirect);
     } catch (err: any) {
       haptic.error();
-      toast.error(err.message || "Giriş yapılamadı");
+      toast.errortranslateError(err, "Giriş yapılamadı");
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ const MobileAuth = () => {
       setMode("login");
     } catch (err: any) {
       haptic.error();
-      toast.error(err.message || "Kayıt başarısız");
+      toast.errortranslateError(err, "Kayıt başarısız");
     } finally {
       setLoading(false);
     }
@@ -104,7 +105,7 @@ const MobileAuth = () => {
       toast.success("Sıfırlama bağlantısı gönderildi");
       setMode("login");
     } catch (err: any) {
-      toast.error(err.message || "İşlem başarısız");
+      toast.errortranslateError(err, "İşlem başarısız");
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Shield, Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
 
+import { translateError } from "@/lib/translateError";
 interface VehicleVerifyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -48,7 +49,7 @@ const VehicleVerifyDialog = ({ open, onOpenChange, vehicleId, plate, phone, onVe
       setCooldown(30);
       toast.success("Doğrulama kodu gönderildi");
     } catch (err: any) {
-      toast.error(err.message || "SMS gönderilemedi");
+      toast.errortranslateError(err, "SMS gönderilemedi");
       setStep("idle");
     }
   };
@@ -71,7 +72,7 @@ const VehicleVerifyDialog = ({ open, onOpenChange, vehicleId, plate, phone, onVe
         }, 1500);
       }
     } catch (err: any) {
-      toast.error(err.message || "Doğrulama başarısız");
+      toast.errortranslateError(err, "Doğrulama başarısız");
       setCode("");
       setStep("input");
     }
