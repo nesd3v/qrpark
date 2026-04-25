@@ -11,7 +11,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
 
 const MobileDashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { isPremium } = useSubscription();
   usePaytrCheckoutHandler();
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ const MobileDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate("/auth");
       return;
@@ -42,7 +43,17 @@ const MobileDashboard = () => {
       }
       setLoading(false);
     })();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <MobileLayout title="QRPark">
+        <div className="flex items-center justify-center pt-20">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout
