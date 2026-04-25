@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, Shield, Settings, MessageSquare, PhoneCall } from "lucide-react";
+import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, Shield, Settings, MessageSquare, PhoneCall, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [vehiclesOpen, setVehiclesOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
