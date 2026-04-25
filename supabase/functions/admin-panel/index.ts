@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
       if (!vehicle_id || !newStatus) {
         return new Response(JSON.stringify({ error: "id and status are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (!["new", "reviewing", "completed"].includes(newStatus)) {
+      if (!["new", "reviewing", "approved", "completed"].includes(newStatus)) {
         return new Response(JSON.stringify({ error: "Invalid status" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const { error: updateError } = await supabase
@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
       const { error: updErr } = await supabase
         .from("corporate_inquiries")
         .update({
-          status: "completed",
+          status: "approved",
           payment_status: "pending_payment",
           user_id: targetUser.id,
         })

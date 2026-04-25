@@ -59,8 +59,8 @@ const Pricing = () => {
         .from("corporate_inquiries" as any)
         .select("id, status, payment_status, plan_type")
         .eq("user_id", user.id)
-        .eq("status", "approved")
         .eq("payment_status", "pending_payment")
+        .in("status", ["approved", "completed"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -211,6 +211,17 @@ const Pricing = () => {
                   <p className="text-xs text-muted-foreground mb-3">
                     Kurumsal Premium aboneliğinizi aktifleştirmek için aşağıdan ödeme yapmanız gerekiyor.
                   </p>
+                  <div className="bg-background/60 rounded-xl p-3 mb-3 space-y-2">
+                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+                      Sonraki adımlar
+                    </p>
+                    <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside">
+                      <li>Aşağıdan size uygun Kurumsal planı (Aylık ₺500 / Yıllık ₺4.990) seçin.</li>
+                      <li>"Şimdi Öde" butonuna basın ve PayTR güvenli ödeme ekranında ödemeyi tamamlayın.</li>
+                      <li>Ödeme onaylandıktan sonra Kurumsal Premium otomatik aktifleşir.</li>
+                      <li>Aktifleştikten sonra <span className="font-medium text-foreground">/corporate</span> kurumsal panele ve sınırsız araç yönetimine erişebilirsiniz.</li>
+                    </ol>
+                  </div>
                   <button
                     onClick={() => setPlanTab("kurumsal")}
                     className="text-xs font-bold text-primary hover:underline"

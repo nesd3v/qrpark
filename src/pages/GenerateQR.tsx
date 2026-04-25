@@ -56,6 +56,12 @@ const GenerateQR = () => {
   const [activeAccountType, setActiveAccountType] = useState<"individual" | "corporate">(
     isCorporatePremium && !isIndividualPremium ? "corporate" : "individual"
   );
+  // Kurumsal premium yoksa kurumsal sekmeden çık
+  useEffect(() => {
+    if (!isCorporatePremium && activeAccountType === "corporate") {
+      setActiveAccountType("individual");
+    }
+  }, [isCorporatePremium, activeAccountType]);
   // Account type for the vehicle currently being added
   const [newAccountType, setNewAccountType] = useState<"individual" | "corporate">("individual");
 
@@ -625,8 +631,8 @@ const GenerateQR = () => {
               </p>
             </div>
 
-            {/* Account type tabs (only when user has both premium types or has vehicles in both) */}
-            {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+            {/* Account type tabs — sadece aktif Kurumsal Premium varsa göster */}
+            {isCorporatePremium && (
               <div className="flex items-center gap-2 mb-4 p-1 bg-secondary rounded-xl">
                 {(["individual", "corporate"] as const).map((t) => {
                   const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;

@@ -73,16 +73,31 @@ Deno.serve(async (req) => {
         return json({ error: `Araç limiti aşılıyor. Mevcut: ${existingCount}, Eklenecek: ${rows.length}, Limit: ${membership.max_vehicles}` }, 400);
       }
 
-      const results = { added: 0, skipped: 0, errors: [] as string[] };
+      const results: {
+        added: number;
+        skipped: number;
+        errorCount: number;
+        items: { plate: string; phone: string; status: "added" | "skipped" | "error"; reason?: string }[];
+      } = { added: 0, skipped: 0, errorCount: 0, items: [] };
+
       for (const row of rows) {
         const plate = (row.plate || "").toUpperCase().trim();
         const phone = (row.phone || "").trim();
-        if (!plate || !phone) { results.skipped++; continue; }
+        if (!plate || !phone) {
+          results.skipped++;
+          results.items.push({ plate: plate || "(boş)", phone: phone || "(boş)", status: "skipped", reason: "Plaka veya telefon eksik" });
+          continue;
+        }
         const { error } = await supabase
           .from("vehicles")
           .upsert({ plate, phone, user_id: user.id, account_type: "corporate" }, { onConflict: "plate" });
-        if (error) results.errors.push(`${plate}: ${error.message}`);
-        else results.added++;
+        if (error) {
+          results.errorCount++;
+          results.items.push({ plate, phone, status: "error", reason: error.message });
+        } else {
+          results.added++;
+          results.items.push({ plate, phone, status: "added" });
+        }
       }
       return json({ success: true, results });
     }

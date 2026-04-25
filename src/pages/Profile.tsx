@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
+import CorporateStatusBanner from "@/components/corporate/CorporateStatusBanner";
 
 import { translateError } from "@/lib/translateError";
 type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean; account_type?: string };
@@ -30,6 +31,13 @@ const Profile = () => {
   const [saved, setSaved] = useState(false);
   const [vehiclesOpen, setVehiclesOpen] = useState(false);
   const [vehicleTab, setVehicleTab] = useState<"individual" | "corporate">("individual");
+
+  // Kurumsal premium yoksa daima bireysel sekmeye dön
+  useEffect(() => {
+    if (!isCorporatePremium && vehicleTab === "corporate") {
+      setVehicleTab("individual");
+    }
+  }, [isCorporatePremium, vehicleTab]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -161,6 +169,9 @@ const Profile = () => {
       <div className="pt-28 pb-16">
         <div className="container mx-auto px-6">
           <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="mb-4">
+              <CorporateStatusBanner />
+            </div>
             
             {/* Profile Header with Avatar */}
             <div className="text-center mb-10">
@@ -280,8 +291,8 @@ const Profile = () => {
 
               {vehiclesOpen && (
               <div className="space-y-3">
-                {/* Account type tabs (only when corporate exists) */}
-                {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+                {/* Account type tabs — sadece kurumsal premium aktif olduğunda göster */}
+                {isCorporatePremium && (
                   <div className="flex items-center gap-2 p-1 bg-muted rounded-xl">
                     {(["individual", "corporate"] as const).map((t) => {
                       const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;

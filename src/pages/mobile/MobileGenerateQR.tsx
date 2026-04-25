@@ -42,6 +42,13 @@ const MobileGenerateQR = () => {
   const [activeAccountType, setActiveAccountType] = useState<"individual" | "corporate">("individual");
   const [newAccountType, setNewAccountType] = useState<"individual" | "corporate">("individual");
 
+  // Kurumsal premium yoksa kurumsal sekmeyi kapat
+  useEffect(() => {
+    if (!isCorporatePremium && activeAccountType === "corporate") {
+      setActiveAccountType("individual");
+    }
+  }, [isCorporatePremium, activeAccountType]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/generate");
@@ -294,7 +301,7 @@ const MobileGenerateQR = () => {
       }
     >
       {/* Account type tabs */}
-      {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+      {isCorporatePremium && (
         <div className="flex items-center gap-2 mb-3 p-1 bg-muted rounded-2xl">
           {(["individual", "corporate"] as const).map((t) => {
             const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;

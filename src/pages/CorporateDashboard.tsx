@@ -79,6 +79,12 @@ const CorporateDashboard = () => {
   const [verifyVehicle, setVerifyVehicle] = useState<Vehicle | null>(null);
   const [qrModalPlate, setQrModalPlate] = useState<string | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [importResult, setImportResult] = useState<{
+    added: number;
+    skipped: number;
+    errorCount: number;
+    items: { plate: string; phone: string; status: "added" | "skipped" | "error"; reason?: string }[];
+  } | null>(null);
   const invoke = useCallback(async (action: string, extra: any = {}) => {
     const { data, error } = await supabase.functions.invoke("corporate-dashboard", {
       body: { action, ...extra },
@@ -132,10 +138,21 @@ const CorporateDashboard = () => {
       }
       if (rows.length === 0) { toast.error("CSV dosyasında geçerli veri bulunamadı"); return; }
       const data = await invoke("bulk_import", { vehicles: rows });
-      toast.success(`${data.results.added} araç eklendi, ${data.results.skipped} atlandı`);
-      if (data.results.errors.length > 0) {
-        toast.error(`${data.results.errors.length} hata oluştu`);
-      }
+      const r = data.results;
+      // Backward compat: old shape { errors: string[] }
+      const items =
+        r.items ||
+        (r.errors || []).map((e: string) => {
+          const [plate, ...rest] = e.split(":");
+          return { plate: plate.trim(), phone: "", status: "error" as const, reason: rest.join(":").trim() };
+        });
+      setImportResult({
+        added: r.added || 0,
+        skipped: r.skipped || 0,
+        errorCount: r.errorCount ?? (r.errors?.length || 0),
+        items,
+      });
+      toast.success(`${r.added} eklendi, ${r.skipped} atlandı, ${r.errorCount ?? (r.errors?.length || 0)} hata`);
       invoke("vehicles").then((d) => setVehicles(d.vehicles));
       invoke("report").then((d) => setReport(d.report));
     } catch (err: any) {
@@ -589,6 +606,113 @@ const CorporateDashboard = () => {
         )}
       </div>
       <Footer />
+
+      {/* CSV Import Sonuç Modalı */}
+      <AnimatePresence>
+        {importResult && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setImportResult(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card rounded-2xl border border-border w-full max-w-2xl max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-5 border-b border-border">
+                <div>
+                  <h3 className="text-lg font-display font-bold text-foreground">CSV İçe Aktarma Sonucu</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Toplam {importResult.items.length} satır işlendi
+                  </p>
+                </div>
+                <button onClick={() => setImportResult(null)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 p-5 border-b border-border">
+                <div className="bg-emerald-500/10 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-display font-bold text-emerald-600">{importResult.added}</div>
+                  <div className="text-[11px] text-muted-foreground mt-1">Eklendi</div>
+                </div>
+                <div className="bg-warning/10 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-display font-bold text-warning">{importResult.skipped}</div>
+                  <div className="text-[11px] text-muted-foreground mt-1">Atlandı</div>
+                </div>
+                <div className="bg-destructive/10 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-display font-bold text-destructive">{importResult.errorCount}</div>
+                  <div className="text-[11px] text-muted-foreground mt-1">Hata</div>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Plaka</TableHead>
+                      <TableHead>Telefon</TableHead>
+                      <TableHead>Durum</TableHead>
+                      <TableHead>Açıklama</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importResult.items.map((it, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-mono text-xs font-bold">{it.plate}</TableCell>
+                        <TableCell className="text-xs">{it.phone || "—"}</TableCell>
+                        <TableCell>
+                          <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                            it.status === "added" ? "bg-emerald-500/20 text-emerald-600" :
+                            it.status === "skipped" ? "bg-warning/20 text-warning" :
+                            "bg-destructive/20 text-destructive"
+                          }`}>
+                            {it.status === "added" ? "Eklendi" : it.status === "skipped" ? "Atlandı" : "Hata"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{it.reason || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex items-center gap-2 p-5 border-t border-border">
+                <Button
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => {
+                    const csv =
+                      "Plaka,Telefon,Durum,Açıklama\n" +
+                      importResult.items.map((it) => {
+                        const status = it.status === "added" ? "Eklendi" : it.status === "skipped" ? "Atlandı" : "Hata";
+                        const reason = (it.reason || "").replace(/"/g, '""');
+                        return `"${it.plate}","${it.phone}","${status}","${reason}"`;
+                      }).join("\n");
+                    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `import-raporu-${new Date().toISOString().slice(0, 10)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  <Download className="w-4 h-4" /> Raporu CSV İndir
+                </Button>
+                <Button className="ml-auto gradient-primary text-primary-foreground" onClick={() => setImportResult(null)}>
+                  Kapat
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* QR Büyütme & İndirme Modalı */}
       <AnimatePresence>
