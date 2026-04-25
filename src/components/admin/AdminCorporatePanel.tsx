@@ -24,6 +24,7 @@ type CorporateInquiry = {
 const statusLabels: Record<string, { label: string; color: string }> = {
   new: { label: "Yeni", color: "bg-primary/20 text-primary" },
   reviewing: { label: "Görüşülüyor", color: "bg-warning/20 text-warning" },
+  approved: { label: "Onaylandı (Ödeme Bekleniyor)", color: "bg-amber-500/20 text-amber-600" },
   completed: { label: "Tamamlandı", color: "bg-emerald-500/20 text-emerald-600" },
 };
 
@@ -69,7 +70,7 @@ const AdminCorporatePanel = () => {
     });
     if (!error && data?.success) {
       toast.success("Onaylandı! Kullanıcıya ödeme bildirimi gösterilecek");
-      setInquiries((prev) => prev.map((i) => i.id === id ? { ...i, status: "completed", payment_status: "pending_payment" } : i));
+      setInquiries((prev) => prev.map((i) => i.id === id ? { ...i, status: "approved", payment_status: "pending_payment" } : i));
     } else toast.error(data?.error || "Onaylama başarısız");
     setUpdatingId(null);
   };
@@ -83,7 +84,7 @@ const AdminCorporatePanel = () => {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4 flex-wrap">
-        {["all", "new", "reviewing", "completed"].map((f) => (
+        {["all", "new", "reviewing", "approved", "completed"].map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               filter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -138,7 +139,7 @@ const AdminCorporatePanel = () => {
                       <CheckCircle2 className="w-3 h-3" /> Ödeme tamamlandı (Aktif üye)
                     </div>
                   )}
-                  {inq.status !== "completed" && (
+                  {inq.status !== "completed" && inq.status !== "approved" && (
                     <div className="mt-3 p-3 bg-secondary/50 rounded-lg space-y-2">
                       <p className="text-xs font-medium text-foreground">
                         Başvuruyu Onayla (kullanıcıdan ödeme istenecek)
