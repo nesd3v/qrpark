@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
-import { Car, Plus, Download, RefreshCw, Crown, ChevronDown, Phone, ShieldCheck, AlertTriangle, XCircle, Loader2 } from "lucide-react";
+import { Car, Plus, Download, RefreshCw, Crown, ChevronDown, Phone, ShieldCheck, AlertTriangle, XCircle, Loader2, User, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,13 +17,15 @@ type Vehicle = {
   phone: string;
   last_qr_generated_at: string | null;
   verification_status: string;
+  account_type?: string;
 };
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const INDIVIDUAL_VEHICLE_LIMIT = 5;
 
 const MobileGenerateQR = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, isIndividualPremium, isCorporatePremium } = useSubscription();
   const navigate = useNavigate();
   const qrRef = useRef<HTMLDivElement>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -37,6 +39,8 @@ const MobileGenerateQR = () => {
   const [newPlate, setNewPlate] = useState("");
   const [newPhone, setNewPhone] = useState("+90 ");
   const [adding, setAdding] = useState(false);
+  const [activeAccountType, setActiveAccountType] = useState<"individual" | "corporate">("individual");
+  const [newAccountType, setNewAccountType] = useState<"individual" | "corporate">("individual");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -50,12 +54,15 @@ const MobileGenerateQR = () => {
     setLoading(true);
     const { data } = await supabase
       .from("vehicles")
-      .select("id, plate, phone, last_qr_generated_at, verification_status")
+      .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
       .eq("user_id", user!.id)
       .order("created_at");
     const list = (data as Vehicle[]) || [];
     setVehicles(list);
-    if (list.length > 0) setSelected(list[0]);
+    if (list.length > 0) {
+      const first = list.find((v) => (v.account_type ?? "individual") === activeAccountType) || list[0];
+      setSelected(first);
+    }
     setLoading(false);
   };
 
@@ -79,6 +86,23 @@ const MobileGenerateQR = () => {
   const handleAddVehicle = async () => {
     if (!newPlate.trim()) { toast.error("Plaka gerekli"); return; }
     if (newPhone.replace(/\D/g, "").length < 12) { toast.error("Geçerli telefon girin"); return; }
+
+    // Limit enforcement
+    if (newAccountType === "individual") {
+      const indCount = vehicles.filter((v) => (v.account_type ?? "individual") === "individual").length;
+      if (isIndividualPremium && indCount >= INDIVIDUAL_VEHICLE_LIMIT) {
+        toast.error(`Bireysel premium en fazla ${INDIVIDUAL_VEHICLE_LIMIT} araç ekleyebilir`);
+        return;
+      }
+      if (!isIndividualPremium && indCount >= 1) {
+        toast.error("Birden fazla bireysel araç için Premium gereklidir");
+        return;
+      }
+    } else if (newAccountType === "corporate" && !isCorporatePremium) {
+      toast.error("Kurumsal araç için Kurumsal Premium gereklidir");
+      return;
+    }
+
     setAdding(true);
     haptic.light();
     try {
@@ -89,8 +113,9 @@ const MobileGenerateQR = () => {
           phone: newPhone.trim(),
           user_id: user!.id,
           verification_status: "verified", // SMS-based verification, no ruhsat needed
+          account_type: newAccountType,
         })
-        .select("id, plate, phone, last_qr_generated_at, verification_status")
+        .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
         .single();
       if (error) {
         if (error.code === "23505") { toast.error("Bu plaka zaten kayıtlı"); return; }
@@ -99,6 +124,7 @@ const MobileGenerateQR = () => {
       const v = data as Vehicle;
       setVehicles((prev) => [...prev, v]);
       setSelected(v);
+      setActiveAccountType(newAccountType);
       setShowAdd(false);
       setNewPlate("");
       setNewPhone("+90 ");
