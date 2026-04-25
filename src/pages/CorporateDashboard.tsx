@@ -79,6 +79,12 @@ const CorporateDashboard = () => {
   const [verifyVehicle, setVerifyVehicle] = useState<Vehicle | null>(null);
   const [qrModalPlate, setQrModalPlate] = useState<string | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [importResult, setImportResult] = useState<{
+    added: number;
+    skipped: number;
+    errorCount: number;
+    items: { plate: string; phone: string; status: "added" | "skipped" | "error"; reason?: string }[];
+  } | null>(null);
   const invoke = useCallback(async (action: string, extra: any = {}) => {
     const { data, error } = await supabase.functions.invoke("corporate-dashboard", {
       body: { action, ...extra },
@@ -132,10 +138,21 @@ const CorporateDashboard = () => {
       }
       if (rows.length === 0) { toast.error("CSV dosyasında geçerli veri bulunamadı"); return; }
       const data = await invoke("bulk_import", { vehicles: rows });
-      toast.success(`${data.results.added} araç eklendi, ${data.results.skipped} atlandı`);
-      if (data.results.errors.length > 0) {
-        toast.error(`${data.results.errors.length} hata oluştu`);
-      }
+      const r = data.results;
+      // Backward compat: old shape { errors: string[] }
+      const items =
+        r.items ||
+        (r.errors || []).map((e: string) => {
+          const [plate, ...rest] = e.split(":");
+          return { plate: plate.trim(), phone: "", status: "error" as const, reason: rest.join(":").trim() };
+        });
+      setImportResult({
+        added: r.added || 0,
+        skipped: r.skipped || 0,
+        errorCount: r.errorCount ?? (r.errors?.length || 0),
+        items,
+      });
+      toast.success(`${r.added} eklendi, ${r.skipped} atlandı, ${r.errorCount ?? (r.errors?.length || 0)} hata`);
       invoke("vehicles").then((d) => setVehicles(d.vehicles));
       invoke("report").then((d) => setReport(d.report));
     } catch (err: any) {
