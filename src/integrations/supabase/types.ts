@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           id: string
           message: string | null
+          payment_status: string
           plan_type: string
           status: string
           user_id: string | null
@@ -34,6 +35,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
+          payment_status?: string
           plan_type?: string
           status?: string
           user_id?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
+          payment_status?: string
           plan_type?: string
           status?: string
           user_id?: string | null
@@ -287,6 +290,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          account_type: string
           amount: number
           created_at: string
           id: string
@@ -300,6 +304,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: string
           amount?: number
           created_at?: string
           id?: string
@@ -313,6 +318,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: string
           amount?: number
           created_at?: string
           id?: string
@@ -445,6 +451,7 @@ export type Database = {
       }
       vehicles: {
         Row: {
+          account_type: string
           brand: string | null
           call_enabled: boolean
           color: string | null
@@ -462,6 +469,7 @@ export type Database = {
           verification_status: string
         }
         Insert: {
+          account_type?: string
           brand?: string | null
           call_enabled?: boolean
           color?: string | null
@@ -479,6 +487,7 @@ export type Database = {
           verification_status?: string
         }
         Update: {
+          account_type?: string
           brand?: string | null
           call_enabled?: boolean
           color?: string | null
