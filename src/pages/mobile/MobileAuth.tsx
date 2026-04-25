@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Car, Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/hooks/useNative";
+import { useAuth } from "@/hooks/useAuth";
 
 import { translateError } from "@/lib/translateError";
 const passwordRules = [
@@ -19,6 +20,7 @@ const MobileAuth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
+  const { user, loading: authLoading } = useAuth();
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -29,6 +31,12 @@ const MobileAuth = () => {
   const [loading, setLoading] = useState(false);
 
   const isPasswordValid = passwordRules.every((r) => r.test(password));
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate(redirect, { replace: true });
+    }
+  }, [authLoading, user, navigate, redirect]);
 
   const formatPhone = (val: string) => {
     if (!val.startsWith("+90")) val = "+90 " + val.replace(/^\+?9?0?\s*/, "");

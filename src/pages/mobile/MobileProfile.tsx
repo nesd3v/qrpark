@@ -48,7 +48,7 @@ const Row = ({
 };
 
 const MobileProfile = () => {
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { isPremium } = useSubscription();
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -59,6 +59,7 @@ const MobileProfile = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) { navigate("/auth"); return; }
     (async () => {
       const [{ data: profile }, { data: v }] = await Promise.all([
@@ -70,9 +71,19 @@ const MobileProfile = () => {
       setVehicles((v as Vehicle[]) || []);
       setLoading(false);
     })();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const initial = (fullName?.charAt(0) || user?.email?.charAt(0) || "?").toUpperCase();
+
+  if (authLoading) {
+    return (
+      <MobileLayout title="Profil">
+        <div className="flex items-center justify-center pt-20">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout title="Profil">

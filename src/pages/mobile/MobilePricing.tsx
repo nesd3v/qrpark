@@ -22,7 +22,7 @@ const features = [
 ];
 
 const MobilePricing = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { isPremium } = useSubscription();
   usePaytrCheckoutHandler();
   const navigate = useNavigate();
@@ -31,6 +31,7 @@ const MobilePricing = () => {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
 
   const handleCheckout = async () => {
+    if (authLoading) return;
     if (!user) { navigate("/auth?redirect=/pricing"); return; }
     setLoadingPlan(selectedPlan);
     haptic.light();
