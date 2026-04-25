@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, Shield, Settings, MessageSquare, PhoneCall, ChevronDown } from "lucide-react";
+import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, Shield, Settings, MessageSquare, PhoneCall, ChevronDown, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +16,11 @@ import { Switch } from "@/components/ui/switch";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 
 import { translateError } from "@/lib/translateError";
-type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean };
+type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean; account_type?: string };
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, isIndividualPremium, isCorporatePremium } = useSubscription();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -29,6 +29,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [vehiclesOpen, setVehiclesOpen] = useState(false);
+  const [vehicleTab, setVehicleTab] = useState<"individual" | "corporate">("individual");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -57,7 +58,7 @@ const Profile = () => {
 
     const { data: vehicleData } = await supabase
       .from("vehicles")
-      .select("id, plate, phone, sms_enabled, call_enabled")
+      .select("id, plate, phone, sms_enabled, call_enabled, account_type")
       .eq("user_id", user!.id)
       .order("created_at", { ascending: true });
 
