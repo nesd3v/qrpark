@@ -2,10 +2,18 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
+type SubInfo = {
+  plan_type: string | null;
+  subscription_end: string | null;
+  legacy?: boolean;
+} | null;
+
 type SubscriptionState = {
   subscribed: boolean;
   planType: string | null;
   subscriptionEnd: string | null;
+  individual: SubInfo;
+  corporate: SubInfo;
   loading: boolean;
 };
 
@@ -15,12 +23,14 @@ export const useSubscription = () => {
     subscribed: false,
     planType: null,
     subscriptionEnd: null,
+    individual: null,
+    corporate: null,
     loading: true,
   });
 
   const checkSubscription = useCallback(async () => {
     if (!user) {
-      setState({ subscribed: false, planType: null, subscriptionEnd: null, loading: false });
+      setState({ subscribed: false, planType: null, subscriptionEnd: null, individual: null, corporate: null, loading: false });
       return;
     }
 
@@ -35,6 +45,8 @@ export const useSubscription = () => {
             subscribed: data?.subscribed ?? false,
             planType: data?.plan_type ?? null,
             subscriptionEnd: data?.subscription_end ?? null,
+            individual: data?.individual ?? null,
+            corporate: data?.corporate ?? null,
             loading: false,
           });
           return;
@@ -59,6 +71,8 @@ export const useSubscription = () => {
   }, [checkSubscription]);
 
   const isPremium = state.subscribed;
+  const isIndividualPremium = !!state.individual;
+  const isCorporatePremium = !!state.corporate;
 
-  return { ...state, isPremium, checkSubscription };
+  return { ...state, isPremium, isIndividualPremium, isCorporatePremium, checkSubscription };
 };
