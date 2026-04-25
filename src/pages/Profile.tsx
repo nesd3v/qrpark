@@ -404,6 +404,7 @@ const Profile = () => {
                   </motion.div>
                 )}
               </div>
+              )}
             </motion.div>
 
             {/* Save Button */}
