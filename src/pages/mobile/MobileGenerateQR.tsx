@@ -285,7 +285,7 @@ const MobileGenerateQR = () => {
       title="QR Kod"
       rightAction={
         <button
-          onClick={() => { haptic.light(); setShowAdd(true); }}
+          onClick={() => { haptic.light(); setNewAccountType(activeAccountType); setShowAdd(true); }}
           className="p-2 rounded-full active:bg-muted/40 text-primary"
           aria-label="Yeni araç"
         >
@@ -293,6 +293,33 @@ const MobileGenerateQR = () => {
         </button>
       }
     >
+      {/* Account type tabs */}
+      {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+        <div className="flex items-center gap-2 mb-3 p-1 bg-muted rounded-2xl">
+          {(["individual", "corporate"] as const).map((t) => {
+            const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;
+            return (
+              <button
+                key={t}
+                onClick={() => {
+                  haptic.light();
+                  setActiveAccountType(t);
+                  const first = vehicles.find((v) => (v.account_type ?? "individual") === t);
+                  setSelected(first || null);
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                  activeAccountType === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                {t === "individual" ? <User className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+                {t === "individual" ? "Bireysel" : "Kurumsal"}
+                <span className="text-[10px] opacity-70">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Vehicle selector */}
       <button
         onClick={() => { haptic.light(); setShowSelector((s) => !s); }}
@@ -302,17 +329,17 @@ const MobileGenerateQR = () => {
           <Car className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 text-left">
-          <p className="font-display font-bold text-foreground tracking-wider">{selected?.plate}</p>
+          <p className="font-display font-bold text-foreground tracking-wider">{selected?.plate ?? "Araç yok"}</p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Phone className="w-3 h-3" />{selected?.phone}
+            <Phone className="w-3 h-3" />{selected?.phone ?? "—"}
           </p>
         </div>
-        {vehicles.length > 1 && <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showSelector ? "rotate-180" : ""}`} />}
+        {vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length > 1 && <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showSelector ? "rotate-180" : ""}`} />}
       </button>
 
-      {showSelector && vehicles.length > 1 && (
+      {showSelector && vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length > 1 && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 mb-4">
-          {vehicles.filter((v) => v.id !== selected?.id).map((v) => (
+          {vehicles.filter((v) => v.id !== selected?.id && (v.account_type ?? "individual") === activeAccountType).map((v) => (
             <button
               key={v.id}
               onClick={() => { haptic.light(); setSelected(v); setShowSelector(false); }}
