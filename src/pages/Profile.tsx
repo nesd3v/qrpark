@@ -31,6 +31,13 @@ const Profile = () => {
   const [vehiclesOpen, setVehiclesOpen] = useState(false);
   const [vehicleTab, setVehicleTab] = useState<"individual" | "corporate">("individual");
 
+  // Kurumsal premium yoksa daima bireysel sekmeye dön
+  useEffect(() => {
+    if (!isCorporatePremium && vehicleTab === "corporate") {
+      setVehicleTab("individual");
+    }
+  }, [isCorporatePremium, vehicleTab]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth?redirect=/profile");
@@ -280,8 +287,8 @@ const Profile = () => {
 
               {vehiclesOpen && (
               <div className="space-y-3">
-                {/* Account type tabs (only when corporate exists) */}
-                {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+                {/* Account type tabs — sadece kurumsal premium aktif olduğunda göster */}
+                {isCorporatePremium && (
                   <div className="flex items-center gap-2 p-1 bg-muted rounded-xl">
                     {(["individual", "corporate"] as const).map((t) => {
                       const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;
