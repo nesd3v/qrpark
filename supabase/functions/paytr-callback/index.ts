@@ -12,6 +12,54 @@ const logStep = (step: string, details?: any) => {
   console.log(`[PAYTR-CALLBACK] ${step}${detailsStr}`);
 };
 
+async function activateCorporateMembership(supabaseAdmin: any, userId: string) {
+  try {
+    // Find latest pending_payment inquiry for the user
+    const { data: inquiry } = await supabaseAdmin
+      .from("corporate_inquiries")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "approved")
+      .in("payment_status", ["pending_payment", "not_required"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (inquiry) {
+      await supabaseAdmin
+        .from("corporate_inquiries")
+        .update({ payment_status: "paid" })
+        .eq("id", inquiry.id);
+    }
+
+    // Activate or create corporate_members entry
+    const { data: existingMember } = await supabaseAdmin
+      .from("corporate_members")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingMember) {
+      await supabaseAdmin
+        .from("corporate_members")
+        .update({ is_active: true, updated_at: new Date().toISOString() })
+        .eq("id", existingMember.id);
+    } else {
+      await supabaseAdmin.from("corporate_members").insert({
+        user_id: userId,
+        company_name: inquiry?.company_name ?? "—",
+        plan_type: inquiry?.plan_type ?? "filo",
+        max_vehicles: 9999,
+        is_active: true,
+        inquiry_id: inquiry?.id ?? null,
+      });
+    }
+    logStep("Corporate membership activated", { userId });
+  } catch (e) {
+    logStep("activateCorporateMembership ERROR", { message: e instanceof Error ? e.message : String(e) });
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -72,6 +120,7 @@ serve(async (req) => {
     if (status === "success") {
       const now = new Date();
       const planType = existing?.plan_type ?? "monthly";
+      const accountType = (existing as any)?.account_type ?? "individual";
       const subscriptionEnd = new Date(now);
       if (planType === "yearly") subscriptionEnd.setFullYear(subscriptionEnd.getFullYear() + 1);
       else subscriptionEnd.setMonth(subscriptionEnd.getMonth() + 1);
@@ -88,7 +137,12 @@ serve(async (req) => {
           })
           .eq("merchant_oid", merchantOid);
         if (updErr) logStep("Update error", { message: updErr.message });
-        logStep("Subscription activated (existing)", { userId: existing.user_id, planType });
+        logStep("Subscription activated (existing)", { userId: existing.user_id, planType, accountType });
+
+        // Corporate flow: mark inquiry paid + activate (or create) corporate membership
+        if (accountType === "corporate") {
+          await activateCorporateMembership(supabaseAdmin, existing.user_id);
+        }
       } else {
         // Fallback: parse user_id from OID (32 hex chars + timestamp)
         const sanitizedUuid = merchantOid.substring(0, 32);
@@ -97,6 +151,7 @@ serve(async (req) => {
           user_id: userId,
           merchant_oid: merchantOid,
           plan_type: planType,
+          account_type: accountType,
           amount: parseInt(totalAmount) || 0,
           status: "active",
           payment_date: now.toISOString(),

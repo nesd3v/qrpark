@@ -76,6 +76,7 @@ serve(async (req) => {
 
     const now = new Date();
     const planType = pending.plan_type ?? "monthly";
+    const accountType = (pending as any).account_type ?? "individual";
     // Don't activate sticker orders here — those have their own flow
     if (planType !== "monthly" && planType !== "yearly") {
       return new Response(
@@ -106,10 +107,55 @@ serve(async (req) => {
 
     log("Subscription activated via verify endpoint", { userId, planType, oid: pending.merchant_oid });
 
+    // Corporate flow: activate corporate membership
+    if (accountType === "corporate") {
+      try {
+        const { data: inquiry } = await supabaseAdmin
+          .from("corporate_inquiries")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("status", "approved")
+          .in("payment_status", ["pending_payment", "not_required"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (inquiry) {
+          await supabaseAdmin
+            .from("corporate_inquiries")
+            .update({ payment_status: "paid" })
+            .eq("id", inquiry.id);
+        }
+        const { data: existingMember } = await supabaseAdmin
+          .from("corporate_members")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (existingMember) {
+          await supabaseAdmin
+            .from("corporate_members")
+            .update({ is_active: true, updated_at: new Date().toISOString() })
+            .eq("id", existingMember.id);
+        } else {
+          await supabaseAdmin.from("corporate_members").insert({
+            user_id: userId,
+            company_name: inquiry?.company_name ?? "—",
+            plan_type: inquiry?.plan_type ?? "filo",
+            max_vehicles: 9999,
+            is_active: true,
+            inquiry_id: inquiry?.id ?? null,
+          });
+        }
+        log("Corporate membership activated", { userId });
+      } catch (e) {
+        log("Corporate activation error", { message: e instanceof Error ? e.message : String(e) });
+      }
+    }
+
     return new Response(
       JSON.stringify({
         activated: true,
         plan_type: planType,
+        account_type: accountType,
         subscription_end: subscriptionEnd.toISOString(),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },

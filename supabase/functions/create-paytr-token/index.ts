@@ -49,10 +49,11 @@ serve(async (req) => {
     const email = claimsData.claims.email as string;
     if (!email || !userId) throw new Error("User not authenticated");
 
-    const { planType } = await req.json();
+    const { planType, accountType } = await req.json();
     if (!planType || !["monthly", "yearly"].includes(planType)) {
       throw new Error("Invalid plan type");
     }
+    const acctType = accountType === "corporate" ? "corporate" : "individual";
 
     const merchantId = Deno.env.get("PAYTR_MERCHANT_ID") ?? "";
     const merchantKey = Deno.env.get("PAYTR_MERCHANT_KEY") ?? "";
@@ -60,10 +61,16 @@ serve(async (req) => {
 
     const sanitizedUserId = userId.replace(/-/g, "");
     const merchantOid = `${sanitizedUserId}${Date.now()}`;
-    const paymentAmount = planType === "monthly" ? 3900 : 34900; // kuruş cinsinden
+    // Pricing in kuruş (1 TL = 100 kuruş)
+    const PRICES: Record<string, Record<string, number>> = {
+      individual: { monthly: 35000, yearly: 349000 },   // ₺350 / ₺3.490
+      corporate:  { monthly: 50000, yearly: 499000 },   // ₺500 / ₺4.990
+    };
+    const paymentAmount = PRICES[acctType][planType];
     const currency = "TL";
     const userIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "85.34.78.112";
-    const merchantOkUrl = `${req.headers.get("origin")}/dashboard?checkout=success`;
+    const successPath = acctType === "corporate" ? "/corporate-dashboard" : "/dashboard";
+    const merchantOkUrl = `${req.headers.get("origin")}${successPath}?checkout=success`;
     const merchantFailUrl = `${req.headers.get("origin")}/pricing?checkout=failed`;
 
     // Save pending subscription record
@@ -75,16 +82,16 @@ serve(async (req) => {
       user_id: userId,
       merchant_oid: merchantOid,
       plan_type: planType,
+      account_type: acctType,
       amount: paymentAmount,
       status: "pending",
     });
     const userName = email.split("@")[0];
     const userAddress = "Türkiye";
     const userPhone = "05000000000";
+    const planLabel = `QRPark ${acctType === "corporate" ? "Kurumsal" : "Bireysel"} Premium ${planType === "monthly" ? "Aylık" : "Yıllık"}`;
     const userBasket = base64Encode(
-      JSON.stringify([
-        [planType === "monthly" ? "QRPark Premium Aylık" : "QRPark Premium Yıllık", paymentAmount / 100, 1]
-      ])
+      JSON.stringify([[planLabel, paymentAmount / 100, 1]])
     );
     const noInstallment = 1;
     const maxInstallment = 0;

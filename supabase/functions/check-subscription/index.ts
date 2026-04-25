@@ -46,29 +46,56 @@ serve(async (req) => {
     if (!userId) throw new Error("User not authenticated");
     logStep("User authenticated", { userId });
 
-    // Check local subscriptions table for active PayTR subscription
-    const { data: subscription, error: subError } = await supabaseClient
+    // Check local subscriptions table for active PayTR subscriptions (both account types)
+    const { data: subs, error: subError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("user_id", userId)
       .eq("status", "active")
       .gte("subscription_end", new Date().toISOString())
-      .order("subscription_end", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("subscription_end", { ascending: false });
 
     if (subError) {
       logStep("DB error", { message: subError.message });
       throw subError;
     }
 
-    const hasActiveSub = !!subscription;
-    logStep("Subscription check result", { hasActiveSub, planType: subscription?.plan_type });
+    const individual = (subs ?? []).find((s: any) => (s.account_type ?? "individual") === "individual") ?? null;
+    const corporate = (subs ?? []).find((s: any) => s.account_type === "corporate") ?? null;
+
+    // Also check for legacy/grandfathered active corporate_members (no payment required)
+    let corporateActive = !!corporate;
+    if (!corporateActive) {
+      const { data: member } = await supabaseClient
+        .from("corporate_members")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .maybeSingle();
+      corporateActive = !!member;
+    }
+
+    const hasActiveSub = !!individual || corporateActive;
+    logStep("Subscription check result", {
+      individual: !!individual,
+      corporate: corporateActive,
+    });
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
-      plan_type: subscription?.plan_type ?? null,
-      subscription_end: subscription?.subscription_end ?? null,
+      // Legacy fields (for back-compat) — prioritise individual
+      plan_type: individual?.plan_type ?? corporate?.plan_type ?? null,
+      subscription_end: individual?.subscription_end ?? corporate?.subscription_end ?? null,
+      // New fields
+      individual: individual ? {
+        plan_type: individual.plan_type,
+        subscription_end: individual.subscription_end,
+      } : null,
+      corporate: corporateActive ? {
+        plan_type: corporate?.plan_type ?? "filo",
+        subscription_end: corporate?.subscription_end ?? null,
+        legacy: !corporate, // grandfathered member
+      } : null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
