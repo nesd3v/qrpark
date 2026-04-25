@@ -106,7 +106,7 @@ const MobileGenerateQR = () => {
       toast.success("Araç kaydedildi");
     } catch (err: any) {
       haptic.error();
-      toast.error(translateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu"));
     } finally {
       setAdding(false);
     }
@@ -137,7 +137,7 @@ const MobileGenerateQR = () => {
       toast.success("QR kodun hazır!");
     } catch (err: any) {
       haptic.error();
-      toast.error(translateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu"));
     } finally {
       setRegenerating(false);
     }

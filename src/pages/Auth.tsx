@@ -86,7 +86,7 @@ const Auth = () => {
 
       setRegistered(true);
     } catch (err: any) {
-      toast.error(translateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu"));
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ const Auth = () => {
       toast.success("Giriş başarılı!");
       navigate(redirect);
     } catch (err: any) {
-      toast.error(translateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu"));
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ const Auth = () => {
       toast.success("Şifre sıfırlama bağlantısı e-postanıza gönderildi!");
       setShowForgot(false);
     } catch (err: any) {
-      toast.error(translateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu"));
     } finally {
       setLoading(false);
     }

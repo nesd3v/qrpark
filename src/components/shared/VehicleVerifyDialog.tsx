@@ -49,7 +49,7 @@ const VehicleVerifyDialog = ({ open, onOpenChange, vehicleId, plate, phone, onVe
       setCooldown(30);
       toast.success("Doğrulama kodu gönderildi");
     } catch (err: any) {
-      toast.error(translateError(err, "SMS gönderilemedi");
+      toast.error(translateError(err, "SMS gönderilemedi"));
       setStep("idle");
     }
   };
@@ -72,7 +72,7 @@ const VehicleVerifyDialog = ({ open, onOpenChange, vehicleId, plate, phone, onVe
         }, 1500);
       }
     } catch (err: any) {
-      toast.error(translateError(err, "Doğrulama başarısız");
+      toast.error(translateError(err, "Doğrulama başarısız"));
       setCode("");
       setStep("input");
     }

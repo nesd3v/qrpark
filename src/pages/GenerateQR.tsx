@@ -250,7 +250,7 @@ const GenerateQR = () => {
       setGenerated(false);
       setAddStep("result");
     } catch (err: any) {
-      toast.error(translateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu"));
       setAddStep("ruhsat");
     } finally {
       setAddingVehicle(false);
