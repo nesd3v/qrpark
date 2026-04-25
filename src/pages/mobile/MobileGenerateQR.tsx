@@ -215,6 +215,24 @@ const MobileGenerateQR = () => {
             <p className="text-sm text-muted-foreground mt-1">Plaka ve telefon bilgilerini gir</p>
           </div>
 
+          {(isIndividualPremium && isCorporatePremium) && (
+            <div className="mb-3 p-1 bg-muted rounded-2xl flex">
+              {(["individual", "corporate"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => { haptic.light(); setNewAccountType(t); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    newAccountType === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  {t === "individual" ? <User className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+                  {t === "individual" ? "Bireysel" : "Kurumsal"}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="rounded-2xl bg-card border border-border px-4 py-3 focus-within:border-primary/60 transition-colors">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Plaka</div>
