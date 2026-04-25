@@ -5,6 +5,7 @@ import { translateError } from "@/lib/translateError";
 import {
   Download, Car, RefreshCw, CheckCircle2, AlertTriangle, Crown, Palette,
   Plus, ChevronDown, Lock, Upload, FileImage, XCircle, ShieldCheck, Loader2, Phone,
+  User, Building2,
 } from "lucide-react";
 import QRCustomizer, { DEFAULT_QR_STYLE, type QRStyle } from "@/components/qr/QRCustomizer";
 import { Button } from "@/components/ui/button";
@@ -31,13 +32,16 @@ type Vehicle = {
   phone: string;
   last_qr_generated_at: string | null;
   verification_status: string;
+  account_type?: string;
 };
 
 type AddVehicleStep = "info" | "ruhsat" | "processing" | "result";
 
+const INDIVIDUAL_VEHICLE_LIMIT = 5;
+
 const GenerateQR = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, isIndividualPremium, isCorporatePremium } = useSubscription();
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -47,6 +51,13 @@ const GenerateQR = () => {
   const [selectedStyle, setSelectedStyle] = useState<QRStyle>(DEFAULT_QR_STYLE);
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
+
+  // Account type tab (filter vehicles)
+  const [activeAccountType, setActiveAccountType] = useState<"individual" | "corporate">(
+    isCorporatePremium && !isIndividualPremium ? "corporate" : "individual"
+  );
+  // Account type for the vehicle currently being added
+  const [newAccountType, setNewAccountType] = useState<"individual" | "corporate">("individual");
 
   // Add vehicle state
   const [addStep, setAddStep] = useState<AddVehicleStep>("info");
@@ -76,7 +87,7 @@ const GenerateQR = () => {
     setLoadingVehicle(true);
     const { data, error } = await supabase
       .from("vehicles")
-      .select("id, plate, phone, last_qr_generated_at, verification_status")
+      .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
       .eq("user_id", user!.id)
       .order("created_at", { ascending: true });
 
@@ -86,7 +97,10 @@ const GenerateQR = () => {
     setVehicles(allVehicles);
 
     if (allVehicles.length > 0) {
-      const first = allVehicles[0];
+      // pick first vehicle matching active tab, fallback to first
+      const first =
+        allVehicles.find((v) => (v.account_type ?? "individual") === activeAccountType) ||
+        allVehicles[0];
       setSelectedVehicle(first);
       if (first.last_qr_generated_at) setGenerated(true);
     }
@@ -148,6 +162,7 @@ const GenerateQR = () => {
     setRuhsatPreview(null);
     setVerificationResult(null);
     setProcessingLabel("");
+    setNewAccountType(activeAccountType);
   };
 
   // --- Get user's full_name for ruhsat verification ---
@@ -167,6 +182,25 @@ const GenerateQR = () => {
       return;
     }
 
+    // Enforce individual 5-vehicle limit
+    if (newAccountType === "individual") {
+      const indCount = vehicles.filter((v) => (v.account_type ?? "individual") === "individual").length;
+      if (isIndividualPremium && indCount >= INDIVIDUAL_VEHICLE_LIMIT) {
+        toast.error(`Bireysel premium en fazla ${INDIVIDUAL_VEHICLE_LIMIT} araç ekleyebilir`);
+        return;
+      }
+      if (!isIndividualPremium && indCount >= 1) {
+        toast.error("Birden fazla bireysel araç için Premium gereklidir");
+        return;
+      }
+    } else {
+      // corporate
+      if (!isCorporatePremium) {
+        toast.error("Kurumsal araç eklemek için Kurumsal Premium gereklidir");
+        return;
+      }
+    }
+
     setAddStep("processing");
     setProcessingLabel("Araç kaydediliyor...");
     setAddingVehicle(true);
@@ -179,8 +213,9 @@ const GenerateQR = () => {
           plate: newPlate.trim().toUpperCase(),
           phone: newPhone.trim(),
           user_id: user!.id,
+          account_type: newAccountType,
         })
-        .select("id, plate, phone, last_qr_generated_at, verification_status")
+        .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
         .single();
 
       if (vehicleError) {
@@ -411,6 +446,40 @@ const GenerateQR = () => {
                   </div>
 
                   <div className="glass rounded-2xl p-8 space-y-5">
+                    {(isIndividualPremium && isCorporatePremium) && (
+                      <div className="space-y-2">
+                        <Label className="text-foreground font-medium">Hesap Tipi</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNewAccountType("individual")}
+                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                              newAccountType === "individual"
+                                ? "border-primary bg-primary/10 text-primary font-semibold"
+                                : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <User className="w-4 h-4" /> Bireysel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setNewAccountType("corporate")}
+                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                              newAccountType === "corporate"
+                                ? "border-primary bg-primary/10 text-primary font-semibold"
+                                : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <Building2 className="w-4 h-4" /> Kurumsal
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {newAccountType === "individual"
+                            ? `Bireysel premium en fazla ${INDIVIDUAL_VEHICLE_LIMIT} araç ekleyebilir`
+                            : "Kurumsal premium ile sınırsız araç ekleyebilirsiniz"}
+                        </p>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label className="text-foreground font-medium flex items-center gap-2">
                         <Car className="w-4 h-4 text-primary" /> Plaka Numarası
@@ -556,8 +625,42 @@ const GenerateQR = () => {
               </p>
             </div>
 
+            {/* Account type tabs (only when user has both premium types or has vehicles in both) */}
+            {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+              <div className="flex items-center gap-2 mb-4 p-1 bg-secondary rounded-xl">
+                {(["individual", "corporate"] as const).map((t) => {
+                  const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        setActiveAccountType(t);
+                        const first = vehicles.find((v) => (v.account_type ?? "individual") === t);
+                        if (first) {
+                          setSelectedVehicle(first);
+                          setGenerated(!!first.last_qr_generated_at);
+                        } else {
+                          setSelectedVehicle(null);
+                          setGenerated(false);
+                        }
+                      }}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeAccountType === t
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {t === "individual" ? <User className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+                      {t === "individual" ? "Bireysel" : "Kurumsal"}
+                      <span className="text-[10px] opacity-70">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Vehicle selector for multiple vehicles */}
-            {vehicles.length > 1 && (
+            {vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length > 1 && (
               <div className="mb-4 flex items-center justify-center gap-2">
                 <div className="relative">
                   <button
@@ -578,7 +681,7 @@ const GenerateQR = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
                       >
-                        {vehicles.map((v) => (
+                        {vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).map((v) => (
                           <button
                             key={v.id}
                             onClick={() => handleSelectVehicle(v)}
@@ -599,24 +702,36 @@ const GenerateQR = () => {
             )}
 
             {/* Add vehicle button */}
-            {isPremium ? (
+            {(activeAccountType === "individual" ? isIndividualPremium : isCorporatePremium) ? (
               <div className="mb-6">
                 <button
-                  onClick={() => setShowAddFlow(true)}
+                  onClick={() => {
+                    setNewAccountType(activeAccountType);
+                    setShowAddFlow(true);
+                  }}
                   className="w-full glass rounded-xl p-4 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:bg-primary/5 transition-colors border border-dashed border-primary/30"
                 >
                   <Plus className="w-4 h-4" />
-                  Yeni Araç Ekle
+                  {activeAccountType === "individual" ? "Yeni Bireysel Araç Ekle" : "Yeni Kurumsal Araç Ekle"}
                 </button>
+                {activeAccountType === "individual" && (
+                  <p className="text-[11px] text-muted-foreground text-center mt-2">
+                    Bireysel: {vehicles.filter((v) => (v.account_type ?? "individual") === "individual").length}/{INDIVIDUAL_VEHICLE_LIMIT} araç
+                  </p>
+                )}
               </div>
-            ) : vehicles.length >= 1 && (
+            ) : vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length >= 1 && (
               <div className="mb-6 glass rounded-xl p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                   <Lock className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Birden fazla araç eklemek için</p>
-                  <p className="text-xs text-muted-foreground">Premium abonelikle sınırsız araç kaydedebilirsiniz</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {activeAccountType === "corporate" ? "Kurumsal araç eklemek için" : "Birden fazla araç eklemek için"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {activeAccountType === "corporate" ? "Kurumsal Premium gereklidir" : "Bireysel Premium ile en fazla 5 araç ekleyebilirsiniz"}
+                  </p>
                 </div>
                 <Link to="/pricing">
                   <span className="text-xs font-bold text-primary hover:underline">Geç →</span>

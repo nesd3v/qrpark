@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, Shield, Settings, MessageSquare, PhoneCall, ChevronDown } from "lucide-react";
+import { User, Mail, Car, Phone, Save, CheckCircle2, Crown, Plus, Trash2, Lock, Shield, Settings, MessageSquare, PhoneCall, ChevronDown, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +16,11 @@ import { Switch } from "@/components/ui/switch";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 
 import { translateError } from "@/lib/translateError";
-type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean };
+type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean; account_type?: string };
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, isIndividualPremium, isCorporatePremium } = useSubscription();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -29,6 +29,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [vehiclesOpen, setVehiclesOpen] = useState(false);
+  const [vehicleTab, setVehicleTab] = useState<"individual" | "corporate">("individual");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -57,7 +58,7 @@ const Profile = () => {
 
     const { data: vehicleData } = await supabase
       .from("vehicles")
-      .select("id, plate, phone, sms_enabled, call_enabled")
+      .select("id, plate, phone, sms_enabled, call_enabled, account_type")
       .eq("user_id", user!.id)
       .order("created_at", { ascending: true });
 
@@ -279,7 +280,35 @@ const Profile = () => {
 
               {vehiclesOpen && (
               <div className="space-y-3">
-                {vehicles.map((v, index) => (
+                {/* Account type tabs (only when corporate exists) */}
+                {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+                  <div className="flex items-center gap-2 p-1 bg-muted rounded-xl">
+                    {(["individual", "corporate"] as const).map((t) => {
+                      const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => setVehicleTab(t)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                            vehicleTab === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                          }`}
+                        >
+                          {t === "individual" ? <User className="w-3 h-3" /> : <Building2 className="w-3 h-3" />}
+                          {t === "individual" ? "Bireysel" : "Kurumsal"}
+                          <span className="text-[10px] opacity-70">({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {vehicles.filter((v) => (v.account_type ?? "individual") === vehicleTab).length === 0 && (
+                  <div className="text-center py-6 text-sm text-muted-foreground">
+                    {vehicleTab === "individual" ? "Bireysel araç eklenmemiş" : "Kurumsal araç eklenmemiş"}
+                  </div>
+                )}
+
+                {vehicles.filter((v) => (v.account_type ?? "individual") === vehicleTab).map((v, index) => (
                   <motion.div
                     key={v.id}
                     className="p-4 rounded-xl bg-secondary/30 border border-border/50 hover:border-primary/20 transition-colors space-y-3"

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
-import { Car, Plus, Download, RefreshCw, Crown, ChevronDown, Phone, ShieldCheck, AlertTriangle, XCircle, Loader2 } from "lucide-react";
+import { Car, Plus, Download, RefreshCw, Crown, ChevronDown, Phone, ShieldCheck, AlertTriangle, XCircle, Loader2, User, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,13 +17,15 @@ type Vehicle = {
   phone: string;
   last_qr_generated_at: string | null;
   verification_status: string;
+  account_type?: string;
 };
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const INDIVIDUAL_VEHICLE_LIMIT = 5;
 
 const MobileGenerateQR = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, isIndividualPremium, isCorporatePremium } = useSubscription();
   const navigate = useNavigate();
   const qrRef = useRef<HTMLDivElement>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -37,6 +39,8 @@ const MobileGenerateQR = () => {
   const [newPlate, setNewPlate] = useState("");
   const [newPhone, setNewPhone] = useState("+90 ");
   const [adding, setAdding] = useState(false);
+  const [activeAccountType, setActiveAccountType] = useState<"individual" | "corporate">("individual");
+  const [newAccountType, setNewAccountType] = useState<"individual" | "corporate">("individual");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -50,12 +54,15 @@ const MobileGenerateQR = () => {
     setLoading(true);
     const { data } = await supabase
       .from("vehicles")
-      .select("id, plate, phone, last_qr_generated_at, verification_status")
+      .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
       .eq("user_id", user!.id)
       .order("created_at");
     const list = (data as Vehicle[]) || [];
     setVehicles(list);
-    if (list.length > 0) setSelected(list[0]);
+    if (list.length > 0) {
+      const first = list.find((v) => (v.account_type ?? "individual") === activeAccountType) || list[0];
+      setSelected(first);
+    }
     setLoading(false);
   };
 
@@ -79,6 +86,23 @@ const MobileGenerateQR = () => {
   const handleAddVehicle = async () => {
     if (!newPlate.trim()) { toast.error("Plaka gerekli"); return; }
     if (newPhone.replace(/\D/g, "").length < 12) { toast.error("Geçerli telefon girin"); return; }
+
+    // Limit enforcement
+    if (newAccountType === "individual") {
+      const indCount = vehicles.filter((v) => (v.account_type ?? "individual") === "individual").length;
+      if (isIndividualPremium && indCount >= INDIVIDUAL_VEHICLE_LIMIT) {
+        toast.error(`Bireysel premium en fazla ${INDIVIDUAL_VEHICLE_LIMIT} araç ekleyebilir`);
+        return;
+      }
+      if (!isIndividualPremium && indCount >= 1) {
+        toast.error("Birden fazla bireysel araç için Premium gereklidir");
+        return;
+      }
+    } else if (newAccountType === "corporate" && !isCorporatePremium) {
+      toast.error("Kurumsal araç için Kurumsal Premium gereklidir");
+      return;
+    }
+
     setAdding(true);
     haptic.light();
     try {
@@ -89,8 +113,9 @@ const MobileGenerateQR = () => {
           phone: newPhone.trim(),
           user_id: user!.id,
           verification_status: "verified", // SMS-based verification, no ruhsat needed
+          account_type: newAccountType,
         })
-        .select("id, plate, phone, last_qr_generated_at, verification_status")
+        .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
         .single();
       if (error) {
         if (error.code === "23505") { toast.error("Bu plaka zaten kayıtlı"); return; }
@@ -99,6 +124,7 @@ const MobileGenerateQR = () => {
       const v = data as Vehicle;
       setVehicles((prev) => [...prev, v]);
       setSelected(v);
+      setActiveAccountType(newAccountType);
       setShowAdd(false);
       setNewPlate("");
       setNewPhone("+90 ");
@@ -189,6 +215,24 @@ const MobileGenerateQR = () => {
             <p className="text-sm text-muted-foreground mt-1">Plaka ve telefon bilgilerini gir</p>
           </div>
 
+          {(isIndividualPremium && isCorporatePremium) && (
+            <div className="mb-3 p-1 bg-muted rounded-2xl flex">
+              {(["individual", "corporate"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => { haptic.light(); setNewAccountType(t); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    newAccountType === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  {t === "individual" ? <User className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+                  {t === "individual" ? "Bireysel" : "Kurumsal"}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="rounded-2xl bg-card border border-border px-4 py-3 focus-within:border-primary/60 transition-colors">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Plaka</div>
@@ -241,7 +285,7 @@ const MobileGenerateQR = () => {
       title="QR Kod"
       rightAction={
         <button
-          onClick={() => { haptic.light(); setShowAdd(true); }}
+          onClick={() => { haptic.light(); setNewAccountType(activeAccountType); setShowAdd(true); }}
           className="p-2 rounded-full active:bg-muted/40 text-primary"
           aria-label="Yeni araç"
         >
@@ -249,6 +293,33 @@ const MobileGenerateQR = () => {
         </button>
       }
     >
+      {/* Account type tabs */}
+      {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+        <div className="flex items-center gap-2 mb-3 p-1 bg-muted rounded-2xl">
+          {(["individual", "corporate"] as const).map((t) => {
+            const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;
+            return (
+              <button
+                key={t}
+                onClick={() => {
+                  haptic.light();
+                  setActiveAccountType(t);
+                  const first = vehicles.find((v) => (v.account_type ?? "individual") === t);
+                  setSelected(first || null);
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                  activeAccountType === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                {t === "individual" ? <User className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+                {t === "individual" ? "Bireysel" : "Kurumsal"}
+                <span className="text-[10px] opacity-70">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Vehicle selector */}
       <button
         onClick={() => { haptic.light(); setShowSelector((s) => !s); }}
@@ -258,17 +329,17 @@ const MobileGenerateQR = () => {
           <Car className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 text-left">
-          <p className="font-display font-bold text-foreground tracking-wider">{selected?.plate}</p>
+          <p className="font-display font-bold text-foreground tracking-wider">{selected?.plate ?? "Araç yok"}</p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Phone className="w-3 h-3" />{selected?.phone}
+            <Phone className="w-3 h-3" />{selected?.phone ?? "—"}
           </p>
         </div>
-        {vehicles.length > 1 && <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showSelector ? "rotate-180" : ""}`} />}
+        {vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length > 1 && <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showSelector ? "rotate-180" : ""}`} />}
       </button>
 
-      {showSelector && vehicles.length > 1 && (
+      {showSelector && vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length > 1 && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 mb-4">
-          {vehicles.filter((v) => v.id !== selected?.id).map((v) => (
+          {vehicles.filter((v) => v.id !== selected?.id && (v.account_type ?? "individual") === activeAccountType).map((v) => (
             <button
               key={v.id}
               onClick={() => { haptic.light(); setSelected(v); setShowSelector(false); }}

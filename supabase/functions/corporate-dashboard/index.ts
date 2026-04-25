@@ -52,6 +52,7 @@ Deno.serve(async (req) => {
         .from("vehicles")
         .select("id, plate, phone, verification_status, last_qr_generated_at, qr_expires_at, created_at")
         .eq("user_id", user.id)
+        .eq("account_type", "corporate")
         .order("created_at", { ascending: false });
       return json({ vehicles: vehicles || [] });
     }
@@ -65,7 +66,8 @@ Deno.serve(async (req) => {
       const { count: existingCount } = await supabase
         .from("vehicles")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("account_type", "corporate");
 
       if ((existingCount || 0) + rows.length > membership.max_vehicles) {
         return json({ error: `Araç limiti aşılıyor. Mevcut: ${existingCount}, Eklenecek: ${rows.length}, Limit: ${membership.max_vehicles}` }, 400);
@@ -78,7 +80,7 @@ Deno.serve(async (req) => {
         if (!plate || !phone) { results.skipped++; continue; }
         const { error } = await supabase
           .from("vehicles")
-          .upsert({ plate, phone, user_id: user.id }, { onConflict: "plate" });
+          .upsert({ plate, phone, user_id: user.id, account_type: "corporate" }, { onConflict: "plate" });
         if (error) results.errors.push(`${plate}: ${error.message}`);
         else results.added++;
       }
