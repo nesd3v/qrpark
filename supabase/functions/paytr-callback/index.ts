@@ -19,7 +19,7 @@ async function activateCorporateMembership(supabaseAdmin: any, userId: string) {
       .from("corporate_inquiries")
       .select("*")
       .eq("user_id", userId)
-      .eq("status", "approved")
+      .in("status", ["approved", "completed"])
       .in("payment_status", ["pending_payment", "not_required"])
       .order("created_at", { ascending: false })
       .limit(1)
