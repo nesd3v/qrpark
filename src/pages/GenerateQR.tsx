@@ -625,8 +625,42 @@ const GenerateQR = () => {
               </p>
             </div>
 
+            {/* Account type tabs (only when user has both premium types or has vehicles in both) */}
+            {(isCorporatePremium || vehicles.some((v) => (v.account_type ?? "individual") === "corporate")) && (
+              <div className="flex items-center gap-2 mb-4 p-1 bg-secondary rounded-xl">
+                {(["individual", "corporate"] as const).map((t) => {
+                  const count = vehicles.filter((v) => (v.account_type ?? "individual") === t).length;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        setActiveAccountType(t);
+                        const first = vehicles.find((v) => (v.account_type ?? "individual") === t);
+                        if (first) {
+                          setSelectedVehicle(first);
+                          setGenerated(!!first.last_qr_generated_at);
+                        } else {
+                          setSelectedVehicle(null);
+                          setGenerated(false);
+                        }
+                      }}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeAccountType === t
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {t === "individual" ? <User className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+                      {t === "individual" ? "Bireysel" : "Kurumsal"}
+                      <span className="text-[10px] opacity-70">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Vehicle selector for multiple vehicles */}
-            {vehicles.length > 1 && (
+            {vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length > 1 && (
               <div className="mb-4 flex items-center justify-center gap-2">
                 <div className="relative">
                   <button
@@ -647,7 +681,7 @@ const GenerateQR = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
                       >
-                        {vehicles.map((v) => (
+                        {vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).map((v) => (
                           <button
                             key={v.id}
                             onClick={() => handleSelectVehicle(v)}
@@ -668,24 +702,36 @@ const GenerateQR = () => {
             )}
 
             {/* Add vehicle button */}
-            {isPremium ? (
+            {(activeAccountType === "individual" ? isIndividualPremium : isCorporatePremium) ? (
               <div className="mb-6">
                 <button
-                  onClick={() => setShowAddFlow(true)}
+                  onClick={() => {
+                    setNewAccountType(activeAccountType);
+                    setShowAddFlow(true);
+                  }}
                   className="w-full glass rounded-xl p-4 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:bg-primary/5 transition-colors border border-dashed border-primary/30"
                 >
                   <Plus className="w-4 h-4" />
-                  Yeni Araç Ekle
+                  {activeAccountType === "individual" ? "Yeni Bireysel Araç Ekle" : "Yeni Kurumsal Araç Ekle"}
                 </button>
+                {activeAccountType === "individual" && (
+                  <p className="text-[11px] text-muted-foreground text-center mt-2">
+                    Bireysel: {vehicles.filter((v) => (v.account_type ?? "individual") === "individual").length}/{INDIVIDUAL_VEHICLE_LIMIT} araç
+                  </p>
+                )}
               </div>
-            ) : vehicles.length >= 1 && (
+            ) : vehicles.filter((v) => (v.account_type ?? "individual") === activeAccountType).length >= 1 && (
               <div className="mb-6 glass rounded-xl p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                   <Lock className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Birden fazla araç eklemek için</p>
-                  <p className="text-xs text-muted-foreground">Premium abonelikle sınırsız araç kaydedebilirsiniz</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {activeAccountType === "corporate" ? "Kurumsal araç eklemek için" : "Birden fazla araç eklemek için"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {activeAccountType === "corporate" ? "Kurumsal Premium gereklidir" : "Bireysel Premium ile en fazla 5 araç ekleyebilirsiniz"}
+                  </p>
                 </div>
                 <Link to="/pricing">
                   <span className="text-xs font-bold text-primary hover:underline">Geç →</span>
