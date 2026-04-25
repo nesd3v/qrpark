@@ -24,7 +24,7 @@ const steps = [
     icon: Bell,
     step: "04",
     title: "Anında Haberdar Olun",
-    desc: "WhatsApp veya SMS ile bilgilendirme alın.",
+    desc: "SMS veya arama yoluyla bilgilendirme alın.",
   },
 ];
 

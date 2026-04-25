@@ -9,7 +9,7 @@ import {
 const faqs = [
   {
     q: "QRPark ücretsiz mi?",
-    a: "Evet! QR kodu oluşturmak ve bildirim almak tamamen ücretsizdir. Premium özellikler için ileride ücretli planlar sunulabilir.",
+    a: "Evet! Temel QR kod oluşturma ve bildirim alma ücretsizdir. Sınırsız araç, süresiz QR ve gelişmiş geçmiş gibi özellikler Premium planda sunulur.",
   },
   {
     q: "QR kodu nereden edinebilirim?",
@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "Bildirimler nasıl geliyor?",
-    a: "Kayıt sırasında verdiğiniz telefon numarasına WhatsApp mesajı veya SMS olarak bildirim gönderilir.",
+    a: "Araç için kayıtlı telefon numarasına SMS gönderilir veya araç sahibinin ayarına göre arama başlatılır.",
   },
   {
     q: "QR kodum kaybolursa ne yapmalıyım?",
