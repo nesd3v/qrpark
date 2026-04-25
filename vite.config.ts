@@ -18,6 +18,16 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      // Service Worker tüm açık sekmelerin kontrolünü hemen ele alsın ve
+      // eski cache'leri silsin. Bu sayede preview'da takılı kalan eski
+      // ekranlar (örn. eski "Sticker Sipariş Et" akışı) yenilenir.
+      workbox: {
+        navigateFallbackDenylist: [/^\/~oauth/],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
+      },
       includeAssets: ["pwa-192x192.png", "pwa-512x512.png", "pwa-maskable-512x512.png"],
       manifest: {
         name: "QRPark - Akıllı Park Bildirim Sistemi",
@@ -47,10 +57,6 @@ export default defineConfig(({ mode }) => ({
             purpose: "maskable",
           },
         ],
-      },
-      workbox: {
-        navigateFallbackDenylist: [/^\/~oauth/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
       },
     }),
   ].filter(Boolean),

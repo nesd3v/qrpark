@@ -139,7 +139,7 @@ const CorporateDashboard = () => {
       invoke("vehicles").then((d) => setVehicles(d.vehicles));
       invoke("report").then((d) => setReport(d.report));
     } catch (err: any) {
-      toast.errortranslateError(err, "İçe aktarma başarısız");
+      toast.error(translateError(err, "İçe aktarma başarısız"));
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

@@ -62,7 +62,7 @@ const AdminVehiclePanel = ({ stats, onRefreshStats }: { stats: Stats | null; onR
       setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
       onRefreshStats();
     } catch (err: any) {
-      toast.errortranslateError(err, "İşlem başarısız");
+      toast.error(translateError(err, "İşlem başarısız"));
     }
     setActionLoading(null);
   };
