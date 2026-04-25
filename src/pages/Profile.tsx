@@ -112,7 +112,7 @@ const Profile = () => {
       setTimeout(() => setSaved(false), 2000);
       await fetchProfile();
     } catch (err: any) {
-      toast.errortranslateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu");
     } finally {
       setSaving(false);
     }
@@ -135,7 +135,7 @@ const Profile = () => {
       setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
       toast.success("Araç silindi");
     } catch (err: any) {
-      toast.errortranslateError(err, "Araç silinemedi");
+      toast.error(translateError(err, "Araç silinemedi");
     }
   };
 

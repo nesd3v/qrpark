@@ -87,7 +87,7 @@ const DeleteAccountDialog = ({ isPremium, userEmail, externalOpen, onExternalOpe
       toast.success("Hesabınız başarıyla silindi");
       navigate("/");
     } catch (err: any) {
-      toast.errortranslateError(err, "Hesap silinemedi");
+      toast.error(translateError(err, "Hesap silinemedi");
     } finally {
       setDeleting(false);
     }

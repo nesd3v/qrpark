@@ -55,7 +55,7 @@ const ResetPassword = () => {
       toast.success("Şifreniz başarıyla güncellendi!");
       navigate("/");
     } catch (err: any) {
-      toast.errortranslateError(err, "Bir hata oluştu");
+      toast.error(translateError(err, "Bir hata oluştu");
     } finally {
       setLoading(false);
     }

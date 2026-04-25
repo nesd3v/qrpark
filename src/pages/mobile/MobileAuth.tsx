@@ -54,7 +54,7 @@ const MobileAuth = () => {
       navigate(redirect);
     } catch (err: any) {
       haptic.error();
-      toast.errortranslateError(err, "Giriş yapılamadı");
+      toast.error(translateError(err, "Giriş yapılamadı");
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ const MobileAuth = () => {
       setMode("login");
     } catch (err: any) {
       haptic.error();
-      toast.errortranslateError(err, "Kayıt başarısız");
+      toast.error(translateError(err, "Kayıt başarısız");
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ const MobileAuth = () => {
       toast.success("Sıfırlama bağlantısı gönderildi");
       setMode("login");
     } catch (err: any) {
-      toast.errortranslateError(err, "İşlem başarısız");
+      toast.error(translateError(err, "İşlem başarısız");
     } finally {
       setLoading(false);
     }
