@@ -446,6 +446,40 @@ const GenerateQR = () => {
                   </div>
 
                   <div className="glass rounded-2xl p-8 space-y-5">
+                    {(isIndividualPremium && isCorporatePremium) && (
+                      <div className="space-y-2">
+                        <Label className="text-foreground font-medium">Hesap Tipi</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNewAccountType("individual")}
+                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                              newAccountType === "individual"
+                                ? "border-primary bg-primary/10 text-primary font-semibold"
+                                : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <User className="w-4 h-4" /> Bireysel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setNewAccountType("corporate")}
+                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                              newAccountType === "corporate"
+                                ? "border-primary bg-primary/10 text-primary font-semibold"
+                                : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <Building2 className="w-4 h-4" /> Kurumsal
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {newAccountType === "individual"
+                            ? `Bireysel premium en fazla ${INDIVIDUAL_VEHICLE_LIMIT} araç ekleyebilir`
+                            : "Kurumsal premium ile sınırsız araç ekleyebilirsiniz"}
+                        </p>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label className="text-foreground font-medium flex items-center gap-2">
                         <Car className="w-4 h-4 text-primary" /> Plaka Numarası
