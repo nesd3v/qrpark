@@ -250,7 +250,12 @@ const Profile = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
             >
-              <div className="flex items-center justify-between mb-5">
+              <button
+                type="button"
+                onClick={() => setVehiclesOpen((v) => !v)}
+                className={`w-full flex items-center justify-between ${vehiclesOpen ? "mb-5" : ""} text-left`}
+                aria-expanded={vehiclesOpen}
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Car className="w-4 h-4 text-primary" />
@@ -262,11 +267,17 @@ const Profile = () => {
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">
-                  {vehicles.length} araç
-                </span>
-              </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">
+                    {vehicles.length} araç
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-muted-foreground transition-transform ${vehiclesOpen ? "rotate-180" : ""}`}
+                  />
+                </div>
+              </button>
 
+              {vehiclesOpen && (
               <div className="space-y-3">
                 {vehicles.map((v, index) => (
                   <motion.div
