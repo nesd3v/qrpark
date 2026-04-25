@@ -12,6 +12,54 @@ const logStep = (step: string, details?: any) => {
   console.log(`[PAYTR-CALLBACK] ${step}${detailsStr}`);
 };
 
+async function activateCorporateMembership(supabaseAdmin: any, userId: string) {
+  try {
+    // Find latest pending_payment inquiry for the user
+    const { data: inquiry } = await supabaseAdmin
+      .from("corporate_inquiries")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "approved")
+      .in("payment_status", ["pending_payment", "not_required"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (inquiry) {
+      await supabaseAdmin
+        .from("corporate_inquiries")
+        .update({ payment_status: "paid" })
+        .eq("id", inquiry.id);
+    }
+
+    // Activate or create corporate_members entry
+    const { data: existingMember } = await supabaseAdmin
+      .from("corporate_members")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingMember) {
+      await supabaseAdmin
+        .from("corporate_members")
+        .update({ is_active: true, updated_at: new Date().toISOString() })
+        .eq("id", existingMember.id);
+    } else {
+      await supabaseAdmin.from("corporate_members").insert({
+        user_id: userId,
+        company_name: inquiry?.company_name ?? "—",
+        plan_type: inquiry?.plan_type ?? "filo",
+        max_vehicles: 9999,
+        is_active: true,
+        inquiry_id: inquiry?.id ?? null,
+      });
+    }
+    logStep("Corporate membership activated", { userId });
+  } catch (e) {
+    logStep("activateCorporateMembership ERROR", { message: e instanceof Error ? e.message : String(e) });
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
