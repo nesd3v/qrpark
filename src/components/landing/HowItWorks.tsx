@@ -12,7 +12,7 @@ const steps = [
     icon: Scan,
     step: "02",
     title: "Aracınıza Yerleştirin",
-    desc: "QR kodunu arabanızın camına yapıştırın.",
+    desc: "QR kodunuzu aracınızın görünür bir yerine yerleştirin.",
   },
   {
     icon: Send,
