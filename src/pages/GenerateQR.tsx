@@ -162,6 +162,7 @@ const GenerateQR = () => {
     setRuhsatPreview(null);
     setVerificationResult(null);
     setProcessingLabel("");
+    setNewAccountType(activeAccountType);
   };
 
   // --- Get user's full_name for ruhsat verification ---
