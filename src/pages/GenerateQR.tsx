@@ -181,6 +181,25 @@ const GenerateQR = () => {
       return;
     }
 
+    // Enforce individual 5-vehicle limit
+    if (newAccountType === "individual") {
+      const indCount = vehicles.filter((v) => (v.account_type ?? "individual") === "individual").length;
+      if (isIndividualPremium && indCount >= INDIVIDUAL_VEHICLE_LIMIT) {
+        toast.error(`Bireysel premium en fazla ${INDIVIDUAL_VEHICLE_LIMIT} araç ekleyebilir`);
+        return;
+      }
+      if (!isIndividualPremium && indCount >= 1) {
+        toast.error("Birden fazla bireysel araç için Premium gereklidir");
+        return;
+      }
+    } else {
+      // corporate
+      if (!isCorporatePremium) {
+        toast.error("Kurumsal araç eklemek için Kurumsal Premium gereklidir");
+        return;
+      }
+    }
+
     setAddStep("processing");
     setProcessingLabel("Araç kaydediliyor...");
     setAddingVehicle(true);
@@ -193,8 +212,9 @@ const GenerateQR = () => {
           plate: newPlate.trim().toUpperCase(),
           phone: newPhone.trim(),
           user_id: user!.id,
+          account_type: newAccountType,
         })
-        .select("id, plate, phone, last_qr_generated_at, verification_status")
+        .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
         .single();
 
       if (vehicleError) {
