@@ -693,7 +693,7 @@ const GenerateQR = () => {
                   </div>
 
                   <p className="text-xs text-muted-foreground text-center">
-                    Bu QR kodu aracınızın camına yapıştırın
+                    Bu QR kodu aracınızın görünür bir yerine yerleştirin
                   </p>
 
                   <div className="flex flex-col sm:flex-row gap-3 w-full">
