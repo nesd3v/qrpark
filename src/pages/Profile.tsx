@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
+import CorporateStatusBanner from "@/components/corporate/CorporateStatusBanner";
 
 import { translateError } from "@/lib/translateError";
 type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean; account_type?: string };
@@ -168,6 +169,9 @@ const Profile = () => {
       <div className="pt-28 pb-16">
         <div className="container mx-auto px-6">
           <motion.div className="max-w-lg mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="mb-4">
+              <CorporateStatusBanner />
+            </div>
             
             {/* Profile Header with Avatar */}
             <div className="text-center mb-10">
