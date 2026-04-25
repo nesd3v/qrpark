@@ -18,6 +18,7 @@ type CorporateInquiry = {
   status: string;
   message: string | null;
   created_at: string;
+  payment_status?: string;
 };
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -67,8 +68,8 @@ const AdminCorporatePanel = () => {
       body: { action: "corporate_approve", vehicle_id: id, user_email: email, max_vehicles: maxV },
     });
     if (!error && data?.success) {
-      toast.success("Kurumsal üyelik oluşturuldu!");
-      setInquiries((prev) => prev.map((i) => i.id === id ? { ...i, status: "completed" } : i));
+      toast.success("Onaylandı! Kullanıcıya ödeme bildirimi gösterilecek");
+      setInquiries((prev) => prev.map((i) => i.id === id ? { ...i, status: "completed", payment_status: "pending_payment" } : i));
     } else toast.error(data?.error || "Onaylama başarısız");
     setUpdatingId(null);
   };
@@ -127,9 +128,21 @@ const AdminCorporatePanel = () => {
                   <p className="text-xs text-muted-foreground mt-2">
                     {new Date(inq.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </p>
+                  {inq.payment_status === "pending_payment" && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-full bg-warning/10 text-warning font-medium">
+                      <Clock className="w-3 h-3" /> Ödeme bekleniyor
+                    </div>
+                  )}
+                  {inq.payment_status === "paid" && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
+                      <CheckCircle2 className="w-3 h-3" /> Ödeme tamamlandı (Aktif üye)
+                    </div>
+                  )}
                   {inq.status !== "completed" && (
                     <div className="mt-3 p-3 bg-secondary/50 rounded-lg space-y-2">
-                      <p className="text-xs font-medium text-foreground">Kurumsal Üyelik Onayla</p>
+                      <p className="text-xs font-medium text-foreground">
+                        Başvuruyu Onayla (kullanıcıdan ödeme istenecek)
+                      </p>
                       <div className="flex gap-2 flex-wrap">
                         <Input placeholder="Kullanıcı e-postası" value={approveEmail[inq.id] || inq.contact_email}
                           onChange={(e) => setApproveEmail((p) => ({ ...p, [inq.id]: e.target.value }))} className="flex-1 min-w-[200px] h-8 text-xs" />
@@ -138,7 +151,7 @@ const AdminCorporatePanel = () => {
                         <Button size="sm" onClick={() => approveInquiry(inq.id)} disabled={updatingId === inq.id}
                           className="gradient-primary text-primary-foreground text-xs h-8">
                           {updatingId === inq.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
-                          Onayla & Üyelik Oluştur
+                          Onayla
                         </Button>
                       </div>
                     </div>
