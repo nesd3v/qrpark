@@ -59,8 +59,8 @@ const Pricing = () => {
         .from("corporate_inquiries" as any)
         .select("id, status, payment_status, plan_type")
         .eq("user_id", user.id)
-        .eq("status", "approved")
         .eq("payment_status", "pending_payment")
+        .in("status", ["approved", "completed"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
