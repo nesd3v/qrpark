@@ -5,6 +5,7 @@ import { translateError } from "@/lib/translateError";
 import {
   Download, Car, RefreshCw, CheckCircle2, AlertTriangle, Crown, Palette,
   Plus, ChevronDown, Lock, Upload, FileImage, XCircle, ShieldCheck, Loader2, Phone,
+  User, Building2,
 } from "lucide-react";
 import QRCustomizer, { DEFAULT_QR_STYLE, type QRStyle } from "@/components/qr/QRCustomizer";
 import { Button } from "@/components/ui/button";
@@ -31,13 +32,16 @@ type Vehicle = {
   phone: string;
   last_qr_generated_at: string | null;
   verification_status: string;
+  account_type?: string;
 };
 
 type AddVehicleStep = "info" | "ruhsat" | "processing" | "result";
 
+const INDIVIDUAL_VEHICLE_LIMIT = 5;
+
 const GenerateQR = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, isIndividualPremium, isCorporatePremium } = useSubscription();
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -47,6 +51,13 @@ const GenerateQR = () => {
   const [selectedStyle, setSelectedStyle] = useState<QRStyle>(DEFAULT_QR_STYLE);
   const [showVehicleSelector, setShowVehicleSelector] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
+
+  // Account type tab (filter vehicles)
+  const [activeAccountType, setActiveAccountType] = useState<"individual" | "corporate">(
+    isCorporatePremium && !isIndividualPremium ? "corporate" : "individual"
+  );
+  // Account type for the vehicle currently being added
+  const [newAccountType, setNewAccountType] = useState<"individual" | "corporate">("individual");
 
   // Add vehicle state
   const [addStep, setAddStep] = useState<AddVehicleStep>("info");
@@ -76,7 +87,7 @@ const GenerateQR = () => {
     setLoadingVehicle(true);
     const { data, error } = await supabase
       .from("vehicles")
-      .select("id, plate, phone, last_qr_generated_at, verification_status")
+      .select("id, plate, phone, last_qr_generated_at, verification_status, account_type")
       .eq("user_id", user!.id)
       .order("created_at", { ascending: true });
 
@@ -86,7 +97,10 @@ const GenerateQR = () => {
     setVehicles(allVehicles);
 
     if (allVehicles.length > 0) {
-      const first = allVehicles[0];
+      // pick first vehicle matching active tab, fallback to first
+      const first =
+        allVehicles.find((v) => (v.account_type ?? "individual") === activeAccountType) ||
+        allVehicles[0];
       setSelectedVehicle(first);
       if (first.last_qr_generated_at) setGenerated(true);
     }
