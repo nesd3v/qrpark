@@ -38,24 +38,40 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Cancel all active subscriptions for this user
+    // Parse desired action: "stop_renewal" (default, soft cancel — keeps access until end)
+    // or "resume_renewal" to re-enable auto renewal.
+    let action: "stop_renewal" | "resume_renewal" = "stop_renewal";
+    try {
+      const body = await req.json();
+      if (body?.action === "resume_renewal") action = "resume_renewal";
+    } catch {
+      /* no body */
+    }
+
+    const update: Record<string, unknown> = {
+      auto_renew: action === "resume_renewal",
+      updated_at: new Date().toISOString(),
+    };
+    if (action === "stop_renewal") update.cancelled_at = new Date().toISOString();
+    else update.cancelled_at = null;
+
     const { data, error } = await adminClient
       .from("subscriptions")
-      .update({
-        status: "cancelled",
-        updated_at: new Date().toISOString(),
-      })
+      .update(update)
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
       .select();
 
     if (error) throw error;
 
-    console.log(`[CANCEL-SUBSCRIPTION] Cancelled ${data?.length ?? 0} subscriptions for user ${user.id}`);
+    console.log(
+      `[CANCEL-SUBSCRIPTION] action=${action} affected=${data?.length ?? 0} user=${user.id}`
+    );
 
-    return new Response(JSON.stringify({ success: true, cancelled: data?.length ?? 0 }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ success: true, action, affected: data?.length ?? 0 }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (err) {
     console.error("Cancel subscription error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
