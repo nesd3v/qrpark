@@ -18,9 +18,10 @@ const MobileBottomNav = () => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border"
+      className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/60"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
       <div className="grid grid-cols-5 px-1 pt-1.5 pb-1.5">
         {items.map((item) => {
           const isActive = location.pathname === item.to;
