@@ -8,9 +8,9 @@ const HeroSection = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
       {/* Aurora orbs */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-primary/25 blur-[140px] animate-orb-drift" />
-        <div className="absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full bg-tertiary/20 blur-[140px] animate-orb-drift" style={{ animationDelay: "-6s" }} />
-        <div className="absolute bottom-0 left-1/3 w-[420px] h-[420px] rounded-full bg-accent/15 blur-[160px] animate-orb-drift" style={{ animationDelay: "-3s" }} />
+        <div className="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-primary/10 blur-[160px] animate-orb-drift" />
+        <div className="absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full bg-tertiary/10 blur-[160px] animate-orb-drift" style={{ animationDelay: "-6s" }} />
+        <div className="absolute bottom-0 left-1/3 w-[420px] h-[420px] rounded-full bg-accent/8 blur-[180px] animate-orb-drift" style={{ animationDelay: "-3s" }} />
       </div>
 
       {/* Grid */}
