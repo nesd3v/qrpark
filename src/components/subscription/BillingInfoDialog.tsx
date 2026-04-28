@@ -217,9 +217,13 @@ const BillingInfoDialog = ({
               <Link to="/on-bilgilendirme" target="_blank" className="text-primary hover:underline">
                 Ön Bilgilendirme Formu
               </Link>
-              {" ve "}
+              {", "}
               <Link to="/mesafeli-satis" target="_blank" className="text-primary hover:underline">
                 Mesafeli Satış Sözleşmesi
+              </Link>
+              {" ve "}
+              <Link to="/terms" target="_blank" className="text-primary hover:underline">
+                Üyelik Sözleşmesi
               </Link>
               ’ni okudum, kabul ediyorum. Üyeliğin satın alma anında derhal aktif edilmesini
               ve dijital içerik için <strong>cayma hakkı bulunmadığını</strong> onaylıyorum.
