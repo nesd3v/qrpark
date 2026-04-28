@@ -292,6 +292,17 @@ export type Database = {
         Row: {
           account_type: string
           amount: number
+          auto_renew: boolean
+          billing_address: string | null
+          billing_city: string | null
+          billing_company: string | null
+          billing_email: string | null
+          billing_name: string | null
+          billing_tax_office: string | null
+          billing_tckn: string | null
+          billing_type: string
+          billing_vkn: string | null
+          cancelled_at: string | null
           created_at: string
           id: string
           merchant_oid: string
@@ -306,6 +317,17 @@ export type Database = {
         Insert: {
           account_type?: string
           amount?: number
+          auto_renew?: boolean
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_company?: string | null
+          billing_email?: string | null
+          billing_name?: string | null
+          billing_tax_office?: string | null
+          billing_tckn?: string | null
+          billing_type?: string
+          billing_vkn?: string | null
+          cancelled_at?: string | null
           created_at?: string
           id?: string
           merchant_oid: string
@@ -320,6 +342,17 @@ export type Database = {
         Update: {
           account_type?: string
           amount?: number
+          auto_renew?: boolean
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_company?: string | null
+          billing_email?: string | null
+          billing_name?: string | null
+          billing_tax_office?: string | null
+          billing_tckn?: string | null
+          billing_type?: string
+          billing_vkn?: string | null
+          cancelled_at?: string | null
           created_at?: string
           id?: string
           merchant_oid?: string
