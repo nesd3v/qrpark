@@ -155,6 +155,14 @@ const MobilePricing = () => {
       </button>
 
       <PayTRModal token={paytrToken} onClose={() => setPaytrToken(null)} />
+      <BillingInfoDialog
+        open={billingOpen}
+        onOpenChange={setBillingOpen}
+        defaultEmail={user?.email}
+        defaultType="individual"
+        loading={!!loadingPlan}
+        onConfirm={submitCheckout}
+      />
     </MobileLayout>
   );
 };
