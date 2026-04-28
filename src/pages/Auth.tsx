@@ -29,6 +29,7 @@ const Auth = () => {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [registered, setRegistered] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -46,6 +47,10 @@ const Auth = () => {
     }
     if (!isPasswordValid) {
       toast.error("Şifre güvenlik kurallarını karşılamıyor");
+      return;
+    }
+    if (!acceptedTerms) {
+      toast.error("Devam etmek için yasal metinleri onaylamanız gerekir");
       return;
     }
 
