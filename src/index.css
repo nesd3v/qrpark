@@ -17,9 +17,9 @@
     --popover-foreground: 210 14% 88%;
 
     /* Aurora Mint — primary brand */
-    --primary: 165 65% 50%;
+    --primary: 162 80% 48%;
     --primary-foreground: 225 25% 8%;
-    --primary-glow: 165 75% 60%;
+    --primary-glow: 160 90% 60%;
 
     /* Iris — secondary glow */
     --secondary: 225 14% 15%;
@@ -29,11 +29,11 @@
     --muted-foreground: 220 8% 62%;
 
     /* Plasma Lime — accent / spotlight */
-    --accent: 165 50% 58%;
+    --accent: 175 75% 55%;
     --accent-foreground: 225 25% 8%;
 
     /* Iris violet — tertiary */
-    --tertiary: 190 35% 65%;
+    --tertiary: 195 70% 60%;
     --tertiary-foreground: 225 25% 8%;
 
     --destructive: 350 65% 55%;
@@ -41,7 +41,7 @@
 
     --border: 225 14% 18%;
     --input: 225 14% 16%;
-    --ring: 165 65% 50%;
+    --ring: 162 80% 48%;
 
     --radius: 1rem;
 
@@ -52,12 +52,12 @@
 
     --sidebar-background: 225 18% 9%;
     --sidebar-foreground: 210 14% 86%;
-    --sidebar-primary: 165 65% 50%;
+    --sidebar-primary: 162 80% 48%;
     --sidebar-primary-foreground: 225 25% 8%;
     --sidebar-accent: 225 12% 13%;
     --sidebar-accent-foreground: 210 14% 86%;
     --sidebar-border: 225 14% 18%;
-    --sidebar-ring: 165 65% 50%;
+    --sidebar-ring: 162 80% 48%;
   }
 }
 
