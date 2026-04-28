@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 const legalLinks = [
   { to: "/kvkk", label: "KVKK Aydınlatma" },
+  { to: "/acik-riza", label: "Açık Rıza" },
   { to: "/cerez", label: "Çerez Politikası" },
   { to: "/mesafeli-satis", label: "Mesafeli Satış" },
   { to: "/on-bilgilendirme", label: "Ön Bilgilendirme" },
