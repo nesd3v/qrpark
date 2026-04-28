@@ -2,37 +2,36 @@ import { Car, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const legalLinks = [
-  { to: "/privacy", label: "Gizlilik" },
-  { to: "/terms", label: "Şartlar" },
-  { to: "/kvkk", label: "KVKK" },
+  { to: "/privacy", label: "Gizlilik Politikası" },
+  { to: "/terms", label: "Kullanım Şartları" },
+  { to: "/kvkk", label: "KVKK Aydınlatma" },
   { to: "/contact", label: "İletişim" },
 ];
 
 const Footer = () => {
   return (
-    <footer className="relative border-t border-border/60 py-14 mt-20">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+    <footer className="relative border-t border-border/70 py-14 mt-20">
       <div className="container mx-auto px-6">
         <div className="grid gap-10 md:grid-cols-3 items-start">
           <div>
-            <Link to="/" className="inline-flex items-center gap-2.5 mb-4 group">
-              <div className="relative w-9 h-9 rounded-xl gradient-primary flex items-center justify-center glow-primary">
-                <Car className="w-4.5 h-4.5 text-primary-foreground" strokeWidth={2.5} />
+            <Link to="/" className="inline-flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+                <Car className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
               </div>
-              <span className="text-xl font-display font-bold tracking-tight text-foreground">
-                QR<span className="text-gradient-aurora">Park</span>
+              <span className="text-lg font-display font-semibold tracking-tight text-foreground">
+                QRPark
               </span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-              Aracınla iletişim kurmanın en güvenli ve en zarif yolu.
+              Aracınızla iletişim kurmanın güvenli, kurumsal yolu.
             </p>
           </div>
 
           <nav aria-label="Yasal" className="md:justify-self-center">
-            <h3 className="font-mono text-[10px] font-semibold text-foreground/60 uppercase tracking-[0.2em] mb-4">
-              // legal
+            <h3 className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.18em] mb-4">
+              Yasal
             </h3>
-            <ul className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            <ul className="grid grid-cols-1 gap-y-2 text-sm">
               {legalLinks.map((l) => (
                 <li key={l.to}>
                   <Link to={l.to} className="text-muted-foreground hover:text-primary transition-colors">
@@ -44,8 +43,8 @@ const Footer = () => {
           </nav>
 
           <div className="md:justify-self-end text-sm">
-            <h3 className="font-mono text-[10px] font-semibold text-foreground/60 uppercase tracking-[0.2em] mb-4">
-              // contact
+            <h3 className="text-[11px] font-semibold text-foreground/70 uppercase tracking-[0.18em] mb-4">
+              İletişim
             </h3>
             <a href="mailto:destek@qrpark.xyz" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
               <Mail className="w-4 h-4" />
@@ -54,12 +53,12 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-border/50 mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="border-t border-border/60 mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} QRPark — Tüm hakları saklıdır.
+            © {new Date().getFullYear()} QRPark. Tüm hakları saklıdır.
           </p>
-          <p className="text-xs font-mono text-muted-foreground/70">
-            crafted in <span className="text-primary">İstanbul</span>
+          <p className="text-xs text-muted-foreground">
+            Türkiye'de tasarlandı.
           </p>
         </div>
       </div>
