@@ -496,6 +496,17 @@ const Pricing = () => {
       </div>
 
       <PayTRModal token={paytrToken} onClose={() => setPaytrToken(null)} />
+      <BillingInfoDialog
+        open={billingOpen}
+        onOpenChange={(v) => {
+          setBillingOpen(v);
+          if (!v) setPendingCheckout(null);
+        }}
+        defaultEmail={user?.email}
+        defaultType={pendingCheckout?.accountType ?? "individual"}
+        loading={!!loadingPlan}
+        onConfirm={submitCheckout}
+      />
       <Footer />
     </div>
   );
