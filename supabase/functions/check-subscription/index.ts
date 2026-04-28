@@ -90,11 +90,15 @@ serve(async (req) => {
       individual: individual ? {
         plan_type: individual.plan_type,
         subscription_end: individual.subscription_end,
+        auto_renew: individual.auto_renew ?? true,
+        cancelled_at: individual.cancelled_at ?? null,
       } : null,
       corporate: corporateActive ? {
         plan_type: corporate?.plan_type ?? "filo",
         subscription_end: corporate?.subscription_end ?? null,
         legacy: !corporate, // grandfathered member
+        auto_renew: corporate?.auto_renew ?? true,
+        cancelled_at: corporate?.cancelled_at ?? null,
       } : null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

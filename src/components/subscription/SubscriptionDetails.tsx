@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Crown, Calendar, Clock, CreditCard, AlertTriangle, Loader2, ExternalLink } from "lucide-react";
+import { Crown, Calendar, Clock, CreditCard, AlertTriangle, Loader2, ExternalLink, RefreshCw, RotateCw } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,9 +17,12 @@ import {
 import { toast } from "sonner";
 
 const SubscriptionDetails = () => {
-  const { isPremium, planType, subscriptionEnd, loading, checkSubscription } = useSubscription();
+  const { isPremium, planType, subscriptionEnd, loading, checkSubscription, individual, corporate } = useSubscription();
   const navigate = useNavigate();
-  const [cancelling, setCancelling] = useState(false);
+  const [busy, setBusy] = useState<"stop" | "resume" | null>(null);
+
+  const activeSub = individual ?? corporate;
+  const autoRenew = activeSub?.auto_renew !== false; // default true
 
   if (loading) {
     return (
@@ -64,17 +66,35 @@ const SubscriptionDetails = () => {
     ? Math.max(0, Math.ceil((new Date(subscriptionEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  const handleCancelRequest = async () => {
-    setCancelling(true);
+  const handleStopRenewal = async () => {
+    setBusy("stop");
     try {
-      const { error } = await supabase.functions.invoke("cancel-subscription");
+      const { error } = await supabase.functions.invoke("cancel-subscription", {
+        body: { action: "stop_renewal" },
+      });
       if (error) throw error;
-      toast.success("Aboneliğiniz başarıyla iptal edildi.");
+      toast.success("Otomatik yenileme kapatıldı. Mevcut dönem sonuna kadar Premium aktif.");
       await checkSubscription();
     } catch {
-      toast.error("Abonelik iptal edilirken bir hata oluştu. Lütfen tekrar deneyin.");
+      toast.error("İşlem yapılamadı. Lütfen tekrar deneyin.");
     } finally {
-      setCancelling(false);
+      setBusy(null);
+    }
+  };
+
+  const handleResumeRenewal = async () => {
+    setBusy("resume");
+    try {
+      const { error } = await supabase.functions.invoke("cancel-subscription", {
+        body: { action: "resume_renewal" },
+      });
+      if (error) throw error;
+      toast.success("Otomatik yenileme yeniden açıldı.");
+      await checkSubscription();
+    } catch {
+      toast.error("İşlem yapılamadı. Lütfen tekrar deneyin.");
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -144,6 +164,27 @@ const SubscriptionDetails = () => {
           )}
         </div>
 
+        {/* Auto renewal status */}
+        <div className={`rounded-lg p-3 border ${autoRenew ? "border-primary/30 bg-primary/5" : "border-warning/40 bg-warning/5"}`}>
+          <div className="flex items-center gap-2">
+            {autoRenew ? (
+              <RefreshCw className="w-4 h-4 text-primary" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-warning" />
+            )}
+            <p className="text-xs font-semibold text-foreground">
+              {autoRenew
+                ? "Otomatik yenileme açık"
+                : "Otomatik yenileme kapalı"}
+            </p>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+            {autoRenew
+              ? "Üyeliğin dönem sonunda otomatik yenilenecek. İstediğin an tek tıkla kapatabilirsin."
+              : `Üyeliğin ${endDate ?? "dönem sonunda"} sona erecek ve hesap ücretsiz plana dönecek.`}
+          </p>
+        </div>
+
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2">
           <button
@@ -152,21 +193,23 @@ const SubscriptionDetails = () => {
           >
             <ExternalLink className="w-3.5 h-3.5" /> Planları Gör
           </button>
-          <AlertDialog>
+          {autoRenew ? (
+            <AlertDialog>
             <AlertDialogTrigger asChild>
               <button
-                disabled={cancelling}
+                disabled={busy !== null}
                 className="flex-1 py-2.5 rounded-xl border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                {cancelling ? "İptal Ediliyor..." : "İptal Et"}
+                {busy === "stop" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                {busy === "stop" ? "İşleniyor..." : "Yenilemeyi Kapat"}
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Aboneliği iptal etmek istediğinize emin misiniz?</AlertDialogTitle>
+                <AlertDialogTitle>Otomatik yenilemeyi kapatmak istiyor musunuz?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  İptal talebiniz destek ekibimize iletilecektir. Mevcut abonelik süreniz bitene kadar Premium özelliklerden yararlanmaya devam edebilirsiniz.
+                  Mevcut abonelik süreniz bitene kadar Premium özelliklerden yararlanmaya devam edersiniz.
+                  Süre sonunda hesap otomatik olarak ücretsiz plana döner; herhangi bir tahsilat yapılmaz.
                   {endDate && (
                     <span className="block mt-2 font-medium text-foreground">
                       Premium erişiminiz {endDate} tarihine kadar aktif kalacaktır.
@@ -177,14 +220,24 @@ const SubscriptionDetails = () => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Vazgeç</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={handleCancelRequest}
+                  onClick={handleStopRenewal}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  Evet, İptal Talebi Gönder
+                  Evet, Yenilemeyi Kapat
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          ) : (
+            <button
+              onClick={handleResumeRenewal}
+              disabled={busy !== null}
+              className="flex-1 py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-medium hover:bg-primary/10 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {busy === "resume" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
+              {busy === "resume" ? "Açılıyor..." : "Yenilemeyi Aç"}
+            </button>
+          )}
         </div>
       </div>
     </div>

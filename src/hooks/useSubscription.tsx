@@ -6,6 +6,8 @@ type SubInfo = {
   plan_type: string | null;
   subscription_end: string | null;
   legacy?: boolean;
+  auto_renew?: boolean;
+  cancelled_at?: string | null;
 } | null;
 
 type SubscriptionState = {

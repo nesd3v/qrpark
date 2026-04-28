@@ -22,8 +22,14 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Kvkk from "./pages/Kvkk";
 import Contact from "./pages/Contact";
+import MesafeliSatis from "./pages/MesafeliSatis";
+import OnBilgilendirme from "./pages/OnBilgilendirme";
+import Cayma from "./pages/Cayma";
+import Cerez from "./pages/Cerez";
+import TicariBilgi from "./pages/TicariBilgi";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/shared/SupportChatWidget";
+import CookieConsentBanner from "./components/shared/CookieConsentBanner";
 import { useNativeInit } from "./hooks/useNative";
 
 const queryClient = new QueryClient();
@@ -60,9 +66,15 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/kvkk" element={<Kvkk />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/mesafeli-satis" element={<MesafeliSatis />} />
+          <Route path="/on-bilgilendirme" element={<OnBilgilendirme />} />
+          <Route path="/cayma" element={<Cayma />} />
+          <Route path="/cerez" element={<Cerez />} />
+          <Route path="/ticari-bilgi" element={<TicariBilgi />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />
+        <CookieConsentBanner />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

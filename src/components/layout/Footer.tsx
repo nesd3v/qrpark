@@ -2,10 +2,14 @@ import { Car, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const legalLinks = [
+  { to: "/kvkk", label: "KVKK Aydınlatma" },
+  { to: "/cerez", label: "Çerez Politikası" },
+  { to: "/mesafeli-satis", label: "Mesafeli Satış" },
+  { to: "/on-bilgilendirme", label: "Ön Bilgilendirme" },
+  { to: "/cayma", label: "Cayma & İade" },
+  { to: "/ticari-bilgi", label: "Ticari Bilgi" },
   { to: "/privacy", label: "Gizlilik" },
   { to: "/terms", label: "Şartlar" },
-  { to: "/kvkk", label: "KVKK" },
-  { to: "/contact", label: "İletişim" },
 ];
 
 const Footer = () => {
@@ -32,7 +36,7 @@ const Footer = () => {
             <h3 className="font-mono text-[10px] font-semibold text-foreground/60 uppercase tracking-[0.2em] mb-4">
               // legal
             </h3>
-            <ul className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
               {legalLinks.map((l) => (
                 <li key={l.to}>
                   <Link to={l.to} className="text-muted-foreground hover:text-primary transition-colors">
@@ -58,8 +62,10 @@ const Footer = () => {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} QRPark — Tüm hakları saklıdır.
           </p>
-          <p className="text-xs font-mono text-muted-foreground/70">
-            crafted in <span className="text-primary">İstanbul</span>
+          <p className="text-xs text-muted-foreground/80 text-center md:text-right">
+            <Link to="/ticari-bilgi" className="hover:text-primary transition-colors">
+              Ticari ve vergi bilgileri
+            </Link>
           </p>
         </div>
       </div>

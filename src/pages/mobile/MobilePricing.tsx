@@ -9,6 +9,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { usePaytrCheckoutHandler } from "@/hooks/usePaytrCheckoutHandler";
 import { supabase } from "@/integrations/supabase/client";
 import PayTRModal from "@/components/subscription/PayTRModal";
+import BillingInfoDialog, { BillingInfo } from "@/components/subscription/BillingInfoDialog";
 import { haptic } from "@/hooks/useNative";
 
 import { translateError } from "@/lib/translateError";
@@ -29,17 +30,26 @@ const MobilePricing = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
+  const [billingOpen, setBillingOpen] = useState(false);
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (authLoading) return;
     if (!user) { navigate("/auth?redirect=/pricing"); return; }
-    setLoadingPlan(selectedPlan);
     haptic.light();
+    setBillingOpen(true);
+  };
+
+  const submitCheckout = async (billing: BillingInfo) => {
+    setLoadingPlan(selectedPlan);
     try {
-      const { data, error } = await supabase.functions.invoke("create-paytr-token", { body: { planType: selectedPlan } });
+      const { data, error } = await supabase.functions.invoke("create-paytr-token", {
+        body: { planType: selectedPlan, accountType: "individual", billing },
+      });
       if (error) throw error;
-      if (data?.token) setPaytrToken(data.token);
-      else throw new Error(data?.error || "Token alınamadı");
+      if (data?.token) {
+        setPaytrToken(data.token);
+        setBillingOpen(false);
+      } else throw new Error(data?.error || "Token alınamadı");
     } catch (err: any) {
       haptic.error();
       toast.error("Ödeme başlatılamadı: " + translateError(err, "Bilinmeyen hata"));
@@ -145,6 +155,14 @@ const MobilePricing = () => {
       </button>
 
       <PayTRModal token={paytrToken} onClose={() => setPaytrToken(null)} />
+      <BillingInfoDialog
+        open={billingOpen}
+        onOpenChange={setBillingOpen}
+        defaultEmail={user?.email}
+        defaultType="individual"
+        loading={!!loadingPlan}
+        onConfirm={submitCheckout}
+      />
     </MobileLayout>
   );
 };
