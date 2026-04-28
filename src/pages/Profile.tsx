@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
 import CorporateStatusBanner from "@/components/corporate/CorporateStatusBanner";
+import ConsentManager from "@/components/shared/ConsentManager";
 
 import { translateError } from "@/lib/translateError";
 type Vehicle = { id: string; plate: string; phone: string; sms_enabled: boolean; call_enabled: boolean; account_type?: string };
@@ -500,6 +501,15 @@ const Profile = () => {
                   <span className="text-muted-foreground text-xs">›</span>
                 </Link>
               ))}
+            </motion.div>
+
+            {/* Consent & Communication Preferences */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <ConsentManager />
             </motion.div>
 
             {/* Delete Account */}

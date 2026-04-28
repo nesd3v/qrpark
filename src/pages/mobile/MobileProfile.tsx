@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import MobileLayout from "@/components/layout/MobileLayout";
 import DeleteAccountDialog from "@/components/shared/DeleteAccountDialog";
+import ConsentManager from "@/components/shared/ConsentManager";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -220,6 +221,10 @@ const MobileProfile = () => {
         <Row icon={FileText} label="Kullanım Şartları" to="/terms" />
         <Row icon={Lock} label="KVKK Aydınlatma Metni" to="/kvkk" />
       </Section>
+
+      <div className="mt-4">
+        <ConsentManager />
+      </div>
 
       {/* Tehlikeli */}
       <Section title="Hesap İşlemleri">

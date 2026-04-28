@@ -258,6 +258,13 @@ const Auth = () => {
                 className="text-primary hover:underline font-medium">Kayıt Ol</button>
             </p>
           </form>
+          <p className="text-center text-[11px] text-muted-foreground mt-4 leading-relaxed">
+            Devam ederek{" "}
+            <Link to="/terms" className="text-primary hover:underline">Kullanım Şartları</Link>,{" "}
+            <Link to="/privacy" className="text-primary hover:underline">Gizlilik Politikası</Link> ve{" "}
+            <Link to="/kvkk" className="text-primary hover:underline">KVKK Aydınlatma</Link>
+            'yı kabul etmiş sayılırsınız.
+          </p>
         </motion.div>
       </div>
     );
