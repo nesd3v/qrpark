@@ -155,6 +155,33 @@ Deno.serve(async (req) => {
         .update({ updated_at: new Date().toISOString() })
         .eq("id", conversation_id);
 
+      // Notify admin email when end-user sends a message (fire and forget)
+      if (sType === "user" && message) {
+        try {
+          const { data: convFull } = await supabase
+            .from("support_conversations")
+            .select("user_name, user_email")
+            .eq("id", conversation_id)
+            .single();
+          await fetch(`${supabaseUrl}/functions/v1/notify-admin-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": Deno.env.get("SUPABASE_ANON_KEY") || "",
+            },
+            body: JSON.stringify({
+              type: "support",
+              payload: {
+                user_name: convFull?.user_name || "",
+                user_email: convFull?.user_email || "",
+                message,
+                conversation_id,
+              },
+            }),
+          });
+        } catch (e) { console.error("notify support fail", e); }
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
