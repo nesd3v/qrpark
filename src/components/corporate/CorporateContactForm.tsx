@@ -66,6 +66,21 @@ const CorporateContactForm = ({ planType = "filo", onClose }: CorporateContactFo
         },
       }).catch(() => {});
 
+      // Notify destek@qrpark.xyz via Gmail
+      await supabase.functions.invoke("notify-admin-email", {
+        body: {
+          type: "corporate",
+          payload: {
+            company_name: form.company_name,
+            vehicle_count: vehicleCount,
+            contact_phone: form.contact_phone,
+            contact_email: form.contact_email,
+            plan_type: planType,
+            message: form.message || null,
+          },
+        },
+      }).catch(() => {});
+
       setSubmitted(true);
       toast.success("Başvurunuz alındı! En kısa sürede sizinle iletişime geçeceğiz.");
     } catch (err: any) {
