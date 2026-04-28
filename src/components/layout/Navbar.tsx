@@ -28,14 +28,14 @@ const Navbar = () => {
   }, [user]);
 
   return (
-    <nav className="fixed top-3 left-3 right-3 sm:top-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 sm:max-w-5xl sm:w-[calc(100%-2rem)] glass rounded-2xl">
-      <div className="px-4 sm:px-5 py-2.5 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/60">
+      <div className="container mx-auto px-6 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="relative w-8 h-8 rounded-lg gradient-primary flex items-center justify-center glow-primary group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
             <Car className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
           </div>
-          <span className="text-lg font-display font-bold tracking-tight text-foreground">
-            QR<span className="text-gradient-aurora">Park</span>
+          <span className="text-lg font-display font-semibold tracking-tight text-foreground">
+            QRPark
           </span>
         </Link>
 
