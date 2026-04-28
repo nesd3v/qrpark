@@ -13,6 +13,7 @@ import { usePaytrCheckoutHandler } from "@/hooks/usePaytrCheckoutHandler";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import PayTRModal from "@/components/subscription/PayTRModal";
+import BillingInfoDialog, { BillingInfo } from "@/components/subscription/BillingInfoDialog";
 import { translateError } from "@/lib/translateError";
 
 type PlanTab = "bireysel" | "kurumsal";
@@ -50,6 +51,11 @@ const Pricing = () => {
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
   const [planTab, setPlanTab] = useState<PlanTab>("bireysel");
   const [pendingInquiry, setPendingInquiry] = useState<CorporateInquiry | null>(null);
+  const [billingOpen, setBillingOpen] = useState(false);
+  const [pendingCheckout, setPendingCheckout] = useState<{
+    accountType: AccountType;
+    planType: PlanType;
+  } | null>(null);
 
   // Check for approved corporate inquiry awaiting payment
   useEffect(() => {
@@ -73,15 +79,25 @@ const Pricing = () => {
       navigate("/auth?redirect=/pricing");
       return;
     }
+    // Open billing info dialog before initiating checkout
+    setPendingCheckout({ accountType, planType });
+    setBillingOpen(true);
+  };
+
+  const submitCheckout = async (billing: BillingInfo) => {
+    if (!pendingCheckout) return;
+    const { accountType, planType } = pendingCheckout;
     const key = `${accountType}-${planType}`;
     setLoadingPlan(key);
     try {
       const { data, error } = await supabase.functions.invoke("create-paytr-token", {
-        body: { planType, accountType },
+        body: { planType, accountType, billing },
       });
       if (error) throw error;
-      if (data?.token) setPaytrToken(data.token);
-      else throw new Error(data?.error || "Token alınamadı");
+      if (data?.token) {
+        setPaytrToken(data.token);
+        setBillingOpen(false);
+      } else throw new Error(data?.error || "Token alınamadı");
     } catch (err: any) {
       toast.error("Ödeme sayfası oluşturulamadı: " + translateError(err, "Bilinmeyen hata"));
     } finally {
