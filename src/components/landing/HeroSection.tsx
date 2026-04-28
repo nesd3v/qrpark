@@ -102,10 +102,10 @@ const HeroSection = () => {
           id="features"
         >
           {[
-            { icon: QrCode, title: "QR Oluştur", desc: "Plakana özel benzersiz kod", color: "primary" },
-            { icon: Bell, title: "Anlık SMS", desc: "Saniyeler içinde haberin olur", color: "accent" },
-            { icon: Shield, title: "Gizli Numara", desc: "Telefonun asla paylaşılmaz", color: "tertiary" },
-            { icon: Clock, title: "Süresiz Premium", desc: "Tek seferlik fiyat, sonsuz QR", color: "primary" },
+            { icon: QrCode, title: "QR Oluştur", desc: "Plakana özel benzersiz kod", orb: "bg-primary/15", chip: "bg-primary/10 border-primary/25 text-primary" },
+            { icon: Bell, title: "Anlık SMS", desc: "Saniyeler içinde haberin olur", orb: "bg-accent/15", chip: "bg-accent/10 border-accent/25 text-accent" },
+            { icon: Shield, title: "Gizli Numara", desc: "Telefonun asla paylaşılmaz", orb: "bg-tertiary/15", chip: "bg-tertiary/10 border-tertiary/25 text-tertiary" },
+            { icon: Clock, title: "Süresiz Premium", desc: "Tek seferlik fiyat, sonsuz QR", orb: "bg-primary/15", chip: "bg-primary/10 border-primary/25 text-primary" },
           ].map((item, i) => (
             <motion.div
               key={item.title}
@@ -114,9 +114,9 @@ const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 + i * 0.08 }}
             >
-              <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-${item.color}/10 blur-2xl group-hover:bg-${item.color}/20 transition-colors`} />
-              <div className={`relative w-10 h-10 rounded-xl bg-${item.color}/10 border border-${item.color}/20 flex items-center justify-center mb-3`}>
-                <item.icon className={`w-5 h-5 text-${item.color}`} />
+              <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full ${item.orb} blur-2xl transition-colors`} />
+              <div className={`relative w-10 h-10 rounded-xl border flex items-center justify-center mb-3 ${item.chip}`}>
+                <item.icon className="w-5 h-5" />
               </div>
               <h3 className="font-display font-semibold text-sm sm:text-base mb-1 text-foreground">{item.title}</h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
