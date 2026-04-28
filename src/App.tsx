@@ -27,6 +27,7 @@ import OnBilgilendirme from "./pages/OnBilgilendirme";
 import Cayma from "./pages/Cayma";
 import Cerez from "./pages/Cerez";
 import TicariBilgi from "./pages/TicariBilgi";
+import AcikRiza from "./pages/AcikRiza";
 import NotFound from "./pages/NotFound";
 import SupportChatWidget from "./components/shared/SupportChatWidget";
 import CookieConsentBanner from "./components/shared/CookieConsentBanner";
@@ -71,6 +72,7 @@ const App = () => (
           <Route path="/cayma" element={<Cayma />} />
           <Route path="/cerez" element={<Cerez />} />
           <Route path="/ticari-bilgi" element={<TicariBilgi />} />
+          <Route path="/acik-riza" element={<AcikRiza />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <SupportChatWidget />

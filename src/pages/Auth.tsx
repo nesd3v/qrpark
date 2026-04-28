@@ -29,6 +29,7 @@ const Auth = () => {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [registered, setRegistered] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -46,6 +47,10 @@ const Auth = () => {
     }
     if (!isPasswordValid) {
       toast.error("Şifre güvenlik kurallarını karşılamıyor");
+      return;
+    }
+    if (!acceptedTerms) {
+      toast.error("Devam etmek için yasal metinleri onaylamanız gerekir");
       return;
     }
 
@@ -357,6 +362,22 @@ const Auth = () => {
             className="w-full gradient-primary text-primary-foreground font-semibold py-6 text-base glow-primary hover:opacity-90 transition-opacity disabled:opacity-40">
             {loading ? "Yükleniyor..." : "Kayıt Ol"}
           </Button>
+
+          <label className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer flex-shrink-0"
+            />
+            <span>
+              <Link to="/kvkk" target="_blank" className="text-primary hover:underline">KVKK Aydınlatma</Link>,{" "}
+              <Link to="/acik-riza" target="_blank" className="text-primary hover:underline">Açık Rıza</Link>,{" "}
+              <Link to="/terms" target="_blank" className="text-primary hover:underline">Kullanım Şartları</Link> ve{" "}
+              <Link to="/privacy" target="_blank" className="text-primary hover:underline">Gizlilik Politikası</Link>'nı
+              okudum, anladım ve kabul ediyorum.
+            </span>
+          </label>
         </form>
 
         <p className="text-center text-sm text-muted-foreground mt-5">
