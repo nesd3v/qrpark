@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Shield, ShieldX, Loader2, LogIn, Car, RefreshCw, MessageCircle, Building2,
-  LayoutDashboard, ChevronLeft, ChevronRight, Search, Bell, Users,
+  LayoutDashboard, ChevronLeft, ChevronRight, Search, Bell, Users, Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import AdminCorporatePanel from "@/components/admin/AdminCorporatePanel";
 import AdminSupportPanel from "@/components/admin/AdminSupportPanel";
 import AdminNotificationsPanel from "@/components/admin/AdminNotificationsPanel";
 import AdminUsersPanel from "@/components/admin/AdminUsersPanel";
+import AdminEmailInboxPanel from "@/components/admin/AdminEmailInboxPanel";
 
 type Stats = {
   pending: number;
@@ -109,6 +110,7 @@ const AdminPanel = () => {
     { key: "notifications", label: "Bildirim Geçmişi", icon: Bell, badge: stats?.total_notifications },
     { key: "corporate", label: "Kurumsal", icon: Building2, badge: stats?.corporate_new },
     { key: "support", label: "Canlı Destek", icon: MessageCircle },
+    { key: "email-inbox", label: "E-Posta Kutusu", icon: Mail },
   ];
 
   const currentNav = navItems.find((n) => n.key === activeSection);
@@ -186,6 +188,7 @@ const AdminPanel = () => {
             {activeSection === "notifications" && <AdminNotificationsPanel />}
             {activeSection === "corporate" && <AdminCorporatePanel />}
             {activeSection === "support" && <AdminSupportPanel user={user} />}
+            {activeSection === "email-inbox" && <AdminEmailInboxPanel />}
           </motion.div>
         </main>
       </div>
