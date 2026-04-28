@@ -222,6 +222,10 @@ const MobileProfile = () => {
         <Row icon={Lock} label="KVKK Aydınlatma Metni" to="/kvkk" />
       </Section>
 
+      <div className="mt-4">
+        <ConsentManager />
+      </div>
+
       {/* Tehlikeli */}
       <Section title="Hesap İşlemleri">
         <Row icon={LogOut} label="Çıkış Yap" onClick={signOut} />
