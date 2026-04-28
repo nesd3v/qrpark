@@ -49,7 +49,7 @@ serve(async (req) => {
     const email = claimsData.claims.email as string;
     if (!email || !userId) throw new Error("User not authenticated");
 
-    const { planType, accountType } = await req.json();
+    const { planType, accountType, billing } = await req.json();
     if (!planType || !["monthly", "yearly"].includes(planType)) {
       throw new Error("Invalid plan type");
     }
@@ -78,6 +78,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+    const billingType = billing?.billing_type === "corporate" ? "corporate" : "individual";
     await supabaseAdmin.from("subscriptions").insert({
       user_id: userId,
       merchant_oid: merchantOid,
@@ -85,9 +86,23 @@ serve(async (req) => {
       account_type: acctType,
       amount: paymentAmount,
       status: "pending",
+      billing_type: billingType,
+      billing_name: billing?.billing_name ?? null,
+      billing_tckn: billing?.billing_tckn ?? null,
+      billing_company: billing?.billing_company ?? null,
+      billing_vkn: billing?.billing_vkn ?? null,
+      billing_tax_office: billing?.billing_tax_office ?? null,
+      billing_address: billing?.billing_address ?? null,
+      billing_city: billing?.billing_city ?? null,
+      billing_email: billing?.billing_email ?? email,
     });
-    const userName = email.split("@")[0];
-    const userAddress = "Türkiye";
+    const userName =
+      billing?.billing_company ||
+      billing?.billing_name ||
+      email.split("@")[0];
+    const userAddress =
+      [billing?.billing_address, billing?.billing_city].filter(Boolean).join(", ") ||
+      "Türkiye";
     const userPhone = "05000000000";
     const planLabel = `QRPark ${acctType === "corporate" ? "Kurumsal" : "Bireysel"} Premium ${planType === "monthly" ? "Aylık" : "Yıllık"}`;
     const userBasket = base64Encode(
